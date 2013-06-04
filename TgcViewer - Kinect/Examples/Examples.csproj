@@ -112,6 +112,7 @@
     </Compile>
     <Compile Include="EjemploEnBlanco.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Test\EjemploGesto.cs" />
     <Compile Include="Test\EjemploCajonGesto.cs" />
     <Compile Include="Test\EjemploCajon.cs" />
     <Compile Include="Test\EjemploBasico.cs" />

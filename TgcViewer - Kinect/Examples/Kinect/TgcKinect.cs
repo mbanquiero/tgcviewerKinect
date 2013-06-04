@@ -43,6 +43,15 @@ namespace Examples.Kinect
             set { positionScale = value; }
         }
 
+        int historyFramesCount;
+        /// <summary>
+        /// Tamaño del buffer de historial de frames
+        /// </summary>
+        public int HistoryFramesCount
+        {
+            get { return historyFramesCount; }
+            set { historyFramesCount = value; }
+        }
 
         /// <summary>
         /// Constructor
@@ -52,6 +61,7 @@ namespace Examples.Kinect
             debugSkeleton = new TgcKinectDebugSkeleton();
             positionScale = 100;
             data = new TgcKinectSkeletonData();
+            historyFramesCount = 10;
         }
 
         /// <summary>
@@ -80,6 +90,8 @@ namespace Examples.Kinect
 
             using (var skeletonFrame = this.sensor.SkeletonStream.OpenNextFrame(0))
             {
+                this.data.Active = true;
+
                 // Sometimes we get a null frame back if no data is ready
                 if (null != skeletonFrame)
                 {
@@ -107,7 +119,6 @@ namespace Examples.Kinect
                     }
 
                     //Capturar datos del esqueleto
-                    this.data.Active = true;
                     this.buildSkeletonData(rawSkeleton, this.data);
                 }
             }
@@ -123,7 +134,6 @@ namespace Examples.Kinect
         /// <param name="data">Datos procesados que se actualizan</param>
         private void buildSkeletonData(Skeleton rawSkeleton, TgcKinectSkeletonData data)
         {
-
             //Copiar esqueleto de frame actual a frame anterior, sin escalar las posiciones porque ya estaban escaladas de antes
             this.copySkeleton(data.Current.KinectSkeleton, data.Previous.KinectSkeleton, false);
 
@@ -131,15 +141,115 @@ namespace Examples.Kinect
             data.Previous.RightHandSphere.setCenter(data.Current.RightHandSphere.Center);
             data.Previous.LeftHandSphere.setCenter(data.Current.LeftHandSphere.Center);
 
+            //Copiar pos2D de las dos manos al frame anterior
+            data.Previous.RightHandPos = data.Current.RightHandPos;
+            data.Previous.LefttHandPos = data.Current.LefttHandPos;
+
+
             //Copiar esqueleto recien trackeado al frame actual, escalando posiciones
             this.copySkeleton(rawSkeleton, data.Current.KinectSkeleton, true);
 
             //Actualizar BSphere de manos de frame actual
             data.Current.RightHandSphere.setCenter(TgcKinect.toVector3(data.Current.KinectSkeleton.Joints[JointType.HandRight].Position));
             data.Current.LeftHandSphere.setCenter(TgcKinect.toVector3(data.Current.KinectSkeleton.Joints[JointType.HandLeft].Position));
+
+            //Actualizar posicion 2D de manos de frame actual (las tomamos del rawSkeleton)
+            data.Current.RightHandPos = to2D(rawSkeleton.Joints[JointType.HandRight].Position);
+            data.Current.LefttHandPos = to2D(rawSkeleton.Joints[JointType.HandLeft].Position);
+
+
+
+            //Agregar nuevo cuadro a historial
+            TgcKinectSkeletonData.HandFrame newFrame = new TgcKinectSkeletonData.HandFrame();
+            newFrame.Pos3D[TgcKinectSkeletonData.RIGHT_HAND] = data.Current.RightHandSphere.Center;
+            newFrame.Pos3D[TgcKinectSkeletonData.LEFT_HAND] = data.Current.LeftHandSphere.Center;
+            newFrame.Pos2D[TgcKinectSkeletonData.RIGHT_HAND] = data.Current.RightHandPos;
+            newFrame.Pos2D[TgcKinectSkeletonData.LEFT_HAND] = data.Current.LefttHandPos;
+            data.HandsFrames.AddFirst(newFrame);
+
+            //Ver si hay que eliminar el ultimo cuadro viejo del historial
+            if(data.HandsFrames.Count > this.historyFramesCount)
+            {
+                data.HandsFrames.RemoveLast();
+            }
+
+
+            //Hacer analisis de datos en el historial de frames, para la mano derecha
+            this.computeAxisAnalysis(data, TgcKinectSkeletonData.RIGHT_HAND, 0);
+            this.computeAxisAnalysis(data, TgcKinectSkeletonData.RIGHT_HAND, 1);
+            this.computeAxisAnalysis(data, TgcKinectSkeletonData.RIGHT_HAND, 2);
+
+            //Hacer analisis de datos en el historial de frames, para la mano izquierda
+            this.computeAxisAnalysis(data, TgcKinectSkeletonData.LEFT_HAND, 0);
+            this.computeAxisAnalysis(data, TgcKinectSkeletonData.LEFT_HAND, 1);
+            this.computeAxisAnalysis(data, TgcKinectSkeletonData.LEFT_HAND, 2);
+
         }
 
+        /// <summary>
+        /// Hacer analisis estadistico de los datos de posicion de una mano del esqueleto, en un eje determinado.
+        /// Guarda los datos en el AxisAnalysisData de ese eje, para esa mano
+        /// </summary>
+        private void computeAxisAnalysis(TgcKinectSkeletonData data, int handIndex, int axisIndex)
+        {
+            //Lugar donde tenemos que almacenar el resultado
+            TgcKinectSkeletonData.AxisAnalysisData analysis = data.HandsAnalysisData[handIndex][axisIndex];
 
+            int framesCount = data.HandsFrames.Count;
+            analysis.Min = float.MaxValue;
+            analysis.Max = float.MinValue;
+            float sum = 0;
+            int i = 0;
+            float[] diff = new float[framesCount - 1];
+            float value = 0;
+            float lastValue = 0;
+            foreach (TgcKinectSkeletonData.HandFrame frame in data.HandsFrames)
+            {
+                lastValue = value;
+                value = frame.get3DValue(handIndex, axisIndex);
+                sum += value;
+
+                //min
+                if (value < analysis.Min)
+                {
+                    analysis.Min = value;
+                }
+                //max
+                if (value > analysis.Max)
+                {
+                    analysis.Max = value;
+                }
+
+                //diff con el anterior
+                if (i > 0)
+                {
+                    diff[i - 1] = value - lastValue;
+                }
+
+
+                i++;
+            }
+
+            //avg
+            analysis.Avg = sum / framesCount;
+
+            //variance
+            float sumVariance = 0;
+            foreach (TgcKinectSkeletonData.HandFrame frame in data.HandsFrames)
+            {
+                value = frame.get3DValue(handIndex, axisIndex);
+                sumVariance += analysis.Avg - value;
+            }
+            analysis.Variance = sumVariance / framesCount;
+
+            //diff
+            float sumDiff = 0;
+            for (int j = 0; j < diff.Length; j++)
+            {
+                sumDiff += diff[j];
+            }
+            analysis.DiffAvg = sumDiff / diff.Length;
+        }
 
 
 
@@ -159,7 +269,7 @@ namespace Examples.Kinect
             destination.ClippedEdges = source.ClippedEdges;
 
             //Escalar posicion
-            destination.Position = getScaledPoint(source.Position);
+            destination.Position = scalePos ? getScaledPoint(source.Position) : source.Position;
             
             Array jointTypeValues = Enum.GetValues(typeof(JointType));
 
@@ -167,7 +277,7 @@ namespace Examples.Kinect
             foreach (JointType j in jointTypeValues)
             {
                 Joint temp = destination.Joints[j];
-                temp.Position = getScaledPoint(source.Joints[j].Position);
+                temp.Position = scalePos ? getScaledPoint(source.Joints[j].Position) : source.Joints[j].Position;
                 temp.TrackingState = source.Joints[j].TrackingState;
                 destination.Joints[j] = temp;
             }
@@ -244,7 +354,7 @@ namespace Examples.Kinect
                      };
                      this.sensor.SkeletonStream.Enable(parameters);
                      //this.sensor.ColorStream.Enable(ColorImageFormat.RgbResolution640x480Fps30);
-                     //this.sensor.DepthStream.Enable(DepthImageFormat.Resolution320x240Fps30);
+                     this.sensor.DepthStream.Enable(DepthImageFormat.Resolution320x240Fps30);
                      this.sensor.SkeletonStream.EnableTrackingInNearRange = true; // Enable skeleton tracking in near mode
                      //this.sensor.DepthStream.Range = DepthRange.Near;
 
@@ -284,6 +394,22 @@ namespace Examples.Kinect
         public static Vector3 toVector3(SkeletonPoint p)
         {
             return new Vector3(p.X, p.Y, p.Z);
+        }
+
+        /// <summary>
+        /// Convierte un punto 3D de SkeletonPoint a uno 2D.
+        /// Lo escala en base al tamaño de la pantalla y al DepthBuffer
+        /// </summary>
+        public Vector2 to2D(SkeletonPoint p)
+        {
+            DepthImageStream depthStream = this.sensor.DepthStream;
+            DepthImagePoint depthPt = this.sensor.CoordinateMapper.MapSkeletonPointToDepthPoint(p, depthStream.Format);
+
+            // scale to current depth image display size and add any position offset
+            float x = depthPt.X / depthStream.FrameWidth;
+            float y = depthPt.Y / depthStream.FrameHeight;
+
+            return new Vector2(x, y);
         }
 
         public void dispose()
