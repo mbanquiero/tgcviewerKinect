@@ -61,7 +61,7 @@ namespace Examples.Kinect
             debugSkeleton = new TgcKinectDebugSkeleton();
             positionScale = 100;
             data = new TgcKinectSkeletonData();
-            historyFramesCount = 10;
+            historyFramesCount = 5;
         }
 
         /// <summary>
@@ -161,6 +161,8 @@ namespace Examples.Kinect
 
             //Agregar nuevo cuadro a historial
             TgcKinectSkeletonData.HandFrame newFrame = new TgcKinectSkeletonData.HandFrame();
+            newFrame.Pos3D = new Vector3[2];
+            newFrame.Pos2D = new Vector2[2];
             newFrame.Pos3D[TgcKinectSkeletonData.RIGHT_HAND] = data.Current.RightHandSphere.Center;
             newFrame.Pos3D[TgcKinectSkeletonData.LEFT_HAND] = data.Current.LeftHandSphere.Center;
             newFrame.Pos2D[TgcKinectSkeletonData.RIGHT_HAND] = data.Current.RightHandPos;
@@ -200,9 +202,9 @@ namespace Examples.Kinect
             analysis.Max = float.MinValue;
             float sum = 0;
             int i = 0;
-            float[] diff = new float[framesCount - 1];
             float value = 0;
             float lastValue = 0;
+            float sumDiff = 0;
             foreach (TgcKinectSkeletonData.HandFrame frame in data.HandsFrames)
             {
                 lastValue = value;
@@ -223,7 +225,7 @@ namespace Examples.Kinect
                 //diff con el anterior
                 if (i > 0)
                 {
-                    diff[i - 1] = value - lastValue;
+                    sumDiff += value - lastValue;
                 }
 
 
@@ -233,6 +235,9 @@ namespace Examples.Kinect
             //avg
             analysis.Avg = sum / framesCount;
 
+            //diff
+            analysis.DiffAvg = sumDiff / (framesCount - 1);
+
             //variance
             float sumVariance = 0;
             foreach (TgcKinectSkeletonData.HandFrame frame in data.HandsFrames)
@@ -241,14 +246,6 @@ namespace Examples.Kinect
                 sumVariance += analysis.Avg - value;
             }
             analysis.Variance = sumVariance / framesCount;
-
-            //diff
-            float sumDiff = 0;
-            for (int j = 0; j < diff.Length; j++)
-            {
-                sumDiff += diff[j];
-            }
-            analysis.DiffAvg = sumDiff / diff.Length;
         }
 
 

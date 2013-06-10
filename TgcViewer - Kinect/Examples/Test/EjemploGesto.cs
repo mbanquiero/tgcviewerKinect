@@ -11,6 +11,7 @@ using Examples.Kinect;
 using Microsoft.Kinect;
 using TgcViewer.Utils.TgcSkeletalAnimation;
 using TgcViewer.Utils._2D;
+using TgcViewer.Utils.TgcGeometry;
 
 namespace Examples.Test
 {
@@ -65,6 +66,9 @@ namespace Examples.Test
 
             gestoDetectado = false;
             acumTime = 0;
+
+            GuiController.Instance.FpsCamera.Enable = true;
+            GuiController.Instance.FpsCamera.setCamera(new Vector3(10.2881f, 1f, 9.6917f), new Vector3(10.2427f, 1.0175f, 10.6906f));
         }
 
         
@@ -82,11 +86,16 @@ namespace Examples.Test
             {
                 tgcKinect.DebugSkeleton.render(data.Current.KinectSkeleton);
 
+                //Buscar gesto en mano derecha
+                TgcKinectSkeletonData.AnalysisData rAnalysisData = data.HandsAnalysisData[TgcKinectSkeletonData.RIGHT_HAND];
+
+                GuiController.Instance.Text3d.drawText("Diff AvgZ: " + rAnalysisData.Z.DiffAvg + ", AvgZ: " + rAnalysisData.Z.Avg + ", varX: " + rAnalysisData.X.Variance + "varY: " + rAnalysisData.Y.Variance, 50, 150, Color.Yellow);
+
 
                 if (gestoDetectado)
                 {
                     acumTime += elapsedTime;
-                    if (acumTime > 5)
+                    if (acumTime > 3)
                     {
                         gestoDetectado = false;
                         text.Color = Color.Red;
@@ -95,17 +104,23 @@ namespace Examples.Test
                 }
                 else
                 {
-                    //Buscar gesto en mano derecha
-                    TgcKinectSkeletonData.AnalysisData rAnalysisData = data.HandsAnalysisData[TgcKinectSkeletonData.RIGHT_HAND];
-
-                    //Gesto de abrir cajon
-                    if (rAnalysisData.Z.DiffAvg > 0 && rAnalysisData.X.Variance < 1f && rAnalysisData.Y.Variance < 1f)
+                    if ((rAnalysisData.Z.Max - rAnalysisData.Z.Min) > 10f)
                     {
                         gestoDetectado = true;
                         acumTime = 0;
                         text.Color = Color.Green;
                         text.Text = "Abriendo cajon";
                     }
+
+                    /*
+                    //Gesto de abrir cajon
+                    if (rAnalysisData.Z.DiffAvg > 1 && FastMath.Abs(rAnalysisData.X.Variance) < 0.5f && FastMath.Abs(rAnalysisData.Y.Variance) < 0.5f)
+                    {
+                        gestoDetectado = true;
+                        acumTime = 0;
+                        text.Color = Color.Green;
+                        text.Text = "Abriendo cajon";
+                    }*/
                 }
             }
 

@@ -102,7 +102,7 @@ namespace Examples.Kinect
             /// </summary>
             public AxisAnalysisData Y
             {
-              get { return Y; }
+              get { return y; }
             }
 
             AxisAnalysisData z;
