@@ -21,7 +21,7 @@ namespace Examples.Kinect
         /// <summary>
         /// Indice de mano izquierda
         /// </summary>
-        public const int LEFT_HAND = 0;
+        public const int LEFT_HAND = 1;
 
 
         bool active;

@@ -10,6 +10,9 @@ using Microsoft.Kinect;
 
 namespace Examples.Kinect
 {
+    /// <summary>
+    /// Mesh con animacion esqueletica adaptado para Kinect
+    /// </summary>
     public class TgcKinectSkeletalMesh : TgcSkeletalMesh
     {
 
@@ -42,7 +45,6 @@ namespace Examples.Kinect
         public List<Tuple<JointType, int>> KinectBonesMapping
         {
             get { return kinectBonesMapping; }
-            set { kinectBonesMapping = value; }
         }
 
 
@@ -54,8 +56,32 @@ namespace Examples.Kinect
         {
             kinectBonesMapping = new List<Tuple<JointType, int>>();
             this.currentAnimation = new TgcSkeletalAnimation("kinectAnimation", 30, 2, null, null);
+            this.playLoop = true;
+            this.kinectBonePos = new Vector3[bones.Length];
         }
 
+        /// <summary>
+        /// Cargar el mapeo de huesos del mesh con huesos de kinect
+        /// </summary>
+        /// <param name="mapping">Relaciona un hueso de kinect con el nombre del hueso del mesh</param>
+        public void setBonesMapping(List<Mapping> mapping)
+        {
+            foreach (Mapping m in mapping)
+            {
+                bool found = false;
+                foreach (TgcSkeletalBone bone in bones)
+                {
+                    if (bone.Name == m.MeshBone)
+                    {
+                        found = true;
+                        this.kinectBonesMapping.Add(new Tuple<JointType, int>(m.KinectBone, bone.Index));
+                        break;
+                    }
+                }
+                if (!found)
+                    throw new Exception("No se encontro el hueso con el nombre: " + m.MeshBone);
+            }
+        }
 
         /// <summary>
         /// Actualiza el cuadro actual de animacion y renderiza la malla.
@@ -85,37 +111,10 @@ namespace Examples.Kinect
                 return;
             }
 
-            //Sumo el tiempo transcurrido
-            currentTime += elapsedTime;
-
-            //Se termino la animacion
-            if (currentTime > animationTimeLenght)
-            {
-                //Ver si hacer loop
-                if (playLoop)
-                {
-                    //Dejar el remanente de tiempo transcurrido para el proximo loop
-                    currentTime = currentTime % animationTimeLenght;
-                    //setSkleletonLastPose();
-                    //updateMeshVertices();
-                }
-                else
-                {
-
-                    //TODO: Puede ser que haya que quitar este stopAnimation() y solo llamar al Listener (sin cargar isAnimating = false)
-
-                    stopAnimation();
-                }
-            }
-
-            //La animacion continua
-            else
-            {
-                //Actualizar esqueleto y malla
-                updateKinectData();
-                updateSkeleton();
-                updateMeshVertices();
-            }
+            //Actualizar esqueleto y malla
+            updateKinectData();
+            updateSkeleton();
+            updateMeshVertices();
         }
 
         /// <summary>
@@ -126,8 +125,7 @@ namespace Examples.Kinect
             for (int i = 0; i < kinectBonesMapping.Count; i++)
             {
                 Tuple<JointType, int> mapping = kinectBonesMapping[i];
-                SkeletonPoint p = kinectSkeleton.Joints[mapping.Item1].Position;
-                Vector3 bonePos = new Vector3(p.X, p.Y, p.Z);
+                Vector3 bonePos = TgcKinect.toVector3(kinectSkeleton.Joints[mapping.Item1].Position);
 
                 kinectBonePos[mapping.Item2] = bonePos;
             }
@@ -146,6 +144,10 @@ namespace Examples.Kinect
 
                 Matrix localM = Matrix.Translation(kinectBonePos[i]);
 
+                bone.MatLocal = localM;
+                bone.MatFinal = localM;
+
+                /*
                 //Multiplicar por la matriz del padre, si tiene
                 if (bone.ParentBone != null)
                 {
@@ -155,6 +157,7 @@ namespace Examples.Kinect
                 {
                     bone.MatFinal = localM;
                 }
+                 */ 
             }
         }
 
@@ -170,6 +173,37 @@ namespace Examples.Kinect
             }
         }
 
+        /// <summary>
+        /// Mapeo entre un hueso del mesh y uno de kinect
+        /// </summary>
+        public class Mapping
+        {
+            string meshBone;
+            /// <summary>
+            /// Nombre del hueso del mesh
+            /// </summary>
+            public string MeshBone
+            {
+              get { return meshBone; }
+              set { meshBone = value; }
+            }
+
+            JointType kinectBone;
+            /// <summary>
+            /// Hueso de kinect
+            /// </summary>
+            public JointType KinectBone
+            {
+                get { return kinectBone; }
+                set { kinectBone = value; }
+            }
+
+            public Mapping(string meshBone, JointType kinectBone)
+            {
+                this.meshBone = meshBone;
+                this.kinectBone = kinectBone;
+            }
+        }
 
     }
 }

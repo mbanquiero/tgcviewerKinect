@@ -12,6 +12,7 @@ using Microsoft.Kinect;
 using TgcViewer.Utils.TgcSkeletalAnimation;
 using TgcViewer.Utils._2D;
 using TgcViewer.Utils.TgcGeometry;
+using TgcViewer.Utils.TgcSceneLoader;
 
 namespace Examples.Test
 {
@@ -23,7 +24,9 @@ namespace Examples.Test
         TgcText2d text;
         bool gestoDetectado;
         float acumTime;
-
+        float showAcumTime;
+        string estadisticas;
+        string posicion;
 
         public override string getCategory()
         {
@@ -63,12 +66,16 @@ namespace Examples.Test
             text.changeFont(new System.Drawing.Font(FontFamily.GenericMonospace, 36, FontStyle.Bold));
             text.Text = "Nada";
             text.Size = new Size(300, 100);
+            
 
             gestoDetectado = false;
             acumTime = 0;
+            showAcumTime = 0;
 
             GuiController.Instance.FpsCamera.Enable = true;
             GuiController.Instance.FpsCamera.setCamera(new Vector3(10.2881f, 1f, 9.6917f), new Vector3(10.2427f, 1.0175f, 10.6906f));
+
+            GuiController.Instance.Modifiers.addFloat("diff", -1f, -0.1f, -0.37f);
         }
 
         
@@ -80,6 +87,7 @@ namespace Examples.Test
         {
             Device d3dDevice = GuiController.Instance.D3dDevice;
 
+            showAcumTime += elapsedTime;
 
             TgcKinectSkeletonData data = tgcKinect.update();
             if (data.Active)
@@ -89,13 +97,21 @@ namespace Examples.Test
                 //Buscar gesto en mano derecha
                 TgcKinectSkeletonData.AnalysisData rAnalysisData = data.HandsAnalysisData[TgcKinectSkeletonData.RIGHT_HAND];
 
-                GuiController.Instance.Text3d.drawText("Diff AvgZ: " + rAnalysisData.Z.DiffAvg + ", AvgZ: " + rAnalysisData.Z.Avg + ", varX: " + rAnalysisData.X.Variance + "varY: " + rAnalysisData.Y.Variance, 50, 150, Color.Yellow);
 
+                if (showAcumTime > 0.3f)
+                {
+                    showAcumTime = 0;
+                    estadisticas = "Diff AvgZ: " + printFloat(rAnalysisData.Z.DiffAvg) + ", AvgZ: " + printFloat(rAnalysisData.Z.Avg) + ", varX: " + printFloat(rAnalysisData.X.Variance) + " varY: " + printFloat(rAnalysisData.Y.Variance);
+                    posicion = "Pos rHand: " + TgcParserUtils.printVector3(data.Current.RightHandSphere.Center);
+                }
+                GuiController.Instance.Text3d.drawText(estadisticas, 50, 150, Color.Yellow);
+                GuiController.Instance.Text3d.drawText(posicion, 50, 200, Color.Yellow);
+                
 
                 if (gestoDetectado)
                 {
                     acumTime += elapsedTime;
-                    if (acumTime > 3)
+                    if (acumTime > 1)
                     {
                         gestoDetectado = false;
                         text.Color = Color.Red;
@@ -104,6 +120,7 @@ namespace Examples.Test
                 }
                 else
                 {
+                    /*
                     if ((rAnalysisData.Z.Max - rAnalysisData.Z.Min) > 10f)
                     {
                         gestoDetectado = true;
@@ -111,16 +128,21 @@ namespace Examples.Test
                         text.Color = Color.Green;
                         text.Text = "Abriendo cajon";
                     }
+                    */
 
-                    /*
+
+                    float diff = (float)GuiController.Instance.Modifiers["diff"];
+                    
                     //Gesto de abrir cajon
-                    if (rAnalysisData.Z.DiffAvg > 1 && FastMath.Abs(rAnalysisData.X.Variance) < 0.5f && FastMath.Abs(rAnalysisData.Y.Variance) < 0.5f)
+                    if (rAnalysisData.Z.DiffAvg < diff && FastMath.Abs(rAnalysisData.X.Variance) < 5f && FastMath.Abs(rAnalysisData.Y.Variance) < 10f)
                     {
                         gestoDetectado = true;
                         acumTime = 0;
                         text.Color = Color.Green;
                         text.Text = "Abriendo cajon";
-                    }*/
+                    }
+
+
                 }
             }
 
@@ -130,8 +152,14 @@ namespace Examples.Test
 
         }
 
-        
 
+
+
+        public string printFloat(float n)
+        {
+            if (n < 0.1f && n > -0.1f) return "0";
+            return string.Format("{0:0.##}", n);
+        }
 
 
 

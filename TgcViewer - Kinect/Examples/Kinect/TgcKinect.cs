@@ -5,6 +5,7 @@ using System.Text;
 using Microsoft.Kinect;
 using System.IO;
 using Microsoft.DirectX;
+using TgcViewer.Utils.TgcGeometry;
 
 namespace Examples.Kinect
 {
@@ -61,7 +62,7 @@ namespace Examples.Kinect
             debugSkeleton = new TgcKinectDebugSkeleton();
             positionScale = 100;
             data = new TgcKinectSkeletonData();
-            historyFramesCount = 5;
+            historyFramesCount = 50;
         }
 
         /// <summary>
@@ -243,7 +244,7 @@ namespace Examples.Kinect
             foreach (TgcKinectSkeletonData.HandFrame frame in data.HandsFrames)
             {
                 value = frame.get3DValue(handIndex, axisIndex);
-                sumVariance += analysis.Avg - value;
+                sumVariance += FastMath.Abs(analysis.Avg - value);
             }
             analysis.Variance = sumVariance / framesCount;
         }
