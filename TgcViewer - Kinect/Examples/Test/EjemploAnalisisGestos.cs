@@ -22,8 +22,9 @@ namespace Examples.Test
 
         TgcKinect tgcKinect;
         TgcBox mueble;
-        List<GestureLocker2> cajones;
+        List<GestureLocker> cajones;
         GestureAnalizer gestureAnalizer;
+        TgcBoundingBox sceneBounds;
 
         public override string getCategory()
         {
@@ -51,6 +52,7 @@ namespace Examples.Test
 
             //Analizador de gestos
             gestureAnalizer = new GestureAnalizer();
+            gestureAnalizer.setSceneBounds(new TgcBoundingBox(new Vector3(-200, -200, -200), new Vector3(200, 200, 200)));
 
             //Crear mueble de fondo
             mueble = TgcBox.fromSize(new Vector3(200, 100, 50), Color.SandyBrown);
@@ -58,7 +60,7 @@ namespace Examples.Test
 
             //Crear algunos cajones
             Vector3 muebleCenterPos = mueble.Position;
-            cajones = new List<GestureLocker2>();
+            cajones = new List<GestureLocker>();
             cajones.Add(crearCajon(muebleCenterPos + new Vector3(-30, 0, 2), new Vector3(50, 25, 50)));
             cajones.Add(crearCajon(muebleCenterPos + new Vector3(0, 30, 2), new Vector3(50, 25, 50)));
             cajones.Add(crearCajon(muebleCenterPos + new Vector3(30, 0, 2), new Vector3(50, 25, 50)));
@@ -93,7 +95,7 @@ namespace Examples.Test
                         //Gesto de abrir cajon
                         case GestureType.OpenZ:
                             //Buscar si fue cerca de algun cajon valido
-                            foreach (GestureLocker2 cajon in cajones)
+                            foreach (GestureLocker cajon in cajones)
                             {
                                 if (cajon.validateGesture(gesture))
                                 {
@@ -106,7 +108,7 @@ namespace Examples.Test
                         //Gesto de cerrar cajon
                         case GestureType.CloseZ:
                             //Buscar si fue cerca de algun cajon valido
-                            foreach (GestureLocker2 cajon in cajones)
+                            foreach (GestureLocker cajon in cajones)
                             {
                                 if (cajon.validateGesture(gesture))
                                 {
@@ -123,7 +125,7 @@ namespace Examples.Test
 
 
             //Dibujar cajones
-            foreach (GestureLocker2 l in cajones)
+            foreach (GestureLocker l in cajones)
             {
                 l.update();
                 l.HandleSphere.render();
@@ -142,12 +144,12 @@ namespace Examples.Test
         /// <summary>
         /// Utilidad para crear cajones
         /// </summary>
-        private GestureLocker2 crearCajon(Vector3 pos, Vector3 size)
+        private GestureLocker crearCajon(Vector3 pos, Vector3 size)
         {
             TgcBox cajonMesh = TgcBox.fromSize(size, Color.Green);
             cajonMesh.Position = pos;
 
-            GestureLocker2 locker = new GestureLocker2();
+            GestureLocker locker = new GestureLocker();
             locker.HandleSphere = new TgcBoundingSphere(cajonMesh.Position + new Vector3(0, 0, cajonMesh.Size.Z / 2), 15);
             locker.HandleMaxZ = locker.HandleSphere.Center.Z + cajonMesh.Size.Z;
             locker.Mesh = cajonMesh.toMesh("cajon");

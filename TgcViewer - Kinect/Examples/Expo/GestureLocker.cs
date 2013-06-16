@@ -15,6 +15,10 @@ namespace Examples.Expo
     /// </summary>
     public class GestureLocker
     {
+        /// <summary>
+        /// Tiempo de espera luego de haberse abierto o cerrado
+        /// </summary>
+        const float WAIT_TIME = 1;
 
         TgcMesh mesh;
         /// <summary>
@@ -46,16 +50,6 @@ namespace Examples.Expo
             set { handleMaxZ = value; }
         }
 
-        int gestureFrames;
-        /// <summary>
-        /// Cantidad de cuadros necesarios para trackear como valido los gestos de abrir o cerrar
-        /// </summary>
-        public int GestureFrames
-        {
-            get { return gestureFrames; }
-            set { gestureFrames = value; }
-        }
-
         float movementSpeed;
         /// <summary>
         /// Velocidad de apertura/cierre de cajon
@@ -72,22 +66,19 @@ namespace Examples.Expo
         public enum LockerState
         {
             Closed,
-            OpeningGesture,
             Opening,
             Opened,
-            ClosingGesture,
             Closing,
         }
 
         LockerState currentState;
         float handleMinZ;
-        bool rightHand;
-        int gestureDetectedFrames;
+        float waintElapsedTime;
+
 
         public GestureLocker()
         {
-            gestureFrames = 5;
-            movementSpeed = 10;
+            movementSpeed = 100;
         }
 
 
@@ -95,71 +86,36 @@ namespace Examples.Expo
         {
             currentState = LockerState.Closed;
             handleMinZ = handleSphere.Center.Z;
+            waintElapsedTime = 0;
         }
 
-        public void update(TgcKinectSkeletonData data)
+        /// <summary>
+        /// Abrir cajon
+        /// </summary>
+        public void open()
         {
-            bool collisionTest;
-            TgcBoundingSphere handCurrent;
-            TgcBoundingSphere handPrevious;
-            float diffZ;
-            float distX;
-            float distY;
+            currentState = LockerState.Opening;
+        }
+
+        /// <summary>
+        /// Cerrar cajon
+        /// </summary>
+        public void close()
+        {
+            currentState = LockerState.Closing;
+        }
+
+        /// <summary>
+        /// Actualizar estado
+        /// </summary>
+        public void update()
+        {
             float maxDist = 2 * handleSphere.Radius;
             float movement;
             float correction;
 
             switch (currentState)
             {
-                //Cajon cerrado: vemos si hay colision que inicie el gesto de abrir cajon
-                case LockerState.Closed:
-
-                    //Ver si hay colision con mano derecha
-                    collisionTest = TgcCollisionUtils.testSphereSphere(data.Current.RightHandSphere, handleSphere);
-                    if (collisionTest)
-                    {
-                        currentState = LockerState.OpeningGesture;
-                        rightHand = true;
-                        gestureDetectedFrames = 0;
-                    }
-                    else
-                    {
-                        //Ver si hay colision con mano izquierda
-                        collisionTest = TgcCollisionUtils.testSphereSphere(data.Current.LeftHandSphere, handleSphere);
-                        if (collisionTest)
-                        {
-                            currentState = LockerState.OpeningGesture;
-                            rightHand = false;
-                            gestureDetectedFrames = 0;
-                        }
-                    }
-                    break;
-
-                //Analizando gesto de abrir cajon
-                case LockerState.OpeningGesture:
-                    handCurrent = rightHand ? data.Current.RightHandSphere : data.Current.LeftHandSphere;
-                    handPrevious = rightHand ? data.Previous.RightHandSphere : data.Previous.LeftHandSphere;
-                    diffZ = handCurrent.Center.Z - handPrevious.Center.Z;
-                    distX = FastMath.Abs(handCurrent.Center.X - handleSphere.Center.X);
-                    distY = FastMath.Abs(handCurrent.Center.Y - handleSphere.Center.Y);
-
-                    //Ver si esta haciendo un movimiento positivo en Z, dentro de un rango fijo de XY
-                    if (diffZ >= 0 && distX <= maxDist && distY <= maxDist)
-                    {
-                        gestureDetectedFrames++;
-                        //Ver si se cumplieron los frames necesarios
-                        if (gestureDetectedFrames == gestureFrames)
-                        {
-                            currentState = LockerState.Opening;
-                        }
-                    }
-                    else
-                    {
-                        //Volver a estado cerrado
-                        currentState = LockerState.Closed;
-                    }
-                    break;
-
                 //Hacer animacion de abrir cajon
                 case LockerState.Opening:
                     movement = movementSpeed * GuiController.Instance.ElapsedTime;
@@ -178,56 +134,26 @@ namespace Examples.Expo
 
                         //Pasar a estado abierto
                         currentState = LockerState.Opened;
+                        waintElapsedTime = 0;
                     }
 
                     break;
 
-                //Cajon abierto: vemos si hay colision que inicie el gesto de cerrar cajon
+                //Abierto
                 case LockerState.Opened:
-
-                    //Ver si hay colision con mano derecha
-                    collisionTest = TgcCollisionUtils.testSphereSphere(data.Current.RightHandSphere, handleSphere);
-                    if (collisionTest)
+                    waintElapsedTime += GuiController.Instance.ElapsedTime;
+                    if (waintElapsedTime > WAIT_TIME)
                     {
-                        currentState = LockerState.ClosingGesture;
-                        rightHand = true;
-                        gestureDetectedFrames = 0;
-                    }
-                    else
-                    {
-                        //Ver si hay colision con mano izquierda
-                        collisionTest = TgcCollisionUtils.testSphereSphere(data.Current.LeftHandSphere, handleSphere);
-                        if (collisionTest)
-                        {
-                            currentState = LockerState.ClosingGesture;
-                            rightHand = false;
-                            gestureDetectedFrames = 0;
-                        }
+                        waintElapsedTime = WAIT_TIME;
                     }
                     break;
 
-                //Analizando gesto de cerrar cajon
-                case LockerState.ClosingGesture:
-                    handCurrent = rightHand ? data.Current.RightHandSphere : data.Current.LeftHandSphere;
-                    handPrevious = rightHand ? data.Previous.RightHandSphere : data.Previous.LeftHandSphere;
-                    diffZ = handCurrent.Center.Z - handPrevious.Center.Z;
-                    distX = FastMath.Abs(handCurrent.Center.X - handleSphere.Center.X);
-                    distY = FastMath.Abs(handCurrent.Center.Y - handleSphere.Center.Y);
-
-                    //Ver si esta haciendo un movimiento negativo en Z, dentro de un rango fijo de XY
-                    if (diffZ <= 0 && distX <= maxDist && distY <= maxDist)
+                //Cerrado
+                case LockerState.Closed:
+                    waintElapsedTime += GuiController.Instance.ElapsedTime;
+                    if (waintElapsedTime > WAIT_TIME)
                     {
-                        gestureDetectedFrames++;
-                        //Ver si se cumplieron los frames necesarios
-                        if (gestureDetectedFrames == gestureFrames)
-                        {
-                            currentState = LockerState.Closing;
-                        }
-                    }
-                    else
-                    {
-                        //Volver a estado abierto
-                        currentState = LockerState.Opened;
+                        waintElapsedTime = WAIT_TIME;
                     }
                     break;
 
@@ -249,9 +175,45 @@ namespace Examples.Expo
 
                         //Pasar a estado cerrado
                         currentState = LockerState.Closed;
+                        waintElapsedTime = 0;
                     }
                     break;
             }
+        }
+
+        /// <summary>
+        /// Indica si el gesto es valido para el cajon
+        /// </summary>
+        public bool validateGesture(Gesture gesture)
+        {
+            bool result = false;
+            switch (gesture.Type)
+            {
+                //Abrir
+                case GestureType.OpenZ:
+                    //Ver que este en el estado correcto y que el gesto haya sido cerca de la manija
+                    if (currentState == LockerState.Closed 
+                        && waintElapsedTime >= WAIT_TIME
+                        && FastMath.Abs(gesture.Pos.X - handleSphere.Center.X) < handleSphere.Radius
+                        && FastMath.Abs(gesture.Pos.Y - handleSphere.Center.Y) < handleSphere.Radius)
+                    {
+                        result = true;
+                    }
+                    break;
+
+                //Cerrar
+                case GestureType.CloseZ:
+                    //Ver que este en el estado correcto y que el gesto haya sido cerca de la manija
+                    if (currentState == LockerState.Opened
+                        && waintElapsedTime >= WAIT_TIME
+                        && FastMath.Abs(gesture.Pos.X - handleSphere.Center.X) < handleSphere.Radius
+                        && FastMath.Abs(gesture.Pos.Y - handleSphere.Center.Y) < handleSphere.Radius)
+                    {
+                        result = true;
+                    }
+                    break;
+            }
+            return result;
         }
 
     }

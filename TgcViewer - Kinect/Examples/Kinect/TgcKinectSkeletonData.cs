@@ -293,6 +293,15 @@ namespace Examples.Kinect
                 set { lefttHandPos = value; }
             }
 
+            Vector3 centerPos;
+            /// <summary>
+            /// Posicion del centro del esqueleto
+            /// </summary>
+            public Vector3 CenterPos
+            {
+                get { return centerPos; }
+                set { centerPos = value; }
+            }
 
             public Frame()
             {
@@ -301,6 +310,7 @@ namespace Examples.Kinect
                 this.leftHandSphere = new TgcBoundingSphere(new Vector3(0, 0, 0), 3);
                 this.rightHandPos = new Vector2(0, 0);
                 this.lefttHandPos = new Vector2(0, 0);
+                this.centerPos = new Vector3();
             }
 
         }

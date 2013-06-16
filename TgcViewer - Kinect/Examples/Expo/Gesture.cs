@@ -47,6 +47,12 @@ namespace Examples.Expo
     {
         OpenZ,
         CloseZ,
+        OpenLeft,
+        OpenRight,
+        PressButton,
+        GoLeft,
+        GoRight,
+
     }
 
 }

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using Examples.Kinect;
 using Microsoft.DirectX;
+using TgcViewer.Utils.TgcGeometry;
 
 namespace Examples.Expo
 {
@@ -12,9 +13,20 @@ namespace Examples.Expo
     /// </summary>
     public class GestureAnalizer
     {
+        TgcBoundingBox sceneBounds;
+        Vector3 sceneCenter;
+        Vector3 sceneExtents;
+
         public GestureAnalizer()
         {
+            
+        }
 
+        public void setSceneBounds(TgcBoundingBox sceneBounds)
+        {
+            this.sceneBounds = sceneBounds;
+            this.sceneCenter = sceneBounds.calculateBoxCenter();
+            this.sceneExtents = sceneBounds.calculateAxisRadius();
         }
 
         /// <summary>
@@ -55,6 +67,43 @@ namespace Examples.Expo
             if (data.Z.DiffAvg > 0.37f && data.X.Variance < 5f && data.Y.Variance < 10f)
             {
                 gesture = new Gesture(new Vector3(data.X.Avg, data.Y.Avg, 0), GestureType.CloseZ);
+                return true;
+            }
+
+            //Open left
+            if (data.X.DiffAvg > 0.37f && data.Y.Variance < 0.5f && data.Z.Variance < 10f)
+            {
+                gesture = new Gesture(new Vector3(data.X.Avg, data.Y.Avg, 0), GestureType.OpenLeft);
+                return true;
+            }
+
+            //Open right
+            if (data.X.DiffAvg < -0.37f && data.Y.Variance < 5f && data.Z.Variance < 10f)
+            {
+                gesture = new Gesture(new Vector3(data.X.Avg, data.Y.Avg, 0), GestureType.OpenRight);
+                return true;
+            }
+
+            //Press button
+            if (data.X.Variance < 1f && data.Y.Variance < 1f && data.Z.Variance < 1f && data.Z.Avg <= sceneBounds.PMin.Z)
+            {
+                gesture = new Gesture(new Vector3(data.X.Avg, data.Y.Avg, 0), GestureType.PressButton);
+                return true;
+            }
+
+            //Go Left
+            if (data.X.Variance < 1f && data.Y.Variance < 1f && data.Z.Variance < 1f &&
+                FastMath.Abs(data.Y.Avg - sceneCenter.Y) <= 10f && data.X.Avg <= sceneBounds.PMin.X)
+            {
+                gesture = new Gesture(new Vector3(data.X.Avg, data.Y.Avg, 0), GestureType.GoLeft);
+                return true;
+            }
+
+            //Go Right
+            if (data.X.Variance < 1f && data.Y.Variance < 1f && data.Z.Variance < 1f &&
+                FastMath.Abs(data.Y.Avg - sceneCenter.Y) <= 10f && data.X.Avg <= sceneBounds.PMin.X)
+            {
+                gesture = new Gesture(new Vector3(data.X.Avg, data.Y.Avg, 0), GestureType.GoRight);
                 return true;
             }
 

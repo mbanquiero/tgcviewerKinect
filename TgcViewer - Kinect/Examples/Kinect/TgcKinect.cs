@@ -146,6 +146,8 @@ namespace Examples.Kinect
             data.Previous.RightHandPos = data.Current.RightHandPos;
             data.Previous.LefttHandPos = data.Current.LefttHandPos;
 
+            //Copiar posicion central
+            data.Previous.CenterPos = data.Current.CenterPos;
 
             //Copiar esqueleto recien trackeado al frame actual, escalando posiciones
             this.copySkeleton(rawSkeleton, data.Current.KinectSkeleton, true);
@@ -158,7 +160,8 @@ namespace Examples.Kinect
             data.Current.RightHandPos = to2D(rawSkeleton.Joints[JointType.HandRight].Position);
             data.Current.LefttHandPos = to2D(rawSkeleton.Joints[JointType.HandLeft].Position);
 
-
+            //Actualizar posicion central
+            data.Current.CenterPos = TgcKinect.toVector3(data.Current.KinectSkeleton.Joints[JointType.HipCenter].Position);
 
             //Agregar nuevo cuadro a historial
             TgcKinectSkeletonData.HandFrame newFrame = new TgcKinectSkeletonData.HandFrame();

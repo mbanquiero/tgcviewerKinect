@@ -91,11 +91,10 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Expo\GestureDoorLeft.cs" />
     <Compile Include="Expo\Gesture.cs" />
     <Compile Include="Expo\GestureAnalizer.cs" />
-    <Compile Include="Expo\GestureLocker2.cs" />
     <Compile Include="Expo\GestureLocker.cs" />
-    <Compile Include="Expo\Locker.cs" />
     <Compile Include="Kinect\Skleleton.cs" />
     <Compile Include="Kinect\TgcKinect.cs" />
     <Compile Include="Kinect\TgcKinectDebugSkeleton.cs" />
@@ -115,10 +114,9 @@
     </Compile>
     <Compile Include="EjemploEnBlanco.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Test\EjemploDoor.cs" />
     <Compile Include="Test\EjemploAnalisisGestos.cs" />
     <Compile Include="Test\EjemploGesto.cs" />
-    <Compile Include="Test\EjemploCajonGesto.cs" />
-    <Compile Include="Test\EjemploCajon.cs" />
     <Compile Include="Test\EjemploAvatar.cs" />
     <Compile Include="Test\EjemploEsqueleto.cs" />
   </ItemGroup>
