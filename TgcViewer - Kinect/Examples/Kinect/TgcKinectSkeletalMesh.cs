@@ -125,7 +125,7 @@ namespace Examples.Kinect
             for (int i = 0; i < kinectBonesMapping.Count; i++)
             {
                 Tuple<JointType, int> mapping = kinectBonesMapping[i];
-                Vector3 bonePos = TgcKinect.toVector3(kinectSkeleton.Joints[mapping.Item1].Position);
+                Vector3 bonePos = TgcKinectUtils.toVector3(kinectSkeleton.Joints[mapping.Item1].Position);
 
                 kinectBonePos[mapping.Item2] = bonePos;
             }

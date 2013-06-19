@@ -25,6 +25,7 @@ namespace Examples.Test
         List<GestureLocker> cajones;
         GestureAnalizer gestureAnalizer;
         TgcBoundingBox sceneBounds;
+        TgcSprite sprite;
 
         public override string getCategory()
         {
@@ -68,6 +69,10 @@ namespace Examples.Test
 
             GuiController.Instance.FpsCamera.Enable = true;
             GuiController.Instance.FpsCamera.setCamera(new Vector3(1.5467f, 54.7247f, 401.1074f), new Vector3(1.4672f, 54.4561f, 400.1474f));
+
+
+            sprite = new TgcSprite();
+            sprite.Texture = TgcTexture.createTexture(GuiController.Instance.ExamplesMediaDir + "puntero.bmp");
         }
 
         
@@ -83,6 +88,16 @@ namespace Examples.Test
             TgcKinectSkeletonData data = tgcKinect.update();
             if (data.Active)
             {
+
+                GuiController.Instance.Text3d.drawText("Pos right hand 2D:" + data.Current.RightHandPos, 30, 30, Color.Yellow);
+
+                sprite.Position = data.Current.RightHandPos;
+                GuiController.Instance.Drawer2D.beginDrawSprite();
+                sprite.render();
+                GuiController.Instance.Drawer2D.endDrawSprite();
+
+
+
                 //Render de esqueleto
                 tgcKinect.DebugSkeleton.render(data.Current.KinectSkeleton);
 

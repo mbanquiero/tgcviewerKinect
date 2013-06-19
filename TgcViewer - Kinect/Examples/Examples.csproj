@@ -95,11 +95,18 @@
     <Compile Include="Expo\Gesture.cs" />
     <Compile Include="Expo\GestureAnalizer.cs" />
     <Compile Include="Expo\GestureLocker.cs" />
+    <Compile Include="Expo\BigLogger.cs" />
     <Compile Include="Kinect\Skleleton.cs" />
     <Compile Include="Kinect\TgcKinect.cs" />
     <Compile Include="Kinect\TgcKinectDebugSkeleton.cs" />
     <Compile Include="Kinect\TgcKinectSkeletalMesh.cs" />
     <Compile Include="Kinect\TgcKinectSkeletonData.cs" />
+    <Compile Include="Kinect\TgcKinectUtils.cs" />
+    <Compile Include="Test\EjemploFocus.cs" />
+    <Compile Include="Focus\FocusParser.cs" />
+    <Compile Include="Focus\FocusSet.cs" />
+    <Compile Include="Focus\MeshContainer.cs" />
+    <Compile Include="Focus\YParser.cs" />
     <Compile Include="Otros\EjemploDefault.cs" />
     <Compile Include="Otros\EjemploDefaultHelpForm.cs">
       <SubType>Form</SubType>

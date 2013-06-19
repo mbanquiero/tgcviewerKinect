@@ -12,6 +12,7 @@ using Microsoft.Kinect;
 using TgcViewer.Utils.TgcGeometry;
 using TgcViewer.Utils._2D;
 using TgcViewer.Utils.TgcSceneLoader;
+using Examples.Expo;
 
 namespace Examples.Test
 {
@@ -20,6 +21,9 @@ namespace Examples.Test
     {
 
         TgcKinect tgcKinect;
+        TgcBoundingBox bounds;
+        TgcBox center;
+        TgcSprite mousePointer;
 
         public override string getCategory()
         {
@@ -50,6 +54,14 @@ namespace Examples.Test
 
 
             GuiController.Instance.UserVars.addVar("tracking", "false");
+
+
+            center = TgcBox.fromSize(new Vector3(0, 0, 0), new Vector3(1, 1, 1), Color.Blue);
+            bounds = new TgcBoundingBox(new Vector3(-10, 0, -10), new Vector3(10, 20, 10));
+
+
+            mousePointer = new TgcSprite();
+            mousePointer.Texture = TgcTexture.createTexture(GuiController.Instance.ExamplesMediaDir + "pointer.jpg");
         }
 
         
@@ -66,11 +78,32 @@ namespace Examples.Test
             if (data.Active)
             {
                 tgcKinect.DebugSkeleton.render(data.Current.KinectSkeleton);
+
+
+                Vector3 headPos = TgcKinectUtils.toVector3(data.Current.KinectSkeleton.Joints[JointType.Head].Position);
+                Vector3 centerPos = TgcKinectUtils.toVector3(data.Current.KinectSkeleton.Joints[JointType.HipCenter].Position);
+                float length = Vector3.Length(headPos - centerPos);
+                BigLogger.log("Length", length);
+
+                BigLogger.log("HipCenter", data.Current.CenterPos);
+                BigLogger.log("RightHandPos", data.Current.RightHandPos);
+                BigLogger.log("LefttHandPos", data.Current.LefttHandPos);
+                BigLogger.renderLog();
+
+
+                mousePointer.Position = data.Current.RightHandPos;
+                GuiController.Instance.Drawer2D.beginDrawSprite();
+                mousePointer.render();
+                GuiController.Instance.Drawer2D.endDrawSprite();
             }
 
 
             GuiController.Instance.UserVars["tracking"] = data.Active.ToString();
 
+
+
+            center.render();
+            bounds.render();
         }
 
         

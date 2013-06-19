@@ -6,6 +6,9 @@ using Microsoft.Kinect;
 using System.IO;
 using Microsoft.DirectX;
 using TgcViewer.Utils.TgcGeometry;
+using TgcViewer;
+using System.Drawing;
+using Examples.Expo;
 
 namespace Examples.Kinect
 {
@@ -44,6 +47,16 @@ namespace Examples.Kinect
             set { positionScale = value; }
         }
 
+        Vector3 positionTranslate;
+        /// <summary>
+        /// Valor por el cual se trasladan las posiciones de los huesos luego de escaladas
+        /// </summary>
+        public Vector3 PositionTranslate
+        {
+            get { return positionTranslate; }
+            set { positionTranslate = value; }
+        }
+
         int historyFramesCount;
         /// <summary>
         /// Tamaño del buffer de historial de frames
@@ -54,15 +67,29 @@ namespace Examples.Kinect
             set { historyFramesCount = value; }
         }
 
+        float bodyProportion;
+        /// <summary>
+        /// Es la proporcion del esqueleto generico que se usa.
+        /// Se define como la distancia entre la cabeza (Head) y la cintura (HipCenter).
+        /// El esqueleto es reajustado para mantener esta proporcion.
+        /// </summary>
+        public float BodyProportion
+        {
+            get { return bodyProportion; }
+            set { bodyProportion = value; }
+        }
+
         /// <summary>
         /// Constructor
         /// </summary>
         public TgcKinect()
         {
             debugSkeleton = new TgcKinectDebugSkeleton();
-            positionScale = 100;
+            positionScale = 10;
+            positionTranslate = new Vector3(0, 9, -25);
             data = new TgcKinectSkeletonData();
             historyFramesCount = 50;
+            bodyProportion = 6;
         }
 
         /// <summary>
@@ -153,15 +180,35 @@ namespace Examples.Kinect
             this.copySkeleton(rawSkeleton, data.Current.KinectSkeleton, true);
 
             //Actualizar BSphere de manos de frame actual
-            data.Current.RightHandSphere.setCenter(TgcKinect.toVector3(data.Current.KinectSkeleton.Joints[JointType.HandRight].Position));
-            data.Current.LeftHandSphere.setCenter(TgcKinect.toVector3(data.Current.KinectSkeleton.Joints[JointType.HandLeft].Position));
+            data.Current.RightHandSphere.setCenter(TgcKinectUtils.toVector3(data.Current.KinectSkeleton.Joints[JointType.HandRight].Position));
+            data.Current.LeftHandSphere.setCenter(TgcKinectUtils.toVector3(data.Current.KinectSkeleton.Joints[JointType.HandLeft].Position));
 
             //Actualizar posicion 2D de manos de frame actual (las tomamos del rawSkeleton)
-            data.Current.RightHandPos = to2D(rawSkeleton.Joints[JointType.HandRight].Position);
-            data.Current.LefttHandPos = to2D(rawSkeleton.Joints[JointType.HandLeft].Position);
+            int width = GuiController.Instance.D3dDevice.Viewport.Width;
+            int height = GuiController.Instance.D3dDevice.Viewport.Height;
+            float mouseSpeed = 4;
+
+            data.Current.RightHandPos = new Vector2(
+                TgcKinectUtils.ScaleVector(width - 102, rawSkeleton.Joints[JointType.HandRight].Position.X * mouseSpeed),
+                TgcKinectUtils.ScaleVector(height - 102, -rawSkeleton.Joints[JointType.HandRight].Position.Y * mouseSpeed));
+            data.Current.LefttHandPos = new Vector2(
+                TgcKinectUtils.ScaleVector(width - 102, rawSkeleton.Joints[JointType.HandLeft].Position.X * mouseSpeed),
+                TgcKinectUtils.ScaleVector(height - 102, -rawSkeleton.Joints[JointType.HandLeft].Position.Y * mouseSpeed));
+
+
+            /*
+            SkeletonPoint p1 = rawSkeleton.Joints[JointType.HandRight].Position;
+            SkeletonPoint p2 = rawSkeleton.Joints[JointType.Head].Position;
+            data.Current.RightHandPos = new Vector2(
+                (((p1.X - p2.X) + 0.12f) / 0.37f) * GuiController.Instance.D3dDevice.Viewport.Width,
+                (1 - (((p1.Y - p2.Y) + 0.3f) / 0.36f)) * GuiController.Instance.D3dDevice.Viewport.Height);
+
+            p1 = rawSkeleton.Joints[JointType.HandLeft].Position;
+            data.Current.LefttHandPos = new Vector2(p1.X - p2.X, p1.Y - p2.Y);
+            */
 
             //Actualizar posicion central
-            data.Current.CenterPos = TgcKinect.toVector3(data.Current.KinectSkeleton.Joints[JointType.HipCenter].Position);
+            data.Current.CenterPos = TgcKinectUtils.toVector3(data.Current.KinectSkeleton.Joints[JointType.HipCenter].Position);
 
             //Agregar nuevo cuadro a historial
             TgcKinectSkeletonData.HandFrame newFrame = new TgcKinectSkeletonData.HandFrame();
@@ -262,7 +309,7 @@ namespace Examples.Kinect
         /// </summary>
         /// <param name="source">The source skeleton.</param>
         /// <param name="destination">The destination skeleton.</param>
-        /// <param name="scalePos">Indica si hay que escalar las posiciones.</param>
+        /// <param name="scalePos">Indica si hay que adaptar las posiciones del esqueleto.</param>
         private void copySkeleton(Skeleton source, Skeleton destination, bool scalePos)
         {
             destination.TrackingState = source.TrackingState;
@@ -270,19 +317,19 @@ namespace Examples.Kinect
             destination.ClippedEdges = source.ClippedEdges;
 
             //Escalar posicion
-            destination.Position = scalePos ? getScaledPoint(source.Position) : source.Position;
+            destination.Position = scalePos ? getScaledTranslatedPoint(source.Position) : source.Position;
             
-            Array jointTypeValues = Enum.GetValues(typeof(JointType));
-
             // This must copy before the joint orientations
+            Array jointTypeValues = Enum.GetValues(typeof(JointType));
             foreach (JointType j in jointTypeValues)
             {
                 Joint temp = destination.Joints[j];
-                temp.Position = scalePos ? getScaledPoint(source.Joints[j].Position) : source.Joints[j].Position;
+                temp.Position = scalePos ? getScaledTranslatedPoint(source.Joints[j].Position) : source.Joints[j].Position;
                 temp.TrackingState = source.Joints[j].TrackingState;
                 destination.Joints[j] = temp;
             }
 
+            /* No se está usando
             if (null != source.BoneOrientations)
             {
                 foreach (JointType j in jointTypeValues)
@@ -295,6 +342,27 @@ namespace Examples.Kinect
                     destination.BoneOrientations[j] = temp;
                 }
             }
+             */ 
+
+            //Ajuste de proporciones
+            if (scalePos)
+            {
+                //Obtener la proporcion del esqueleto, medida como la distancia entre la cabeza y la cintura
+                Vector3 headPos = TgcKinectUtils.toVector3(destination.Joints[JointType.Head].Position);
+                Vector3 centerPos = TgcKinectUtils.toVector3(destination.Joints[JointType.HipCenter].Position);
+                float currentProportion = Vector3.Length(headPos - centerPos);
+                float formFactor = bodyProportion / currentProportion;
+
+                //Ajustar todas las posiciones de los huesos al formFactor
+                destination.Position = TgcKinectUtils.mul(destination.Position, formFactor);
+                foreach (JointType j in jointTypeValues)
+                {
+                    Joint temp = destination.Joints[j];
+                    temp.Position = TgcKinectUtils.mul(destination.Joints[j].Position, formFactor);
+                    destination.Joints[j] = temp;
+                }
+            }
+
         }
 
 
@@ -380,38 +448,15 @@ namespace Examples.Kinect
         /// <summary>
         /// Devuelve una posicion del esqueleto escalada por positionScale
         /// </summary>
-        public SkeletonPoint getScaledPoint(SkeletonPoint p)
+        public SkeletonPoint getScaledTranslatedPoint(SkeletonPoint p)
         {
             SkeletonPoint p2 = new SkeletonPoint();
-            p2.X = p.X * positionScale * -1f;
-            p2.Y = p.Y * positionScale;
-            p2.Z = p.Z * positionScale;
+            p2.X = p.X * positionScale * -1f + positionTranslate.X;
+            p2.Y = p.Y * positionScale + positionTranslate.Y;
+            p2.Z = p.Z * positionScale + positionTranslate.Z;
             return p2;
         }
 
-        /// <summary>
-        /// Convierte de un SkeletonPoint a un Vector3
-        /// </summary>
-        public static Vector3 toVector3(SkeletonPoint p)
-        {
-            return new Vector3(p.X, p.Y, p.Z);
-        }
-
-        /// <summary>
-        /// Convierte un punto 3D de SkeletonPoint a uno 2D.
-        /// Lo escala en base al tamaño de la pantalla y al DepthBuffer
-        /// </summary>
-        public Vector2 to2D(SkeletonPoint p)
-        {
-            DepthImageStream depthStream = this.sensor.DepthStream;
-            DepthImagePoint depthPt = this.sensor.CoordinateMapper.MapSkeletonPointToDepthPoint(p, depthStream.Format);
-
-            // scale to current depth image display size and add any position offset
-            float x = depthPt.X / depthStream.FrameWidth;
-            float y = depthPt.Y / depthStream.FrameHeight;
-
-            return new Vector2(x, y);
-        }
 
         public void dispose()
         {

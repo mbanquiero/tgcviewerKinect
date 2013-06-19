@@ -15,7 +15,7 @@ namespace Examples.Kinect
     public class TgcKinectDebugSkeleton
     {
 
-        public const float JOINT_SIZE = 5f;
+        public const float JOINT_SIZE = 0.5f;
 
         TgcBox[] jointBoxes;
         TgcLine[] jointLines;
@@ -64,7 +64,7 @@ namespace Examples.Kinect
                     idx++;
 
                     //Obtener posicion
-                    jointBoxes[idx].Position = TgcKinect.toVector3(joint.Position);
+                    jointBoxes[idx].Position = TgcKinectUtils.toVector3(joint.Position);
 
                     //Setear color segun estado del joint
                     Color jointColor = joint.TrackingState == JointTrackingState.Tracked ? Color.Red : Color.Yellow;
