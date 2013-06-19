@@ -25,7 +25,8 @@ namespace Examples.Test
         List<GestureLocker> cajones;
         GestureAnalizer gestureAnalizer;
         TgcBoundingBox sceneBounds;
-        TgcSprite sprite;
+        TgcBox center;
+
 
         public override string getCategory()
         {
@@ -53,26 +54,25 @@ namespace Examples.Test
 
             //Analizador de gestos
             gestureAnalizer = new GestureAnalizer();
-            gestureAnalizer.setSceneBounds(new TgcBoundingBox(new Vector3(-200, -200, -200), new Vector3(200, 200, 200)));
+            sceneBounds = new TgcBoundingBox(new Vector3(-10, 0, -10), new Vector3(10, 20, 10));
+            gestureAnalizer.setSceneBounds(sceneBounds);
 
             //Crear mueble de fondo
-            mueble = TgcBox.fromSize(new Vector3(200, 100, 50), Color.SandyBrown);
-            mueble.Position = new Vector3(20, 20, 200);
+            mueble = TgcBox.fromSize(new Vector3(20, 20, 5), Color.SandyBrown);
+            mueble.Position = new Vector3(0, 10, -10);
 
             //Crear algunos cajones
             Vector3 muebleCenterPos = mueble.Position;
             cajones = new List<GestureLocker>();
-            cajones.Add(crearCajon(muebleCenterPos + new Vector3(-30, 0, 2), new Vector3(50, 25, 50)));
-            cajones.Add(crearCajon(muebleCenterPos + new Vector3(0, 30, 2), new Vector3(50, 25, 50)));
-            cajones.Add(crearCajon(muebleCenterPos + new Vector3(30, 0, 2), new Vector3(50, 25, 50)));
+            cajones.Add(crearCajon(muebleCenterPos + new Vector3(-3, 0, 0.25f), new Vector3(5, 2, 5)));
+            cajones.Add(crearCajon(muebleCenterPos + new Vector3(0, 3, 0.25f), new Vector3(5, 2, 5)));
+            cajones.Add(crearCajon(muebleCenterPos + new Vector3(3, 0, 0.25f), new Vector3(5, 2, 5)));
 
 
             GuiController.Instance.FpsCamera.Enable = true;
-            GuiController.Instance.FpsCamera.setCamera(new Vector3(1.5467f, 54.7247f, 401.1074f), new Vector3(1.4672f, 54.4561f, 400.1474f));
+            GuiController.Instance.FpsCamera.setCamera(new Vector3(-3.5508f, 16.5873f, 13.2958f), new Vector3(-3.535f, 16.3069f, 12.336f));
 
-
-            sprite = new TgcSprite();
-            sprite.Texture = TgcTexture.createTexture(GuiController.Instance.ExamplesMediaDir + "puntero.bmp");
+            center = TgcBox.fromSize(new Vector3(0, 0, 0), new Vector3(1, 1, 1), Color.Blue);
         }
 
         
@@ -88,16 +88,6 @@ namespace Examples.Test
             TgcKinectSkeletonData data = tgcKinect.update();
             if (data.Active)
             {
-
-                GuiController.Instance.Text3d.drawText("Pos right hand 2D:" + data.Current.RightHandPos, 30, 30, Color.Yellow);
-
-                sprite.Position = data.Current.RightHandPos;
-                GuiController.Instance.Drawer2D.beginDrawSprite();
-                sprite.render();
-                GuiController.Instance.Drawer2D.endDrawSprite();
-
-
-
                 //Render de esqueleto
                 tgcKinect.DebugSkeleton.render(data.Current.KinectSkeleton);
 
@@ -154,6 +144,10 @@ namespace Examples.Test
 
             //Dibujar mueble
             mueble.render();
+
+
+            center.render();
+            sceneBounds.render();
         }
 
         /// <summary>
@@ -165,7 +159,7 @@ namespace Examples.Test
             cajonMesh.Position = pos;
 
             GestureLocker locker = new GestureLocker();
-            locker.HandleSphere = new TgcBoundingSphere(cajonMesh.Position + new Vector3(0, 0, cajonMesh.Size.Z / 2), 15);
+            locker.HandleSphere = new TgcBoundingSphere(cajonMesh.Position + new Vector3(0, 0, cajonMesh.Size.Z / 2), 1f);
             locker.HandleMaxZ = locker.HandleSphere.Center.Z + cajonMesh.Size.Z;
             locker.Mesh = cajonMesh.toMesh("cajon");
             locker.init();

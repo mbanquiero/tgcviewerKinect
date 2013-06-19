@@ -10,6 +10,8 @@ using Microsoft.DirectX;
 using TgcViewer.Utils.Modifiers;
 using TgcViewer.Utils.TgcSceneLoader;
 using Examples.Focus;
+using TgcViewer.Utils.TgcGeometry;
+using Examples.Kinect;
 
 namespace Examples.Test
 {
@@ -21,6 +23,10 @@ namespace Examples.Test
 
         private List<TgcMesh> _meshes;
         private FocusSet [] _conjuntos;
+        TgcBoundingBox bounds;
+        TgcBox center;
+        TgcKinect tgcKinect;
+
 
         public override string getCategory()
         {
@@ -54,36 +60,43 @@ namespace Examples.Test
             loader.FromFile(fileScene);
             _meshes = loader.Escene;
             _conjuntos = loader._focusSets;
+
+
+            center = TgcBox.fromSize(new Vector3(0, 0, 0), new Vector3(1, 1, 1), Color.Blue);
+            bounds = new TgcBoundingBox(new Vector3(-10, 0, -10), new Vector3(10, 20, 10));
+
+
+            tgcKinect = new TgcKinect();
+            tgcKinect.init();
+            tgcKinect.DebugSkeleton.init();
         }
 
-
-        bool renderizar = true;
         public override void render(float elapsedTime)
         {
-            if (!renderizar)
-                return;
-
             Device d3dDevice = GuiController.Instance.D3dDevice;
-            try
-            {
-                foreach (TgcMesh m in _meshes)
-                {
-                    m.render();
-                }
 
-                foreach (FocusSet f in _conjuntos)
-                {
-                    f.animate();
-                    f.Render();
-                }
-            }
-            catch (Exception e)
+            TgcKinectSkeletonData data = tgcKinect.update();
+            if (data.Active)
             {
-                GuiController.Instance.Logger.log(e.StackTrace);
-                renderizar = false;
+                tgcKinect.DebugSkeleton.render(data.Current.KinectSkeleton);
             }
 
 
+            foreach (TgcMesh m in _meshes)
+            {
+                m.render();
+            }
+
+            foreach (FocusSet f in _conjuntos)
+            {
+                f.animate();
+                f.Render();
+            }
+
+
+
+            center.render();
+            bounds.render();
         }
 
 

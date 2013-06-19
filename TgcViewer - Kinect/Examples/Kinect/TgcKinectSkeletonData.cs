@@ -306,8 +306,8 @@ namespace Examples.Kinect
             public Frame()
             {
                 this.kinectSkeleton = new Skeleton();
-                this.rightHandSphere = new TgcBoundingSphere(new Vector3(0, 0, 0), 3);
-                this.leftHandSphere = new TgcBoundingSphere(new Vector3(0, 0, 0), 3);
+                this.rightHandSphere = new TgcBoundingSphere(new Vector3(0, 0, 0), 0.5f);
+                this.leftHandSphere = new TgcBoundingSphere(new Vector3(0, 0, 0), 0.5f);
                 this.rightHandPos = new Vector2(0, 0);
                 this.lefttHandPos = new Vector2(0, 0);
                 this.centerPos = new Vector3();
