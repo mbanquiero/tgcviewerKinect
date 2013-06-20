@@ -1,3 +1,4 @@
+C:\TgcViewer - Kinect\TgcViewer\obj\Debug\TgcViewer.csprojResolveAssemblyReference.cache
 C:\TgcViewer - Kinect\TgcViewer\obj\Debug\TgcViewer.MainForm.resources
 C:\TgcViewer - Kinect\TgcViewer\obj\Debug\TgcViewer.Properties.Resources.resources
 C:\TgcViewer - Kinect\TgcViewer\obj\Debug\TgcViewer.Utils.Modifiers.TgcMeshBrowser.resources
@@ -13,4 +14,3 @@ C:\TgcViewer - Kinect\TgcViewer\obj\Debug\TgcViewer.exe
 C:\TgcViewer - Kinect\TgcViewer\obj\Debug\TgcViewer.pdb
 C:\TgcViewer - Kinect\TgcViewer.exe
 C:\TgcViewer - Kinect\TgcViewer.pdb
-C:\TgcViewer - Kinect\TgcViewer\obj\Debug\TgcViewer.csprojResolveAssemblyReference.cache
