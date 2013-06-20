@@ -73,6 +73,7 @@ namespace Examples.Test
             rightHandPointer = new TgcSprite();
             rightHandPointer.Texture = TgcTexture.createTexture(GuiController.Instance.ExamplesMediaDir + "right_pointer.png");
 
+            GuiController.Instance.Modifiers.addFloat("speed", 0.5f, 10f, 1f);
             GuiController.Instance.Modifiers.addBoolean("showValues", "showValues", false);
         }
 
@@ -85,10 +86,14 @@ namespace Examples.Test
         {
             Device d3dDevice = GuiController.Instance.D3dDevice;
 
+            //Velocidad de movimiento 2D
+            tgcKinect.Hands2dSpeed = (float)GuiController.Instance.Modifiers["speed"];
 
+            //Actualizar estado de kinect
             TgcKinectSkeletonData data = tgcKinect.update();
             if (data.Active)
             {
+                //Render de esqueleto debug
                 tgcKinect.DebugSkeleton.render(data.Current.KinectSkeleton);
 
 
