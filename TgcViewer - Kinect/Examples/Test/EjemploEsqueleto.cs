@@ -1,17 +1,11 @@
-using System;
-using System.Collections.Generic;
-using System.Text;
 using TgcViewer.Example;
 using TgcViewer;
 using Microsoft.DirectX.Direct3D;
 using System.Drawing;
 using Microsoft.DirectX;
-using TgcViewer.Utils.Modifiers;
 using Examples.Kinect;
 using Microsoft.Kinect;
 using TgcViewer.Utils.TgcGeometry;
-using TgcViewer.Utils._2D;
-using TgcViewer.Utils.TgcSceneLoader;
 using Examples.Expo;
 
 namespace Examples.Test
@@ -23,7 +17,6 @@ namespace Examples.Test
         TgcKinect tgcKinect;
         TgcBoundingBox bounds;
         TgcBox center;
-        TgcSprite mousePointer;
 
         public override string getCategory()
         {
@@ -59,9 +52,6 @@ namespace Examples.Test
             center = TgcBox.fromSize(new Vector3(0, 0, 0), new Vector3(1, 1, 1), Color.Blue);
             bounds = new TgcBoundingBox(new Vector3(-10, 0, -10), new Vector3(10, 20, 10));
 
-
-            mousePointer = new TgcSprite();
-            mousePointer.Texture = TgcTexture.createTexture(GuiController.Instance.ExamplesMediaDir + "pointer.jpg");
         }
 
         
@@ -90,11 +80,6 @@ namespace Examples.Test
                 BigLogger.log("LefttHandPos", data.Current.LefttHandPos);
                 BigLogger.renderLog();
 
-
-                mousePointer.Position = data.Current.RightHandPos;
-                GuiController.Instance.Drawer2D.beginDrawSprite();
-                mousePointer.render();
-                GuiController.Instance.Drawer2D.endDrawSprite();
             }
 
 

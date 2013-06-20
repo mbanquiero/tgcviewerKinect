@@ -4,6 +4,8 @@ using System.Linq;
 using System.Text;
 using Microsoft.Kinect;
 using Microsoft.DirectX;
+using System.Drawing;
+using Microsoft.DirectX.Direct3D;
 
 namespace Examples.Kinect
 {
@@ -44,19 +46,89 @@ namespace Examples.Kinect
             return new Vector3(p.X, p.Y, p.Z);
         }
 
-        public static float ScaleVector(int length, float position)
+        /// <summary>
+        /// Convierte de un SkeletonPoint a un Vector2, ignorando Z
+        /// </summary>
+        public static Vector2 toVector2(SkeletonPoint p)
         {
-            float value = (((((float)length) / 1f) / 2f) * position) + (length / 2);
-            if (value > length)
-            {
-                return (float)length;
-            }
-            if (value < 0f)
-            {
-                return 0f;
-            }
-            return value;
+            return new Vector2(p.X, p.Y);
         }
 
+        /// <summary>
+        /// Buscar bounding-box 2D del conjunto de puntos
+        /// </summary>
+        public static RectangleF computeScreenRect(SkeletonPoint[] points)
+        {
+            float minX = float.MaxValue;
+            float maxX = float.MinValue;
+            float minY = float.MaxValue;
+            float maxY = float.MinValue;
+
+            for (int i = 0; i < points.Length; i++)
+            {
+                if (points[i].X < minX)
+                {
+                    minX = points[i].X;
+                }
+                if (points[i].Y < minY)
+                {
+                    minY = points[i].Y;
+                }
+                if (points[i].X > maxX)
+                {
+                    maxX = points[i].X;
+                }
+                if (points[i].Y > maxY)
+                {
+                    maxY = points[i].Y;
+                }
+            }
+            
+            return new RectangleF(minX, minY, maxX - minX, maxY - minY);
+        }
+
+        /// <summary>
+        /// Clampear puntos a extremos del rectangulo
+        /// </summary>
+        public static Vector2 clampToRect(Vector2 p, RectangleF rect)
+        {
+            Vector2 p2 = new Vector2(p.X, p.Y);
+
+            if (p2.X < rect.X)
+            {
+                p2.X = rect.X;
+            }
+            if (p2.X >= rect.X + rect.Width)
+            {
+                p2.X = rect.X + rect.Width - 1;
+            }
+            if (p2.Y < rect.Y)
+            {
+                p2.Y = rect.Y;
+            }
+            if (p2.Y >= rect.Y + rect.Height)
+            {
+                p2.Y = rect.Y + rect.Height - 1;
+            }
+
+            return p2;
+        }
+
+        /// <summary>
+        /// Mapear punto p que está dentro de rect a la pantalla screenViewport
+        /// </summary>
+        public static Vector2 mapPointToScreen(Vector2 p, RectangleF rect, Viewport screenViewport)
+        {
+            Vector2 q = new Vector2();
+
+            float translateX = screenViewport .X - rect.X;
+            float translateY = screenViewport.Y - rect.Y;
+            float scaleX = screenViewport.Width / rect.Width;
+            float scaleY = screenViewport.Height / rect.Height;
+
+            q.X = (p.X + translateX) * scaleX;
+            q.Y = (p.Y + translateY) * scaleY;
+            return q;
+        }
     }
 }

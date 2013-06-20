@@ -4,6 +4,8 @@ using System.IO;
 using Microsoft.DirectX;
 using TgcViewer.Utils.TgcGeometry;
 using TgcViewer;
+using System.Drawing;
+using Microsoft.DirectX.Direct3D;
 
 namespace Examples.Kinect
 {
@@ -160,6 +162,9 @@ namespace Examples.Kinect
             //Copiar esqueleto de frame actual a frame anterior, sin escalar las posiciones porque ya estaban escaladas de antes
             this.copySkeleton(data.Current.KinectSkeleton, data.Previous.KinectSkeleton, false);
 
+            //Copiar posicion central
+            data.Previous.CenterPos = data.Current.CenterPos;
+
             //Copiar BSphere de frame actual a frame anterior
             data.Previous.RightHandSphere.setCenter(data.Current.RightHandSphere.Center);
             data.Previous.LeftHandSphere.setCenter(data.Current.LeftHandSphere.Center);
@@ -168,28 +173,41 @@ namespace Examples.Kinect
             data.Previous.RightHandPos = data.Current.RightHandPos;
             data.Previous.LefttHandPos = data.Current.LefttHandPos;
 
-            //Copiar posicion central
-            data.Previous.CenterPos = data.Current.CenterPos;
+            
 
-            //Copiar esqueleto recien trackeado al frame actual, escalando posiciones
+
+
+            //Copiar esqueleto recien trackeado al frame actual, adaptando proporciones
             this.copySkeleton(rawSkeleton, data.Current.KinectSkeleton, true);
+
+            //Actualizar posicion central
+            data.Current.CenterPos = TgcKinectUtils.toVector3(data.Current.KinectSkeleton.Joints[JointType.HipCenter].Position);
 
             //Actualizar BSphere de manos de frame actual
             data.Current.RightHandSphere.setCenter(TgcKinectUtils.toVector3(data.Current.KinectSkeleton.Joints[JointType.HandRight].Position));
             data.Current.LeftHandSphere.setCenter(TgcKinectUtils.toVector3(data.Current.KinectSkeleton.Joints[JointType.HandLeft].Position));
 
-            //Actualizar posicion 2D de manos de frame actual (las tomamos del rawSkeleton)
-            int width = GuiController.Instance.D3dDevice.Viewport.Width;
-            int height = GuiController.Instance.D3dDevice.Viewport.Height;
-            float mouseSpeed = 4;
+            //Calcular boundingBox 2D entre la cabeza, los hombres y la spine (en base al rawSkeleton)
+            RectangleF bodyScreenRect = TgcKinectUtils.computeScreenRect(new SkeletonPoint[]{
+                rawSkeleton.Joints[JointType.ShoulderLeft].Position,
+                rawSkeleton.Joints[JointType.ShoulderRight].Position,
+                rawSkeleton.Joints[JointType.Head].Position,
+                rawSkeleton.Joints[JointType.Spine].Position,
+            });
 
-            data.Current.RightHandPos = new Vector2(
-                TgcKinectUtils.ScaleVector(width - 102, rawSkeleton.Joints[JointType.HandRight].Position.X * mouseSpeed),
-                TgcKinectUtils.ScaleVector(height - 102, -rawSkeleton.Joints[JointType.HandRight].Position.Y * mouseSpeed));
-            data.Current.LefttHandPos = new Vector2(
-                TgcKinectUtils.ScaleVector(width - 102, rawSkeleton.Joints[JointType.HandLeft].Position.X * mouseSpeed),
-                TgcKinectUtils.ScaleVector(height - 102, -rawSkeleton.Joints[JointType.HandLeft].Position.Y * mouseSpeed));
+            //Agrandar un cuarto de ancho de cada lado para tener mas lugar para las manos
+            float bodyScreenHalfWidth = bodyScreenRect.Width / 2;
+            bodyScreenRect.X -= bodyScreenHalfWidth;
+            bodyScreenRect.Width += bodyScreenHalfWidth;
 
+            //Clampear posicion 2D de manos segun el boundingBox 2D
+            Vector2 rHand2dPos = TgcKinectUtils.clampToRect(TgcKinectUtils.toVector2(rawSkeleton.Joints[JointType.HandRight].Position), bodyScreenRect);
+            Vector2 lHand2dPos = TgcKinectUtils.clampToRect(TgcKinectUtils.toVector2(rawSkeleton.Joints[JointType.HandLeft].Position), bodyScreenRect);
+
+            //Mapear puntos al tamaño de la pantalla para obtener posicion 2D de las manos
+            Viewport screenViewport = GuiController.Instance.D3dDevice.Viewport;
+            data.Current.RightHandPos = TgcKinectUtils.mapPointToScreen(rHand2dPos, bodyScreenRect, screenViewport);
+            data.Current.LefttHandPos = TgcKinectUtils.mapPointToScreen(lHand2dPos, bodyScreenRect, screenViewport);
 
             /*
             SkeletonPoint p1 = rawSkeleton.Joints[JointType.HandRight].Position;
@@ -202,8 +220,7 @@ namespace Examples.Kinect
             data.Current.LefttHandPos = new Vector2(p1.X - p2.X, p1.Y - p2.Y);
             */
 
-            //Actualizar posicion central
-            data.Current.CenterPos = TgcKinectUtils.toVector3(data.Current.KinectSkeleton.Joints[JointType.HipCenter].Position);
+            
 
             //Agregar nuevo cuadro a historial
             TgcKinectSkeletonData.HandFrame newFrame = new TgcKinectSkeletonData.HandFrame();
