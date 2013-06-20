@@ -1,0 +1,16 @@
+C:\TgcViewer - Kinect\TgcViewer\obj\Debug\TgcViewer.csprojResolveAssemblyReference.cache
+C:\TgcViewer - Kinect\TgcViewer\obj\Debug\TgcViewer.MainForm.resources
+C:\TgcViewer - Kinect\TgcViewer\obj\Debug\TgcViewer.Properties.Resources.resources
+C:\TgcViewer - Kinect\TgcViewer\obj\Debug\TgcViewer.Utils.Modifiers.TgcMeshBrowser.resources
+C:\TgcViewer - Kinect\TgcViewer\obj\Debug\TgcViewer.Utils.Modifiers.TgcTextureBrowser.resources
+C:\TgcViewer - Kinect\TgcViewer\obj\Debug\TgcViewer.Utils.Networking.TgcNetworkingModifierClientsDialog.resources
+C:\TgcViewer - Kinect\TgcViewer\obj\Debug\TgcViewer.Utils.Networking.TgcNetworkingModifierControl.resources
+C:\TgcViewer - Kinect\TgcViewer\obj\Debug\TgcViewer.Utils.Networking.TgcNetworkingModifierServersDialog.resources
+C:\TgcViewer - Kinect\TgcViewer\obj\Debug\TgcViewer.Utils.Ui.AboutWindow.resources
+C:\TgcViewer - Kinect\TgcViewer\obj\Debug\TgcViewer.Utils.Ui.FullScreenPanel.resources
+C:\TgcViewer - Kinect\TgcViewer\obj\Debug\TgcViewer.csproj.GenerateResource.Cache
+C:\TgcViewer - Kinect\TgcViewer.exe.config
+C:\TgcViewer - Kinect\TgcViewer\obj\Debug\TgcViewer.exe
+C:\TgcViewer - Kinect\TgcViewer\obj\Debug\TgcViewer.pdb
+C:\TgcViewer - Kinect\TgcViewer.exe
+C:\TgcViewer - Kinect\TgcViewer.pdb
