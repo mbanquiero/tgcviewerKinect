@@ -151,5 +151,10 @@ namespace Examples.Focus
             container.Rotation = rot;
             container.Scale = scale;
         }
+
+        public void dispose()
+        {
+            container.dispose();
+        }
     }
 }

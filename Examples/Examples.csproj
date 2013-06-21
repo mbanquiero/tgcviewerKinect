@@ -96,6 +96,7 @@
     <Compile Include="Expo\GestureAnalizer.cs" />
     <Compile Include="Expo\GestureLocker.cs" />
     <Compile Include="Expo\BigLogger.cs" />
+    <Compile Include="Expo\TexturasFocus.cs" />
     <Compile Include="Focus\FocusCamera.cs" />
     <Compile Include="gui\gui.cs" />
     <Compile Include="gui\gui_item.cs" />

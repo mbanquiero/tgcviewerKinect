@@ -14,6 +14,7 @@ using TgcViewer.Utils.TgcGeometry;
 using Examples.Kinect;
 using TgcViewer.Utils.Gui;
 using TgcViewer.Utils.Input;
+using Examples.Expo;
 
 namespace Examples.Test
 {
@@ -23,11 +24,12 @@ namespace Examples.Test
     public class EjemploFocus : TgcExample
     {
 
-        private List<TgcMesh> meshes;
-        private FocusSet [] conjuntos;
+        private List<TgcMesh> _meshes;
+        private FocusSet [] _conjuntos;
         TgcBoundingBox bounds;
         TgcBox center;
         TgcKinect tgcKinect;
+        TexturasFocus texturasFocus;
 
         // gui
         DXGui gui = new DXGui();
@@ -59,33 +61,33 @@ namespace Examples.Test
             GuiController.Instance.FpsCamera.MovementSpeed *= 10;
             GuiController.Instance.FpsCamera.JumpSpeed *= 10;
 
-
-            //Iniciar Kinect
-            tgcKinect = new TgcKinect();
-            tgcKinect.init();
-            tgcKinect.DebugSkeleton.init();
-
-            // levanto el GUI
-            gui.Create();
-
-
-            //Cargar primera escena de focus
+            //Path de Focus
             FocusParser.TEXTURE_FOLDER = GuiController.Instance.ExamplesMediaDir + "Focus\\texturas\\";
             FocusParser.MESH_FOLDER = GuiController.Instance.ExamplesMediaDir + "Focus\\texturas\\";
-            cambiarEscena(1);
 
 
             center = TgcBox.fromSize(new Vector3(0, 0, 0), new Vector3(1, 1, 1), Color.Blue);
             bounds = new TgcBoundingBox(new Vector3(-10, 0, -10), new Vector3(10, 20, 10));
 
+            //Iniciar kinect
+            tgcKinect = new TgcKinect();
+            tgcKinect.init();
+            tgcKinect.DebugSkeleton.init();
+
+
+            // levanto el GUI
+            gui.Create();
+
+            //Configurar todas las texturas que se pueden elegir para cambiar
+            texturasFocus = new TexturasFocus();
 
 
             // Inicio un dialogo modalless
             gui.InitDialog(true);
             int x0 = 10;
             int y0 = 10;
-            int dy = 25;
-            int dx = 200;
+            int dy = 35;
+            int dx = 300;
             gui.InsertMenuItem(100, "Abrir Proyecto", x0, y0, dx, dy);
             gui.InsertMenuItem(101, "Grabar Proyecto", x0, y0 += 40, dx, dy);
             gui.InsertMenuItem(102, "Modo Navegacion", x0, y0 += 40, dx, dy);
@@ -95,40 +97,48 @@ namespace Examples.Test
 
             // Camara para 3d support
             gui.camera = camera;
-
-
         }
 
         public override void render(float elapsedTime)
         {
             Device d3dDevice = GuiController.Instance.D3dDevice;
 
-            //Tomar datos de kinect
             TgcKinectSkeletonData data = tgcKinect.update();
             if (data.Active)
             {
                 tgcKinect.DebugSkeleton.render(data.Current.KinectSkeleton);
             }
 
-
-            //Render de escena
-            foreach (TgcMesh m in meshes)
+            if (_meshes != null)
             {
-                m.render();
+                // Hay escena
+                foreach (TgcMesh m in _meshes)
+                {
+                    m.render();
+                }
+
+
+                /*
+                 * foreach (FocusSet f in _conjuntos)
+                {
+                    f.animate();
+                    f.Render();
+                }
+                */
+
             }
-            foreach (FocusSet f in conjuntos)
+            else
             {
-                f.animate();
-                f.Render();
+                // Solo hay gui, dibujo un fondo de presentacion
+                gui.DrawImage(GuiController.Instance.ExamplesMediaDir + "Focus\\texturas\\fondo.png", 0, 0,
+                    GuiController.Instance.Panel3d.Width, GuiController.Instance.Panel3d.Height);
+
             }
-
-
-
             center.render();
             bounds.render();
 
 
-            //Procesar mensajes de GUI
+            // ------------------------------------------------
             GuiMessage msg = gui.Update(elapsedTime);
             Vector3 ViewDir = camera.LookAt - camera.LookFrom;
             // proceso el msg
@@ -160,7 +170,7 @@ namespace Examples.Test
 
                         case 103:
                             // Cambiar Textura
-                            TexturaDlg();
+                            texturasFocus.TextureGroupDlg(gui);
                             break;
 
                         case 104:
@@ -178,23 +188,38 @@ namespace Examples.Test
                             camera.LookFrom = camera.LookFrom + ViewDir * 0.1f;
                             camera.updateCamera();
                             break;
-
                         default:
-                            //Cambiar textura
-                            if (msg.id >= 1000 && msg.id < 2000)
+
+                            //Cambiar de escena
+                            if (msg.id >= 3000)
                             {
-                                // Selecciono una textura
-                                System.Windows.Forms.MessageBox.Show("Textura Nro:" + (msg.id - 1000 + 1), "Textura seleccionada",
-                                    System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Information);
-                                // Termino el dialogo
-                                gui.EndDialog();
-                            } 
-                            //Cambiar escena
-                            else if (msg.id > 2000)
-                            {
-                                cambiarEscena(msg.id - 2000);
+                                disposeScene();
+
+                                // Selecciono una escena Cargo la escena y Termino el dialogo
+                                var loader = new FocusParser();
+                                int nro_escena = msg.id - 3000 + 1;
+                                string fileScene = GuiController.Instance.ExamplesMediaDir + "Focus\\escena" + nro_escena + ".dat";
+                                loader.FromFile(fileScene);
+                                _meshes = loader.Escene;
+                                _conjuntos = loader._focusSets;
                                 gui.EndDialog();
                             }
+                            
+                            //Cambiar de textura
+                            else if (msg.id >= 2000)
+                            {
+                                texturasFocus.applyTextureChange(_meshes, _conjuntos, msg.id);
+                                gui.EndDialog();
+                            }
+
+                            //Seleccionar categoria de textura
+                            else if (msg.id >= 1000)
+                            {
+                                gui.EndDialog();
+                                texturasFocus.TextureDlg(gui, msg.id);
+                            }
+
+                            
                             break;
                     }
                     break;
@@ -207,8 +232,6 @@ namespace Examples.Test
 
 
         }
-
-        
 
         public void OpenFileDlg()
         {
@@ -231,11 +254,11 @@ namespace Examples.Test
             lista.Add("escenas\\escena3.png");
             lista.Add("escenas\\escena4.png");
 
-            int cant_escenas = lista.Count;
-            for (int t = 0; t < cant_escenas; ++t)
+            int cant_texturas = lista.Count;
+            for (int t = 0; t < cant_texturas; ++t)
             {
                 String s = "" + (t + 1);
-                gui.InsertKinectTileButton(2000 + (t + 1), s, lista[t], x0 + t * (tdx + 20), y0, tdx, tdy);
+                gui.InsertKinectTileButton(3000 + t, s, lista[t], x0 + t * (tdx + 20), y0, tdx, tdy);
             }
             gui.InsertKinectScrollButton(0, "scroll_left.png", x0, y0 + dy - tdy - 40, dx / 2 - 40, 80);
             gui.InsertKinectScrollButton(1, "scroll_right.png", x0 + dx / 2 + 20, y0 + dy - tdy - 40, dx / 2 - 40, 80);
@@ -243,42 +266,7 @@ namespace Examples.Test
 
         }
 
-        public void TexturaDlg()
-        {
-            // Inicio un dialogo modalless
-            gui.InitDialog(false, false);
-
-            int W = GuiController.Instance.Panel3d.Width;
-            int H = GuiController.Instance.Panel3d.Height;
-
-            int x0 = -20;
-            int y0 = 10;
-            int dy = 400;
-            int dx = W + 40;
-            int tdx = 200;
-            int tdy = 150;
-
-            gui.InsertFrame("Seleccione la textura", x0, y0, dx, dy, Color.FromArgb(192, 192, 192));
-
-            List<string> lista = new List<string>();
-            lista.Add("maderas\\09-guindo.jpg");
-            lista.Add("masisa\\acacia.jpg");
-            lista.Add("masisa\\roble mi.jpg");
-            lista.Add("metales\\cromado.jpg");
-            lista.Add("metales\\Aco.jpg");
-            lista.Add("colores\\dorado.jpg");
-
-            int cant_texturas = lista.Count;
-            for (int t = 0; t < cant_texturas; ++t)
-            {
-                String s = "" + (t + 1);
-                gui.InsertKinectTileButton(1000 + t, s, lista[t], x0 + 50 + t * (tdx + 20), y0 + 50, tdx, tdy);
-            }
-
-            gui.InsertKinectScrollButton(0, "scroll_left.png", x0 + 40, y0 + dy - 100, (dx - 40) / 2 - 40, 80);
-            gui.InsertKinectScrollButton(1, "scroll_right.png", x0 + dx / 2 + 20, y0 + dy - 100, (dx - 49) / 2 - 40, 80);
-
-        }
+        
 
 
         public void MeshDlg()
@@ -321,66 +309,32 @@ namespace Examples.Test
         }
 
         /// <summary>
-        /// Cambiar de escena
-        /// </summary>
-        private void cambiarEscena(int n)
-        {
-            //Quitar escena anterior
-            disposeScene();
-
-            //Path de escena
-            string fileScene = GuiController.Instance.ExamplesMediaDir + "\\Focus\\escena" + n + ".dat";
-
-            //Cargar escena
-            FocusParser loader = new FocusParser();
-            loader.FromFile(fileScene);
-            meshes = loader.Escene;
-            conjuntos = loader._focusSets;
-        }
-
-        /// <summary>
-        /// Busca todos los mesh que tienen una textura y se la cambia por la nueva.
-        /// Los path tienen que ser relativos a FocusParser.TEXTURE_FOLDER
-        /// </summary>
-        private void cambiarTextura(string oldTexturePath, string newTexturePath)
-        {
-            foreach (TgcMesh mesh in meshes)
-            {
-                //Ver si el mesh tiene la textura vieja
-                if (mesh.RenderType == TgcMesh.MeshRenderType.DIFFUSE_MAP)
-                {
-                    for (int i = 0; i < mesh.DiffuseMaps.Length; i++)
-                    {
-                        if (mesh.DiffuseMaps[i].FilePath.Contains(oldTexturePath))
-                        {
-                            mesh.DiffuseMaps[i].dispose();
-                            mesh.DiffuseMaps[i] = TgcTexture.createTexture(FocusParser.TEXTURE_FOLDER + newTexturePath);
-                        }
-                    }
-                }
-            }
-        }
-
-        /// <summary>
         /// Limpiar toda la escena
         /// </summary>
         private void disposeScene()
         {
-            if (meshes != null)
+            if (_meshes != null)
             {
-                foreach (TgcMesh m in meshes)
+                foreach (TgcMesh m in _meshes)
                 {
                     m.dispose();
                 }
-                meshes = null;
-                conjuntos = null;
+                foreach (FocusSet c in _conjuntos)
+                {
+                    c.dispose();
+                }
+                _meshes = null;
+                _conjuntos = null;
             }
         }
 
         /// </summary>
         public override void close()
         {
-            disposeScene();
+            foreach (TgcMesh m in _meshes)
+            {
+                m.dispose();
+            }
             gui.Dispose();
 
         }
