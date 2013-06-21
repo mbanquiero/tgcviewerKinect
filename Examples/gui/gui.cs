@@ -64,13 +64,19 @@ namespace TgcViewer.Utils.Gui
     };
 
 
-
+    public struct st_bitmap
+    {
+        public Texture texture;
+        public string fname;
+        public int Width;
+        public int Height;
+    }
 
     public class DXGui
     {
         // Defines
         public const int MAX_GUI_ITEMS = 100;
-        public const int MAX_TEXTURAS = 50;
+        public const int MAX_BITMAPS = 10;
         public const int MAX_CURSOR = 10;
         public const int MAX_DIALOG = 20;
         // Eventos
@@ -138,6 +144,10 @@ namespace TgcViewer.Utils.Gui
         public Texture[] cursores = new Texture[MAX_CURSOR];
         public tipoCursor cursor_der, cursor_izq;
 
+        // Pool de texturas para DrawImage
+        public st_bitmap[] bitmaps = new st_bitmap[MAX_BITMAPS];
+        public int cant_bitmaps;
+
         // Posicion del mouse
         public float mouse_x;
         public float mouse_y;
@@ -147,6 +157,12 @@ namespace TgcViewer.Utils.Gui
 
         // Camara TGC
         public FocusCamera camera;
+
+        // Parametros srcoll automatico
+        public float vel_scroll = 500;           // pixeles por segundo
+        public float min_sox = -1000;
+        public float max_sox = 1000;
+
 
 
         public DXGui()
@@ -175,10 +191,9 @@ namespace TgcViewer.Utils.Gui
             mouse_x = mouse_y = -1;
             for (int i = 0; i < MAX_CURSOR; ++i)
                 cursores[i] = null;
-
+            cant_bitmaps = 0;
             cursor_izq = tipoCursor.sin_cursor;
             cursor_der = tipoCursor.targeting;
-            
         }
 
         public void Dispose()
@@ -189,7 +204,13 @@ namespace TgcViewer.Utils.Gui
             for (int i = 0; i < MAX_CURSOR; ++i)
                 if (cursores[i] != null)
                     cursores[i].Dispose();
+
+            for (int i = 0; i < cant_bitmaps; ++i)
+                    bitmaps[i].texture.Dispose();
+
         }
+
+
 
 		// interface
         public void Create()
@@ -279,7 +300,7 @@ namespace TgcViewer.Utils.Gui
         }
 
 		// input
-        public GuiMessage ProcessInput()
+        public GuiMessage ProcessInput(float elapsed_time)
         {
             GuiMessage msg = new GuiMessage();
             msg.message = MessageType.WM_NOTHING;
@@ -360,10 +381,12 @@ namespace TgcViewer.Utils.Gui
                 switch (items[sel].item_id)
                 {
                     case EVENT_SCROLL_LEFT:
-                        sox -= 1;
+                        if(sox<max_sox)
+                            sox += vel_scroll*elapsed_time;
                         break;
                     case EVENT_SCROLL_RIGHT:
-                        sox += 1;
+                        if(sox>min_sox)
+                            sox -= vel_scroll * elapsed_time;
                         break;
                 }
 
@@ -480,7 +503,7 @@ namespace TgcViewer.Utils.Gui
                 items[i].ftime += elapsed_time;
 
             // Proceso el input y devuelve el resultado
-            return ProcessInput();
+            return ProcessInput(elapsed_time);
         }
 
 		public void Render()
@@ -963,6 +986,46 @@ namespace TgcViewer.Utils.Gui
         }
 
 
+        public void DrawImage(string fname, int x0, int y0, int x1, int y1)
+        {
+            // Verifico si la imagen ya esta cargada
+            bool flag = false;
+            int i = 0;
+            while(i < cant_bitmaps && !flag)
+                if (fname == bitmaps[i].fname)
+                    flag = true;
+                else
+                    ++i;
+
+            if (!flag)
+            {
+                // No estaba, cargo la textura
+                i = cant_bitmaps++;
+                bitmaps[i].texture = cargar_textura(fname);
+                bitmaps[i].fname = fname;
+                // Aprovecho para calcular el tamaño de la imagen del boton
+                SurfaceDescription desc = bitmaps[i].texture.GetLevelDescription(0);
+                bitmaps[i].Width = desc.Width;
+                bitmaps[i].Height = desc.Height;
+            }
+
+            Vector3 pos = new Vector3((x0+x1)/2, (y0+y1)/2, 0);
+            Vector3 c0 = new Vector3(bitmaps[i].Width / 2, bitmaps[i].Height/ 2, 0);
+            // Determino la escala para que entre justo
+            Vector2 scale2 = new Vector2((float)(x1 - x0) / (float)bitmaps[i].Width, (float)(y1-y0) / (float)bitmaps[i].Height);
+            sprite.Transform = Matrix.Transformation2D(new Vector2(pos.X, pos.Y), 0, scale2, new Vector2(0, 0), 0, new Vector2(0,0));
+
+            Device d3dDevice = GuiController.Instance.D3dDevice;
+            d3dDevice.SetTexture(0, null);
+            bool ant_zenable = d3dDevice.RenderState.ZBufferEnable;
+            d3dDevice.RenderState.ZBufferEnable = false;
+            sprite.Begin(SpriteFlags.AlphaBlend);
+            sprite.Draw(bitmaps[i].texture, c0, pos, Color.FromArgb(255, 255, 255, 255).ToArgb());
+            sprite.End();
+            d3dDevice.RenderState.ZBufferEnable = ant_zenable;
+
+        }
+
         // Helper para cargar una textura 
         public static Texture cargar_textura(String filename,bool alpha_channel=false)
         {
@@ -992,7 +1055,9 @@ namespace TgcViewer.Utils.Gui
                     SetAlphaChannel(textura, 255, 0, 255);
                 }
                 else
-                    textura = TextureLoader.FromFile(d3dDevice, fname_aux);
+                    textura = TextureLoader.FromFile(d3dDevice, fname_aux, -2, -2, 1, Usage.None,
+                        Format.A8B8G8R8, Pool.Managed, Filter.None, Filter.None, 0);
+                    //textura = TextureLoader.FromFile(d3dDevice, fname_aux);
             }
             catch (System.Exception error)
             {
