@@ -100,7 +100,7 @@ namespace Examples.Kinect
             }
             if (p2.X >= rect.X + rect.Width)
             {
-                p2.X = rect.X + rect.Width - 1;
+                p2.X = rect.X + rect.Width;
             }
             if (p2.Y < rect.Y)
             {
@@ -108,7 +108,7 @@ namespace Examples.Kinect
             }
             if (p2.Y >= rect.Y + rect.Height)
             {
-                p2.Y = rect.Y + rect.Height - 1;
+                p2.Y = rect.Y + rect.Height;
             }
 
             return p2;
@@ -117,14 +117,18 @@ namespace Examples.Kinect
         /// <summary>
         /// Mapear punto p que está dentro de rect a la pantalla screenViewport
         /// </summary>
-        public static Vector2 mapPointToScreen(Vector2 p, RectangleF rect, Viewport screenViewport)
+        public static Vector2 mapPointToScreen(Vector2 p, RectangleF rect, Viewport screenViewport, Vector2 cursorSize)
         {
             Vector2 q = new Vector2();
 
+            //Traslacion y escalado para screen-space
             float translateX = screenViewport .X - rect.X;
             float translateY = screenViewport.Y - rect.Y;
-            float scaleX = screenViewport.Width / rect.Width;
-            float scaleY = screenViewport.Height / rect.Height;
+            float scaleX = (screenViewport.Width - cursorSize.X) / rect.Width;
+            float scaleY = (screenViewport.Height - cursorSize.Y) / rect.Height;
+
+            //Invertir Y
+            p.Y = (rect.Y + rect.Height - p.Y) + rect.Y;
 
             q.X = (p.X + translateX) * scaleX;
             q.Y = (p.Y + translateY) * scaleY;

@@ -87,6 +87,16 @@ namespace Examples.Kinect
             set { hands2dSpeed = value; }
         }
 
+        Vector2 cursorSize;
+        /// <summary>
+        /// Tamaño en pixels del cursor 2D que representa las manos en screen-space
+        /// </summary>
+        public Vector2 CursorSize
+        {
+            get { return cursorSize; }
+            set { cursorSize = value; }
+        }
+
         /// <summary>
         /// Constructor
         /// </summary>
@@ -99,6 +109,7 @@ namespace Examples.Kinect
             historyFramesCount = 50;
             bodyProportion = 6;
             hands2dSpeed = 1;
+            cursorSize = new Vector2(64, 64);
         }
 
         /// <summary>
@@ -237,31 +248,36 @@ namespace Examples.Kinect
         /// </summary>
         private void updateHandsScreenPos(Skeleton rawSkeleton, TgcKinectSkeletonData data)
         {
-            //Calcular boundingBox 2D entre la cabeza, los hombres y la spine (en base al rawSkeleton)
-            RectangleF bodyScreenRect = TgcKinectUtils.computeScreenRect(new SkeletonPoint[]{
-                rawSkeleton.Joints[JointType.ShoulderLeft].Position,
+            //Calcular boundingBox 2D para la mano derecha: entre la cabeza, el hombro derecho y la spine.
+            RectangleF rScreenRect = TgcKinectUtils.computeScreenRect(new SkeletonPoint[]{
                 rawSkeleton.Joints[JointType.ShoulderRight].Position,
                 rawSkeleton.Joints[JointType.Head].Position,
                 rawSkeleton.Joints[JointType.Spine].Position,
             });
 
-            //Agrandar un cuarto de ancho de cada lado para tener mas lugar para las manos
-            float bodyScreenHalfWidth = bodyScreenRect.Width / 2;
-            bodyScreenRect.X -= bodyScreenHalfWidth;
-            bodyScreenRect.Width += bodyScreenHalfWidth;
+            //Calcular boundingBox 2D para la mano izquierda: entre la cabeza, el hombro izq y la spine.
+            RectangleF lScreenRect = TgcKinectUtils.computeScreenRect(new SkeletonPoint[]{
+                rawSkeleton.Joints[JointType.ShoulderLeft].Position,
+                rawSkeleton.Joints[JointType.Head].Position,
+                rawSkeleton.Joints[JointType.Spine].Position,
+            });
+
+            //Agrandar ambos boundingBox hacia el lado donde esta la mano
+            rScreenRect.Width += rScreenRect.Width / 2;
+            lScreenRect.X -= lScreenRect.Width / 2;
 
             //Multiplicar posicion 2D de las manos por factor de velocidad
             Vector2 rHand2dPos = TgcKinectUtils.toVector2(rawSkeleton.Joints[JointType.HandRight].Position) * hands2dSpeed;
             Vector2 lHand2dPos = TgcKinectUtils.toVector2(rawSkeleton.Joints[JointType.HandLeft].Position) * hands2dSpeed;
 
             //Clampear posicion 2D de manos segun el boundingBox 2D
-            rHand2dPos = TgcKinectUtils.clampToRect(rHand2dPos, bodyScreenRect);
-            lHand2dPos = TgcKinectUtils.clampToRect(lHand2dPos, bodyScreenRect);
+            rHand2dPos = TgcKinectUtils.clampToRect(rHand2dPos, rScreenRect);
+            lHand2dPos = TgcKinectUtils.clampToRect(lHand2dPos, lScreenRect);
 
             //Mapear puntos al tamaño de la pantalla para obtener posicion 2D de las manos
             Viewport screenViewport = GuiController.Instance.D3dDevice.Viewport;
-            data.Current.RightHandPos = TgcKinectUtils.mapPointToScreen(rHand2dPos, bodyScreenRect, screenViewport);
-            data.Current.LefttHandPos = TgcKinectUtils.mapPointToScreen(lHand2dPos, bodyScreenRect, screenViewport);
+            data.Current.RightHandPos = TgcKinectUtils.mapPointToScreen(rHand2dPos, rScreenRect, screenViewport, cursorSize);
+            data.Current.LefttHandPos = TgcKinectUtils.mapPointToScreen(lHand2dPos, lScreenRect, screenViewport, cursorSize);
 
             /* Forma MARIAN
             SkeletonPoint p1 = rawSkeleton.Joints[JointType.HandRight].Position;

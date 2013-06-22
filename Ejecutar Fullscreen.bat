@@ -1,0 +1,1 @@
+TgcViewer.exe fullScreenMode=true defaultExampleName="Ejemplo Focus Loader" defaultExampleCategory="Test" showModifiersPanel=false title="Focus Kinect" showTitleBar=true
