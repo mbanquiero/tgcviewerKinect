@@ -5,6 +5,7 @@ using System.Windows;
 using Microsoft.DirectX.Direct3D;
 using Microsoft.DirectX;
 using System.Drawing;
+using Examples.Kinect;
 
 namespace TgcViewer.Utils.Gui
 {
@@ -31,6 +32,7 @@ namespace TgcViewer.Utils.Gui
         public st_hand right_hand = new st_hand();
         public bool right_hand_sel = true;
         public Gesture currentGesture = Gesture.Nothing;
+        public TgcKinectSkeletonData kinectData;
 
 		public kinect_input()
         {
@@ -57,6 +59,20 @@ namespace TgcViewer.Utils.Gui
 
         public void GetInputFromMouse()
         {
+            //Aplicar datos de kinect
+            right_hand.position.X = kinectData.Current.RightHandPos.X;
+            right_hand.position.Y = kinectData.Current.RightHandPos.Y;
+            right_hand.position.Z = 1;
+
+            left_hand.position.X = kinectData.Current.LefttHandPos.X;
+            left_hand.position.Y = kinectData.Current.LefttHandPos.Y;
+            left_hand.position.Z = 1;
+
+
+
+
+
+            /*
             // boton derecho cambia de mano
             if (GuiController.Instance.D3dInput.buttonPressed(Input.TgcD3dInput.MouseButtons.BUTTON_RIGHT))
             {
@@ -85,7 +101,7 @@ namespace TgcViewer.Utils.Gui
                 left_hand.position.Y = sy;
                 left_hand.position.Z = sz;
             }
-
+            */
 
         }
 
@@ -93,6 +109,18 @@ namespace TgcViewer.Utils.Gui
         {
             currentGesture = Gesture.Nothing;
 
+            //Ver en que mano chequear gesto
+            int handIdx = right_hand_sel ? TgcKinectSkeletonData.RIGHT_HAND : TgcKinectSkeletonData.LEFT_HAND;
+
+            //Ver si la derivada en Z fue positiva (y poca varianza en x e y)
+            if (kinectData.HandsAnalysisData[handIdx].Z.DiffAvg > 0.1f && kinectData.HandsAnalysisData[handIdx].X.Variance < 1f && kinectData.HandsAnalysisData[handIdx].Y.Variance < 1f)
+            {
+                currentGesture = Gesture.Pressing;
+            }
+
+
+
+            /*
             // Espacio para abrir / cerrar la mano
             if (GuiController.Instance.D3dInput.keyPressed(Microsoft.DirectX.DirectInput.Key.Space))
             {
@@ -105,6 +133,7 @@ namespace TgcViewer.Utils.Gui
             // el wheel del mouse, representa la mano hacia atras, en el movimiento de seleccion
             if ((right_hand_sel && right_hand.position.Z>0) || (!right_hand_sel && left_hand.position.Z > 0))
                 currentGesture = Gesture.Pressing;
+             */ 
         }
 
     }
