@@ -619,9 +619,12 @@ namespace TgcViewer.Utils.Gui
     public class gui_mesh_button : gui_item
     {
         public float size;
-        public gui_mesh_button(DXGui gui, String s,String fname, int id, int x, int y, int dx, int dy) :
+        public Rectangle rc_sel;
+        public gui_mesh_button(DXGui gui, String s, String fname, int id, int x, int y, int dx, int dy, int xs, int ys, int dxs, int dys) :
             base(gui,s , x, y, dx, dy,id)
         {
+            rc_sel = new Rectangle(xs, ys, dxs, dys);
+
             //TgcSceneLoader.TgcSceneLoader loader = new TgcSceneLoader.TgcSceneLoader();
             //TgcSceneLoader.TgcScene currentScene = loader.loadSceneFromFile(fname);
             // mesh = currentScene.Meshes[0];
@@ -631,7 +634,7 @@ namespace TgcViewer.Utils.Gui
             mesh = yparser.Mesh;
 
             mesh.AutoTransformEnable = false;
-            size = mesh.BoundingBox.calculateSize().Length() * 1.2f;
+            size = mesh.BoundingBox.calculateSize().Length();
             seleccionable = true;
             item3d = true;
 
@@ -655,31 +658,44 @@ namespace TgcViewer.Utils.Gui
             float ey = gui.ey;
 
             if (sel)
-            {
                 // aumento las escala
-                k = 1 / (1 + (float)(3 * (gui.delay_sel0 - gui.delay_sel)));
-                ex /= k;
-                ey /= k;
-            }
+                k = 1 + (gui.delay_sel0 - gui.delay_sel)*1.0f;
+
+            // Determino el rectangulo
+            float xm = (rc.Left + rc.Right) * 0.5f;
+            float ym = (rc.Top + rc.Bottom) * 0.5f;
+            float rx = rc.Width * k * 0.5f;
+            float ry = rc.Height * k * 0.5f;
+
+            float x0 = xm - rx + ox;
+            float y0 = ym - ry + oy;
+            // El dx no deja poner viewport con origen negativo (pero si me puedo pasar por la derecha o por abajo)
+            if (x0 < 0)
+                x0 = 0;
+            if (y0 < 0)
+                y0 = 0;
+            float x1 = x0 + 2*rx;
+            float y1 = y0 + 2*ry;
 
             // Y roto la vista
-            float an = sel ? ftime : 0;
-            Vector3 viewDir = new Vector3((float)Math.Sin(an), 1.0f, (float)Math.Cos(an));
+            float an = sel ? ftime*1.5f : 0;
+            Vector3 viewDir = new Vector3((float)Math.Sin(an), 0.3f, (float)Math.Cos(an));
             viewDir.Normalize();
             gui.camera.LookAt = mesh.Position;
-            gui.camera.LookFrom = mesh.Position + viewDir * (size );
+            float dist = sel ? size * 1.2f : size * 1.5f;
+            gui.camera.LookFrom = mesh.Position + viewDir * dist;
             gui.camera.updateCamera();
             gui.camera.updateViewMatrix(d3dDevice);
 
             Viewport ant_viewport = d3dDevice.Viewport;
             Viewport btn_viewport = new Viewport();
-            btn_viewport.X = (int)(rc.X * ex);
-            btn_viewport.Y = (int)(rc.Y * ey);
-            btn_viewport.Width = (int)(rc.Width * ex);
-            btn_viewport.Height = (int)(rc.Height * ey);
+            btn_viewport.X = (int)(x0 * ex);
+            btn_viewport.Y = (int)(y0 * ey);
+            btn_viewport.Width = (int)((x1-x0)* ex);
+            btn_viewport.Height = (int)((y1-y0)* ey);
             d3dDevice.Viewport = btn_viewport;
             d3dDevice.EndScene();
-            d3dDevice.Clear(ClearFlags.ZBuffer , 0, 1.0f, 0);
+            d3dDevice.Clear(ClearFlags.ZBuffer | ClearFlags.Target, sel ? Color.FromArgb(240, 250, 240) : Color.FromArgb(192, 192, 192), 1.0f, 0);
             d3dDevice.BeginScene();
             d3dDevice.SetRenderState(RenderStates.ZEnable, true);
             mesh.render();
@@ -691,11 +707,7 @@ namespace TgcViewer.Utils.Gui
             d3dDevice.SetRenderState(RenderStates.ZEnable, false);
 
             // Dibujo un rectangulo
-            int x0 = (int)(rc.Left + ox);
-            int x1 = (int)(rc.Right + ox);
-            int y0 = (int)(rc.Top + oy);
-            int y1 = (int)(rc.Bottom + oy);
-            gui.DrawRect(x0, y0, x1, y1,5, Color.FromArgb(gui.alpha, 32, 140, 55));
+            gui.DrawRect((int)x0, (int)y0, (int)x1, (int)y1, sel?5:2, Color.FromArgb(gui.alpha, 32, 140, 55));
 
         }
 

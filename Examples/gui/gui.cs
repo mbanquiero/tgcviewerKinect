@@ -622,10 +622,20 @@ namespace TgcViewer.Utils.Gui
             sprite.Transform = matAnt;
 
             // 3- dibujo los items 3d a travez de la interface usual del TGC (usando la camara y un viewport)
+            item_sel = -1;
             d3dDevice.RenderState.ZBufferEnable = true;
             for (int i = item_0; i < cant_items; ++i)
-                    if (items[i].item3d)
+                if (items[i].item3d)
+                {
+                    if (items[i].state != itemState.hover || item_sel != -1)
                         items[i].Render(this);
+                    else
+                        item_sel = i;           // Este item lo dibujo al final de todo
+                }
+
+            // Item seleccionado
+            if (item_sel != -1)
+                items[item_sel].Render(this);
 
             d3dDevice.RenderState.ZBufferEnable = ant_zenable;
 
@@ -683,9 +693,10 @@ namespace TgcViewer.Utils.Gui
         }
 
         // mesh buttons
-        public gui_mesh_button InsertMeshButton(int id, String s,String fname, int x, int y, int dx, int dy)
+        public gui_mesh_button InsertMeshButton(int id, String s,String fname, int x, int y, int dx, int dy,
+            int xs, int ys, int dxs, int dys)
         {
-            return (gui_mesh_button)InsertItem(new gui_mesh_button(this, s,fname,id, x, y, dx, dy));
+            return (gui_mesh_button)InsertItem(new gui_mesh_button(this, s, fname, id, x, y, dx, dy, xs, ys, dxs, dys));
         }
 
         public int GetDlgItemCtrl(int id)

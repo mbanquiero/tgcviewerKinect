@@ -407,7 +407,8 @@ namespace Examples.Test
                 for (int j = 0; j < 2 && t < cant_texturas; ++j)
                 {
                     String s = "" + (t + 1);
-                    gui.InsertMeshButton(1000 + t, s, lista[t], x0 + i * (tdx + 20), y0 + j * (tdy + 20), tdx, tdy);
+                    gui.InsertMeshButton(1000 + t, s, lista[t], x0 + i * (tdx + 20), y0 + j * (tdy + 20), tdx, tdy,
+                            x0+20,y0+20,300,300);
                     ++t;
                 }
 
