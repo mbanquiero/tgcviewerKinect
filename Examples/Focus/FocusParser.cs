@@ -81,6 +81,7 @@ namespace Examples.Focus
 
         public static string WEB_TEXTURE_FOLDER = "http://lepton.com.ar/download/armarius/texturas/";
         public static string WEB_MESH_FOLDER = "http://lepton.com.ar/download/armarius/texturasy/";
+        public static readonly TgcTexture NULL_TEXTURE = new TgcTexture("", "", null, false);
 		
 		/**
 		 * Loads a Viewer.dat Lepton File.
@@ -399,26 +400,6 @@ namespace Examples.Focus
         private void DownloadAssets()
         {
             WebClient wc = new WebClient();
-            for (int i = 0; i < _texturesId.Length; i++)
-            {
-                var mn = _texturesId[i];
-                if (Path.GetFileNameWithoutExtension(mn).Length != 0 && !File.Exists(mn))
-                {
-                    try
-                    {
-                        Directory.CreateDirectory(Path.GetDirectoryName(mn));
-                        string webpath = WEB_TEXTURE_FOLDER + mn.Substring(TEXTURE_FOLDER.Length).Replace('\\', '/').Replace(" ","%20").ToLower();                        
-                        GuiController.Instance.Logger.log("Descargando archivo: " + webpath);
-                        wc.DownloadFile(webpath, mn);
-                    }
-                    catch (Exception)
-                    {
-                        GuiController.Instance.Logger.log("Archivo: " + mn + " no se encuentra.");
-                    }
-
-                }
-            }
-
             for (int i = 0; i < _meshesId.Length; i++)
             {
                 var mn = _meshesId[i];
@@ -445,20 +426,7 @@ namespace Examples.Focus
             _textures = new TgcTexture[_cantTextures];
             for (int i = 0; i < _texturesId.Length; i++)
             {
-                var mn = _texturesId[i];
-                if(Path.GetFileNameWithoutExtension(mn).Length != 0)
-                {
-                    try
-                    {
-                        _textures[i] = TgcTexture.createTexture(GuiController.Instance.D3dDevice,
-                                                         Path.GetFileName(mn), mn);
-                    }
-                    catch (Exception)
-                    {
-                        GuiController.Instance.Logger.log("Archivo: "+mn+" no se encuentra.");
-                    }
-                    
-                }
+                _textures[i] = FocusParser.getTexture(_texturesId[i]);
             }
         }
 		
@@ -617,6 +585,7 @@ namespace Examples.Focus
             m.DiffuseMaps = (TgcTexture[])tgcMesh.DiffuseMaps.Clone();
             m.Materials = (Material[])tgcMesh.Materials.Clone();
             m.BoundingBox = tgcMesh.BoundingBox;
+            m.AlphaBlendEnable = tgcMesh.AlphaBlendEnable;
 
             return m;
         }
@@ -628,6 +597,51 @@ namespace Examples.Focus
             if (end != -1)
                 str = str.Substring(0, end);
             return str;
+        }
+
+        public static TgcTexture getTexture(string path)
+        {
+            if (Path.GetFileNameWithoutExtension(path).Length == 0)
+                return NULL_TEXTURE;
+            
+            path = Path.ChangeExtension(path,".png");
+
+            if (!downloadTexture(path))
+            {
+                path = Path.ChangeExtension(path, ".jpg");
+                downloadTexture(path);
+            }
+
+            try
+            {
+                return TgcTexture.createTexture(GuiController.Instance.D3dDevice,
+                                                 Path.GetFileName(path), path);
+            }
+            catch (Exception)
+            {
+                GuiController.Instance.Logger.log("Archivo: " + path + " no se encuentra.");
+                return NULL_TEXTURE;
+            }
+        }
+
+        public static bool downloadTexture(string path)
+        {
+            if (File.Exists(path))
+                return true;
+
+            try
+            {
+                WebClient wc = new WebClient();
+                Directory.CreateDirectory(Path.GetDirectoryName(path));
+                string webpath = FocusParser.WEB_TEXTURE_FOLDER + path.Substring(FocusParser.TEXTURE_FOLDER.Length).Replace('\\', '/').Replace(" ", "%20").ToLower();
+                wc.DownloadFile(webpath, path);
+                GuiController.Instance.Logger.log("Descargado: " + webpath);
+                return true;
+            }
+            catch (Exception e)
+            {
+                return false;
+            }
         }
 		
 	}

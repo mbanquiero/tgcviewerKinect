@@ -80,7 +80,7 @@ namespace Examples.Focus
 				string path = FocusParser.TEXTURE_FOLDER + name;
 
                 if (Path.GetExtension(path).ToLower() == ".bmp")
-                    path = Path.ChangeExtension(path, ".jpg");
+                    path = Path.ChangeExtension(path, ".png");
 				
 				_materialNames[i] = path;
 				
@@ -185,22 +185,34 @@ namespace Examples.Focus
 
         private void DownloadAssets()
         {
+            return;
             WebClient wc = new WebClient();
             for (int i = 0; i < _materialNames.Length; i++)
             {
-                var mn = _materialNames[i];
-                if (Path.GetFileNameWithoutExtension(mn).Length != 0 && !File.Exists(mn))
+                var mnpng = _materialNames[i];
+                var mnjpg = Path.ChangeExtension(mnpng, ".jpg");
+                if (Path.GetFileNameWithoutExtension(mnpng).Length != 0 && (!File.Exists(mnpng) && !File.Exists(mnjpg)))
                 {
+
+                    Directory.CreateDirectory(Path.GetDirectoryName(mnpng));
+                    string webpath = FocusParser.WEB_TEXTURE_FOLDER + mnpng.Substring(FocusParser.TEXTURE_FOLDER.Length).Replace('\\', '/').Replace(" ", "%20").ToLower();
+                    GuiController.Instance.Logger.log("Descargando archivo: " + webpath);
                     try
                     {
-                        Directory.CreateDirectory(Path.GetDirectoryName(mn));
-                        string webpath = FocusParser.WEB_TEXTURE_FOLDER + mn.Substring(FocusParser.TEXTURE_FOLDER.Length).Replace('\\', '/').Replace(" ", "%20").ToLower();
-                        GuiController.Instance.Logger.log("Descargando archivo: " + webpath);
-                        wc.DownloadFile(webpath, mn);
+                            wc.DownloadFile(webpath, mnpng);
                     }
                     catch (Exception)
                     {
-                        GuiController.Instance.Logger.log("Archivo: " + mn + " no se encuentra.");
+                        try
+                        {
+                            wc.DownloadFile(Path.ChangeExtension(webpath,".jpg"), mnjpg);
+                            _materialNames[i] = mnjpg;
+                        }
+                        catch (Exception)
+                        {
+                            GuiController.Instance.Logger.log("Archivo: " + mnjpg + " no se encuentra.");
+                        }
+
                     }
 
                 }
@@ -213,24 +225,7 @@ namespace Examples.Focus
             for (int i = 0; i < _materialNames.Length; i++)
             {
                 var mn = _materialNames[i];
-                if(Path.GetFileNameWithoutExtension(mn).Length != 0)
-                {
-                    try
-                    {
-                        _textures[i] = TgcTexture.createTexture(GuiController.Instance.D3dDevice,
-                                                         Path.GetFileName(mn), mn);
-                    }
-                    catch(Exception e)
-                    {
-                        GuiController.Instance.Logger.log("No se encuentra la textura: "+mn);
-                        _textures[i] = new TgcTexture("", "", null, false);
-                    }
-                    
-                }
-                else
-                {
-                    _textures[i] = new TgcTexture("","",null,false);
-                }
+                _textures[i] = FocusParser.getTexture(mn);
             }
 
         }
@@ -278,8 +273,10 @@ namespace Examples.Focus
                         {
                             Materials = _materialData,
                             DiffuseMaps = _textures,
-                            Enabled = true
+                            Enabled = true,
+                            AlphaBlendEnable = false,
                         };
+
             _mesh.BoundingBox = new TgcBoundingBox(minVert,maxVert);
 		}
 
