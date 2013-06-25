@@ -24,6 +24,17 @@ namespace Examples.Test
     public class EjemploFocus : TgcExample
     {
 
+        // Defines
+        public const int IDOK = 0;
+        public const int IDCANCEL = 1;
+        public const int ID_FILE_OPEN = 100;
+        public const int ID_FILE_SAVE = 101;
+        public const int ID_MODO_NAVEGACION = 102;
+        public const int ID_CAMBIAR_TEXTURAS = 103;
+        public const int ID_CAMBIAR_EMPUJADORES = 104;
+        public const int ID_APP_EXIT = 105;
+        public const int ID_CAMBIAR_MATERIALES = 106;
+
         private List<TgcMesh> _meshes;
         private FocusSet [] _conjuntos;
         TgcBoundingBox bounds;
@@ -84,16 +95,17 @@ namespace Examples.Test
 
             // Inicio un dialogo modalless
             gui.InitDialog(true);
-            int x0 = 10;
-            int y0 = 10;
-            int dy = 35;
-            int dx = 300;
-            gui.InsertMenuItem(100, "Abrir Proyecto", x0, y0, dx, dy);
-            gui.InsertMenuItem(101, "Grabar Proyecto", x0, y0 += 40, dx, dy);
-            gui.InsertMenuItem(102, "Modo Navegacion", x0, y0 += 40, dx, dy);
-            gui.InsertMenuItem(103, "Modificar Texturas", x0, y0 += 40, dx, dy);
-            gui.InsertMenuItem(104, "Cambiar Empujadores", x0, y0 += 40, dx, dy);
-            gui.InsertMenuItem(105, "Salir", x0, y0 += 40, dx, dy);
+            int x0 = 40;
+            int y0 = 40;
+            int dy = 45;
+            int dx = 350;
+            gui.InsertMenuItem(ID_FILE_OPEN, "Abrir Proyecto", x0, y0, dx, dy);
+            gui.InsertMenuItem(ID_FILE_SAVE, "Grabar Proyecto", x0, y0 += 40, dx, dy,false);
+            gui.InsertMenuItem(ID_MODO_NAVEGACION, "Modo Navegacion", x0, y0 += 40, dx, dy);
+            gui.InsertMenuItem(ID_CAMBIAR_MATERIALES, "Modificar Materiales", x0, y0 += 40, dx, dy);
+            gui.InsertMenuItem(ID_CAMBIAR_TEXTURAS, "Modificar Texturas", x0, y0 += 40, dx, dy, false);
+            gui.InsertMenuItem(ID_CAMBIAR_EMPUJADORES, "Cambiar Empujadores", x0, y0 += 40, dx, dy);
+            gui.InsertMenuItem(ID_APP_EXIT, "Salir", x0, y0 += 40, dx, dy);
 
             // Camara para 3d support
             gui.camera = camera;
@@ -107,11 +119,25 @@ namespace Examples.Test
             if (data.Active)
             {
                 tgcKinect.DebugSkeleton.render(data.Current.KinectSkeleton);
+            }
 
-                //Pasar data de kinect a GUI
-                gui.kinect.kinectData = data;
+            if (_meshes != null)
+            {
+                // Hay escena
+                foreach (TgcMesh m in _meshes)
+                {
+                    m.render();
+                }
+            }
+            else
+            {
+                // Solo hay gui, dibujo un fondo de presentacion
+                gui.DrawImage(GuiController.Instance.ExamplesMediaDir + "Focus\\texturas\\fondo.png", 0, 0,
+                    GuiController.Instance.Panel3d.Width, GuiController.Instance.Panel3d.Height);
 
             }
+            center.render();
+            bounds.render();
 
 
             // ------------------------------------------------
@@ -123,35 +149,73 @@ namespace Examples.Test
                 case MessageType.WM_COMMAND:
                     switch (msg.id)
                     {
-                        case 0:
-                        case 1:
+                        case IDOK:
+                        case IDCANCEL:
                             // Resultados OK, y CANCEL del ultimo messagebox
                             gui.EndDialog();
                             break;
 
-                        case 100:
+                        case ID_FILE_OPEN:
                             // Abrir Proyecto
                             OpenFileDlg();
                             break;
 
-                        case 101:
+                        case ID_FILE_SAVE:
                             // Grabar Proyecto
                             gui.MessageBox("Proyecto Grabado", "Focus Kinect Interaction");
                             break;
 
-                        case 102:
+                        case ID_MODO_NAVEGACION:
                             // Modo navegacion
                             gui.MessageBox("Modo navegación Activado", "Focus Kinect Interaction");
                             break;
 
-                        case 103:
-                            // Cambiar Textura
-                            texturasFocus.TextureGroupDlg(gui);
+                        case ID_APP_EXIT:
+                            // Salir
+                            gui.MessageBox("Desea Salir del Sistema?", "Focus Kinect Interaction");
                             break;
 
-                        case 104:
-                            // Cambiar Mesh
-                            MeshDlg();
+                        case ID_CAMBIAR_MATERIALES:
+                            // Cambiar Materiales
+                            //texturasFocus.TextureGroupDlg(gui);
+                            MaterialesDlg();
+                            break;
+
+                        case 400:
+                            // Cambiar material abiertos
+                            MaterialesGabDlg(true);
+                            break;
+                        case 401:
+                            // Cambiar material cerrados
+                            MaterialesGabDlg();
+                            break;
+
+                        case 402:
+                            // Cambiar material de Puertas
+                            // No implementado en verdad
+                            texturasFocus.TextureDlg(gui, 1000);        // 1000 = maderas
+                            break;
+
+                        case 403:
+                            // Cambiar material de Cajones
+                            // No implementado en verdad
+                            texturasFocus.TextureDlg(gui, 1000);        // 1000 = maderas
+                            break;
+
+                        case 406:
+                        case ID_CAMBIAR_EMPUJADORES:
+                            // Cambiar empujador de cajon
+                            // No implementado en verdad
+                            EmpujadorDlg();
+                            break;
+
+                        case 500:
+                        case 501:
+                        case 502:
+                        case 503:
+                            // Cambia textura de fondo gabinetes abiertos
+                            // No implementado en verdad
+                            texturasFocus.TextureDlg(gui, 1000);        // 1000 = maderas
                             break;
 
                         case 200:
@@ -164,8 +228,8 @@ namespace Examples.Test
                             camera.LookFrom = camera.LookFrom + ViewDir * 0.1f;
                             camera.updateCamera();
                             break;
-                        default:
 
+                        default:
                             //Cambiar de escena
                             if (msg.id >= 3000)
                             {
@@ -179,15 +243,18 @@ namespace Examples.Test
                                 _meshes = loader.Escene;
                                 _conjuntos = loader._focusSets;
                                 gui.EndDialog();
-                            }
 
+                                // Habilito los items de menu 
+                                gui.EnableItem(ID_FILE_SAVE);
+                                gui.EnableItem(ID_CAMBIAR_TEXTURAS); 
+                                gui.EnableItem(ID_CAMBIAR_MATERIALES);
+                            }
                             //Cambiar de textura
                             else if (msg.id >= 2000)
                             {
                                 texturasFocus.applyTextureChange(_meshes, _conjuntos, msg.id);
                                 gui.EndDialog();
                             }
-
                             //Seleccionar categoria de textura
                             else if (msg.id >= 1000)
                             {
@@ -195,44 +262,13 @@ namespace Examples.Test
                                 texturasFocus.TextureDlg(gui, msg.id);
                             }
 
-
+                            
                             break;
                     }
                     break;
                 default:
                     break;
             }
-
-
-            if (_meshes != null)
-            {
-                // Hay escena
-                foreach (TgcMesh m in _meshes)
-                {
-                    m.render();
-                }
-
-
-                /*
-                 * foreach (FocusSet f in _conjuntos)
-                {
-                    f.animate();
-                    f.Render();
-                }
-                */
-
-            }
-            else
-            {
-                // Solo hay gui, dibujo un fondo de presentacion
-                gui.DrawImage(GuiController.Instance.ExamplesMediaDir + "Focus\\texturas\\fondo.png", 0, 0,
-                    GuiController.Instance.Panel3d.Width, GuiController.Instance.Panel3d.Height);
-
-            }
-            center.render();
-            bounds.render();
-
-            
             camera.Enable = true;
             gui.Render();
             GuiController.Instance.FpsCamera.Enable = true;
@@ -267,16 +303,77 @@ namespace Examples.Test
                 String s = "" + (t + 1);
                 gui.InsertKinectTileButton(3000 + t, s, lista[t], x0 + t * (tdx + 20), y0, tdx, tdy);
             }
+
             gui.InsertKinectScrollButton(0, "scroll_left.png", x0, y0 + dy - tdy - 40, dx / 2 - 40, 80);
             gui.InsertKinectScrollButton(1, "scroll_right.png", x0 + dx / 2 + 20, y0 + dy - tdy - 40, dx / 2 - 40, 80);
 
 
         }
 
-        
+        public void MaterialesDlg()
+        {
+            gui.InitDialog(false, false);
+
+            int x0 = 20;
+            int y0 = 20;
+            int dy = 500;
+            int dx = 800;
+            int r = 100;
+            int r2 = 150;
+
+            gui.InsertFrame("Materiales utilizados en el Proyecto", x0, y0, dx, dy, Color.FromArgb(60, 120, 60));
+            y0 += 80;
+            x0 = 80;
+
+            gui.InsertKinectCircleButton(400, "Abiertos", "abiertos.png", x0, y0, r);
+            gui.InsertKinectCircleButton(401, "Cerrados", "cerrados.png", x0+=r2, y0, r);
+            gui.InsertKinectCircleButton(402, "Puertas", "puertas.png", x0+=r2 , y0, r);
+            gui.InsertKinectCircleButton(403, "Cajones", "cajones.png", x0+=r2, y0, r);
+            y0 += r + 100;
+            x0 = 80;
+            gui.InsertKinectCircleButton(404, "Zocalo", "zocalo.png", x0, y0, r);
+            gui.InsertKinectCircleButton(405, "Patas", "patas.png", x0+=r2, y0, r);
+            gui.InsertKinectCircleButton(406, "Manijas", "manijas.png", x0+=r2, y0, r);
+
+            gui.InsertKinectCircleButton(IDCANCEL, "Cancel", "cancel.png", 700, 350, r);
 
 
-        public void MeshDlg()
+        }
+
+        public void MaterialesGabDlg(bool abiertos=false)
+        {
+            gui.InitDialog(false, false,true);
+
+            int x0 = 20;
+            int y0 = 10;
+            int dy = 300;
+            int dx = 800;
+            int r = 100;
+            int r2 = 150;
+
+            gui.InsertFrame("", x0, y0, 250, 150, Color.FromArgb(192, 192, 192));
+            gui_kinect_circle_button static_item = abiertos ? gui.InsertKinectCircleButton(-1, "", "abiertos.png", x0+50, y0+20, r) :
+                                              gui.InsertKinectCircleButton(-1, "", "cerrados.png", x0+50 ,y0+20, r);
+            static_item.disabled = true;
+            static_item.border = false;
+
+            y0 = 150;
+            gui.InsertFrame("Materiales Gabinetes " + (abiertos ? "abiertos" : "cerrados"),
+                    x0, y0, dx, dy, Color.FromArgb(60, 120, 60));
+            x0 = 80;
+            y0 += 80;
+
+            gui.InsertKinectTileButton(500, "Standard", "Maderas\\Blanco.jpg", x0, y0, r,r);
+            gui.InsertKinectTileButton(501, "Fondo", "Maderas\\09-guindo.jpg", x0 += r2, y0, r, r);
+            gui.InsertKinectTileButton(502, "Tap.Mel", "Maderas\\09-guindo.jpg", x0 += r2, y0, r, r);
+            gui.InsertKinectTileButton(503, "Tap.Abs", "Maderas\\09-guindo.jpg", x0 += r2, y0, r, r);
+            gui.InsertKinectCircleButton(IDCANCEL, "Cancel", "cancel.png", x0 += r2, y0, r);
+
+
+        }
+
+
+        public void EmpujadorDlg()
         {
             gui.InitDialog(false, false);
 
@@ -284,15 +381,16 @@ namespace Examples.Test
             int y0 = 10;
             int dy = 400;
             int dx = 1000;
-            int tdx = 200;
-            int tdy = 150;
+            int tdx = 150;
+            int tdy = 100;
 
-            gui.InsertFrame("Seleccione el empujador", x0, y0, dx, dy, Color.Honeydew);
+            gui.InsertFrame("Seleccione el empujador", x0, y0, dx, dy, Color.FromArgb(240, 240, 240));
             x0 += 50;
             y0 += 80;
 
             List<string> lista = new List<string>();
             lista.Add(GuiController.Instance.ExamplesMediaDir + "Focus\\texturas\\dxf\\manija modulos\\msh\\10089945.y");
+
             lista.Add(GuiController.Instance.ExamplesMediaDir + "Focus\\texturas\\dxf\\manija modulos\\msh\\10090267.y");
             lista.Add(GuiController.Instance.ExamplesMediaDir + "Focus\\texturas\\dxf\\bachas\\msh\\405 E.y");
             lista.Add(GuiController.Instance.ExamplesMediaDir + "Focus\\texturas\\dxf\\adornos\\msh\\adorno13.y");
@@ -312,6 +410,9 @@ namespace Examples.Test
                     gui.InsertMeshButton(1000 + t, s, lista[t], x0 + i * (tdx + 20), y0 + j * (tdy + 20), tdx, tdy);
                     ++t;
                 }
+
+            gui.InsertKinectCircleButton(IDCANCEL, "Cancel", "cancel.png", x0 + dx - 300, y0+dy-250, 80);
+
 
         }
 

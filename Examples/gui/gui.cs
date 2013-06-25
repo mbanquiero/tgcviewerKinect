@@ -121,6 +121,7 @@ namespace TgcViewer.Utils.Gui
         public static Color c_buttom_text = Color.FromArgb(130, 255, 130);      // Color texto del boton
         public static Color c_buttom_sel_text = Color.FromArgb(255, 220, 220);  // Color texto del boton seleccionado
         public static Color c_frame_border = Color.FromArgb(130, 255, 130);     // Color borde los frames
+        public static Color c_item_disabled = Color.FromArgb(128, 128, 128);    // color texto item deshabilitado
 
         
         // Cableados
@@ -148,6 +149,10 @@ namespace TgcViewer.Utils.Gui
         public st_bitmap[] bitmaps = new st_bitmap[MAX_BITMAPS];
         public int cant_bitmaps;
 
+        // Transicion entre dialogos
+        public float delay_initDialog;
+        public byte alpha;
+
         // Posicion del mouse
         public float mouse_x;
         public float mouse_y;
@@ -160,8 +165,8 @@ namespace TgcViewer.Utils.Gui
 
         // Parametros srcoll automatico
         public float vel_scroll = 500;           // pixeles por segundo
-        public float min_sox = -1000;
-        public float max_sox = 1000;
+        public float min_sox = -3000;
+        public float max_sox = 3000;
 
 
 
@@ -171,6 +176,7 @@ namespace TgcViewer.Utils.Gui
 	        cant_dialog = 0;
             trapezoidal_style = true;
             autohide = false;
+            alpha = 255;
 
             // Computo la matrix de cambio rect to quad
             float W = GuiController.Instance.Panel3d.Width;
@@ -185,7 +191,7 @@ namespace TgcViewer.Utils.Gui
             item_pressed = sel = -1;
 	        time = 0;
 	        item_0 = 0;
-	        ey = ex = 1;
+	        ey = ex = 1.5f;
 	        ox = oy = 0;
             sox = soy = 0;
             mouse_x = mouse_y = -1;
@@ -194,6 +200,8 @@ namespace TgcViewer.Utils.Gui
             cant_bitmaps = 0;
             cursor_izq = tipoCursor.sin_cursor;
             cursor_der = tipoCursor.targeting;
+            alpha = 1;
+
         }
 
         public void Dispose()
@@ -236,7 +244,7 @@ namespace TgcViewer.Utils.Gui
         }
 
         // dialog support
-        public void InitDialog(bool pautohide=false,bool trapezoidal = true)
+        public void InitDialog(bool pautohide=false,bool trapezoidal = true,bool delay=false)
         {
 	        // guardo el valor de item_0 en la pila
 	        dialog[cant_dialog].item_0 = item_0;
@@ -253,7 +261,7 @@ namespace TgcViewer.Utils.Gui
 	        rbt = -1;
 	        sel = -1;
             Show();
-
+            delay_initDialog = delay?1.0f:0;
         }
 
         public void EndDialog()
@@ -267,8 +275,7 @@ namespace TgcViewer.Utils.Gui
             autohide = dialog[cant_dialog].autohide;
             // Saco el foco
 	        foco = -1;
-	        // valores x defecto
-	        ey = ex = 1;
+	        // valores x defecto del scroll
 	        ox = oy = 0;
             sox = soy = 0;
         }
@@ -284,19 +291,18 @@ namespace TgcViewer.Utils.Gui
         public void MessageBox(string msg,string titulo="")
         {
             InitDialog(false, false);
-            float W = GuiController.Instance.Panel3d.Width;
-            float H = GuiController.Instance.Panel3d.Height;
+            float W = GuiController.Instance.Panel3d.Width / ex;
+            float H = GuiController.Instance.Panel3d.Height / ey;
 
-            int dx = 600;
-            int dy = 400;
+            int dx = (int)(650.0f / ex);
+            int dy = (int)(400.0f / ey);
             int x0 = (int)((W-dx) / 2);
             int y0 = (int)((H-dy) / 2);
 
             InsertFrame(titulo, x0, y0, dx, dy, Color.FromArgb(64,32,64));
-            
-            InsertItem(msg, x0+100, y0+100);
-            InsertKinectCircleButton(0, "OK", "ok.png", x0 + dx / 4, y0 + dy - 130, 30);
-            InsertKinectCircleButton(1, "CANCEL", "cancel.png", x0 + 3 * dx / 4, y0 + dy - 130, 30);
+            InsertItem(msg, x0+50, y0+80);
+            InsertKinectCircleButton(0, "OK", "ok.png", x0 + 30, y0 + dy - 130, 80);
+            InsertKinectCircleButton(1, "CANCEL", "cancel.png", x0 + dx - 80 - 30 , y0 + dy - 130, 80);
         }
 
 		// input
@@ -306,6 +312,21 @@ namespace TgcViewer.Utils.Gui
             msg.message = MessageType.WM_NOTHING;
             msg.id = -1;
 	        int ant_sel = sel;
+
+            // Hardcodeado escala dinamica
+
+            if (GuiController.Instance.D3dInput.keyPressed(Microsoft.DirectX.DirectInput.Key.Subtract))
+            {
+                ex /= 1.1f;
+                ey = ex;
+            }
+            else
+            if (GuiController.Instance.D3dInput.keyPressed(Microsoft.DirectX.DirectInput.Key.Add))
+            {
+                ex *= 1.1f;
+                ey = ex;
+            }
+
 
             // Tomo el input de la kinect
             kinect.GetInputFromMouse();
@@ -349,13 +370,13 @@ namespace TgcViewer.Utils.Gui
                 int t = item_0;
                 while (t < cant_items && sel == -1)
                 {
-                    if (items[t].seleccionable || items[t].auto_seleccionable)
+                    if ( !items[t].disabled && (items[t].seleccionable || items[t].auto_seleccionable) )
                     {
                         Point pt = new Point(0,0);
                         if (items[t].scrolleable)
                         {
-                            pt.X = (int)(sx - sox);
-                            pt.Y = (int)(sy - soy);
+                            pt.X = (int)(sx - sox*ex);
+                            pt.Y = (int)(sy - soy*ey);
                         }
                         else
                         {
@@ -440,6 +461,14 @@ namespace TgcViewer.Utils.Gui
             // Actualizo los timers
             time += elapsed_time;
 
+            if(delay_initDialog > 0)
+            {
+                delay_initDialog  -= elapsed_time;
+                if (delay_initDialog < 0)
+                    delay_initDialog = 0;
+            }
+
+
             if (delay_show > 0)
             {
                 delay_show -= elapsed_time;
@@ -517,25 +546,65 @@ namespace TgcViewer.Utils.Gui
             d3dDevice.RenderState.ZBufferEnable = false;
 
             // 1- dibujo los items 2d con una interface de sprites
-
             sprite.Begin(SpriteFlags.AlphaBlend);
             Matrix matAnt = sprite.Transform * Matrix.Identity;
             Vector2 scale = new Vector2(ex,ey);
             Vector2 offset = new Vector2(ox,oy);
             sprite.Transform = Matrix.Transformation2D(new Vector2(0, 0), 0, scale, new Vector2(0, 0), 0, offset) * RTQ;
-            
-            for (int i = item_0; i < cant_items; ++i)
-                    if(!items[i].item3d)
+
+            int item_desde = item_0;
+            // Transicion entre dialogos
+            bool hay_tr = false;
+            if (delay_initDialog > 0 && cant_dialog > 0)
+            {
+                // Dibujo los items del dialogo anterior
+                item_desde = dialog[cant_dialog - 1].item_0;
+                hay_tr = true;
+                alpha = (byte)(255 * delay_initDialog);
+            }
+            else
+                alpha = 255;            // No hay transicion
+
+
+            // si hay un item en modo hover postergo su renderizado para lo ultimo de todo
+            // Esto es porque tiene que verse arriba de los demas items y no hay info de Z
+            // de momento solo soporta un solo item en modo hover al mismo tiempo
+            int item_sel = -1;
+            for (int i = item_desde; i < cant_items; ++i)
+            {
+                if (hay_tr && i == item_0)
+                    // Llegue al dialogo actual, actualizo el alpha blend 
+                    alpha = (byte)(255 - alpha);
+
+                if (!items[i].item3d)
+                {
+                    if (items[i].state != itemState.hover || item_sel != -1)
                         items[i].Render(this);
+                    else
+                        item_sel = i;           // Este item lo dibujo al final de todo
+                }
+
+            }
+
+
+            // Item seleccionado
+            if (item_sel != -1)
+            {
+                sprite.End();           // Termino el anterior
+                sprite.Begin(SpriteFlags.AlphaBlend);
+                items[item_sel].Render(this);
+            }
+
+
 
             // 2 - dibujo el cusor con la misma interface de prites
-            sprite.Transform = Matrix.Transformation2D(new Vector2(0, 0), 0, scale, new Vector2(0, 0), 0, new Vector2(0, 0));
+            sprite.Transform = Matrix.Transformation2D(new Vector2(0, 0), 0, new Vector2(1,1), new Vector2(0, 0), 0, new Vector2(0, 0));
 
             Vector2 scale_center = new Vector2(kinect.left_hand.position.X, kinect.left_hand.position.Y);
             // mano derecha
             if (kinect.right_hand.visible && cursores[(int)cursor_der]!=null)
             {
-                sprite.Transform = Matrix.Transformation2D(scale_center, 0, scale, Vector2.Empty, 0, new Vector2(0, 0));
+                sprite.Transform = Matrix.Transformation2D(scale_center, 0, new Vector2(1, 1), Vector2.Empty, 0, new Vector2(0, 0));
                 sprite.Draw(cursores[(int)cursor_der], Rectangle.Empty, new Vector3(32, 32, 0), kinect.right_hand.position, Color.FromArgb(255, 255, 255, 255));
             }
             // mano izquierda
@@ -543,13 +612,14 @@ namespace TgcViewer.Utils.Gui
             {
                 // dibujo espejado
                 scale.X *= -1;
-                sprite.Transform = Matrix.Transformation2D(scale_center, 0, scale, Vector2.Empty, 0, new Vector2(0, 0));
+                sprite.Transform = Matrix.Transformation2D(scale_center, 0, new Vector2(1, 1), Vector2.Empty, 0, new Vector2(0, 0));
                 sprite.Draw(cursores[(int)cursor_izq], Rectangle.Empty, new Vector3(32, 32, 0), kinect.left_hand.position, Color.FromArgb(255, 255, 255, 255));
             }
-            // Restauro la transformacion del sprite
-            sprite.Transform = matAnt;
             sprite.End();
 
+
+            // Restauro la transformacion del sprite
+            sprite.Transform = matAnt;
 
             // 3- dibujo los items 3d a travez de la interface usual del TGC (usando la camara y un viewport)
             d3dDevice.RenderState.ZBufferEnable = true;
@@ -581,9 +651,9 @@ namespace TgcViewer.Utils.Gui
         }
 
         // Pop up menu item
-        public gui_menu_item InsertMenuItem(int id,String s, int x, int y, int dx = 0, int dy = 0)
+        public gui_menu_item InsertMenuItem(int id,String s, int x, int y, int dx = 0, int dy = 0,bool penabled=true)
         {
-            return (gui_menu_item)InsertItem(new gui_menu_item(this, s,id, x, y, dx, dy));
+            return (gui_menu_item)InsertItem(new gui_menu_item(this, s, id, x, y, dx, dy, penabled));
         }
 
         // Standard push button
@@ -618,6 +688,24 @@ namespace TgcViewer.Utils.Gui
             return (gui_mesh_button)InsertItem(new gui_mesh_button(this, s,fname,id, x, y, dx, dy));
         }
 
+        public int GetDlgItemCtrl(int id)
+        {
+            int rta = -1;
+            int i = item_0;
+            while (i < cant_items && rta == -1)
+                if(items[i].item_id==id)
+                    rta = i;
+                else
+                    ++i;
+            return rta;
+        }
+
+        public void EnableItem(int id,bool enable=true)
+        {
+            int nro_item = GetDlgItemCtrl(id);
+            if (nro_item != -1)
+                items[nro_item].disabled = !enable;
+        }
          
 		// line support
 		public void Transform(VERTEX2D []pt,int cant_ptos)

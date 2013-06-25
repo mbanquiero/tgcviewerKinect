@@ -31,6 +31,7 @@ namespace TgcViewer.Utils.Gui
         public bool auto_seleccionable;     // no hace falta presionarlo para que genere eventos
         public bool scrolleable;            // indica que el item escrollea junto con el gui
         public bool item3d;
+        public bool disabled;
         public itemState state;
 		public Microsoft.DirectX.Direct3D.Font font;
 
@@ -59,6 +60,7 @@ namespace TgcViewer.Utils.Gui
             c_selected = DXGui.c_selected;
             center = Point.Empty;
             item3d = false;
+            disabled = false;
         }
 
         public gui_item(DXGui gui, String s, int x, int y, int dx = 0, int dy = 0,int id=-1)
@@ -99,7 +101,7 @@ namespace TgcViewer.Utils.Gui
 
         public virtual void Render(DXGui gui)
         {
-	        bool sel = gui.sel==nro_item?true:false;
+	        bool sel = gui.sel==nro_item && !disabled?true:false;
 	        Color color = sel ? c_selected :c_font;
             if (rc.Width == 0 || rc.Height == 0)
             {
@@ -117,15 +119,16 @@ namespace TgcViewer.Utils.Gui
             if (textura!=null)
             {
                 Vector3 pos = new Vector3(rc.X - 64, rc.Y - 8, 0);
-                gui.sprite.Draw(textura, Rectangle.Empty, Vector3.Empty, pos, Color.FromArgb(255, 255, 255, 255));
+                gui.sprite.Draw(textura, Rectangle.Empty, Vector3.Empty, pos, Color.FromArgb(gui.alpha, 255, 255, 255));
             }
 
             if (sel)
             {
-                gui.RoundRect(rc.Left - 1, rc.Top - 3, rc.Right + 1, rc.Bottom + 3, 6, 2, DXGui.c_selected_frame, false);
+                gui.RoundRect(rc.Left - 1, rc.Top - 3, rc.Right + 1, rc.Bottom + 3, 6, 2, 
+                    Color.FromArgb(gui.alpha, DXGui.c_selected_frame), false);
                 int dy = rc.Height / 2;
 
-                gui.line.Width = 1f;
+                gui.line.Width = 2f;
                 gui.line.Begin();
 
 
@@ -149,7 +152,7 @@ namespace TgcViewer.Utils.Gui
                     byte r = (byte)(r0 * t + r1 * (1 - t));
                     byte g = (byte)(g0 * t + g1 * (1 - t));
                     byte b = (byte)(b0 * t + b1 * (1 - t));
-                    gui.line.Draw(pt, Color.FromArgb(255, r, g, b));
+                    gui.line.Draw(pt, Color.FromArgb(gui.alpha, r, g, b));
                 }
 
                 // Gradiente de arriba
@@ -172,14 +175,14 @@ namespace TgcViewer.Utils.Gui
                     byte r = (byte)(r0 * t + r1 * (1 - t));
                     byte g = (byte)(g0 * t + g1 * (1 - t));
                     byte b = (byte)(b0 * t + b1 * (1 - t));
-                    gui.line.Draw(pt, Color.FromArgb(255, r, g, b));
+                    gui.line.Draw(pt, Color.FromArgb(gui.alpha, r, g, b));
                 }
                 gui.line.End();
             }
 
 	        // dibujo el texto pp dicho
-            gui.font.DrawText( gui.sprite, text, rc, DrawTextFormat.NoClip |DrawTextFormat.VerticalCenter, 
-                        sel?Color.FromArgb(0,32,128):c_font);
+            gui.font.DrawText( gui.sprite, text, rc, DrawTextFormat.NoClip |DrawTextFormat.VerticalCenter,
+                disabled ? Color.FromArgb(gui.alpha,DXGui.c_item_disabled) : sel ? Color.FromArgb(gui.alpha,0, 32, 128) : c_font);
         }
     }
 
@@ -187,9 +190,10 @@ namespace TgcViewer.Utils.Gui
     public class gui_menu_item : gui_item
     {
 
-        public gui_menu_item(DXGui gui, String s, int id, int x, int y, int dx = 0, int dy = 0) :
+        public gui_menu_item(DXGui gui, String s, int id, int x, int y, int dx = 0, int dy = 0, bool penabled=true) :
             base(gui, s, x, y, dx, dy,id)
         {
+            disabled = !penabled;
             seleccionable = true;
         }
     }
@@ -211,7 +215,7 @@ namespace TgcViewer.Utils.Gui
             if (textura!=null)
             {
                 Vector3 pos = new Vector3(rc.Left - 64, rc.Top - 8, 0);
-                gui.sprite.Draw(textura, Rectangle.Empty, Vector3.Empty, pos, Color.FromArgb(255,255,255,255));
+                gui.sprite.Draw(textura, Rectangle.Empty, Vector3.Empty, pos, Color.FromArgb(gui.alpha, 255, 255, 255));
             }
 
 
@@ -300,17 +304,17 @@ namespace TgcViewer.Utils.Gui
             bool sel = gui.sel == nro_item ? true: false;
 
 	        // interior
-		    gui.DrawRect(rc.X,rc.Y,rc.X+rc.Width , rc.Y + rc.Height,1,c_fondo,true);
+		    gui.DrawRect(rc.X,rc.Y,rc.X+rc.Width , rc.Y + rc.Height,1,Color.FromArgb(gui.alpha,c_fondo),true);
 
 	        // contorno
-            gui.DrawRect(rc.X, rc.Y, rc.X + rc.Width, rc.Y + rc.Height, 6, DXGui.c_frame_border);
+            gui.DrawRect(rc.X, rc.Y, rc.X + rc.Width, rc.Y + rc.Height, 6, Color.FromArgb(gui.alpha,DXGui.c_frame_border));
 
 	        // Texto del frame
             Rectangle rc2 = new Rectangle(rc.X, rc.Y, rc.X + rc.Width, rc.Y + rc.Height);
 		    rc2.Y += 30;
 		    rc2.X += 30;
 		    Color color = sel?c_selected:c_font;
-		    gui.font.DrawText( gui.sprite, text, rc2, DrawTextFormat.NoClip | DrawTextFormat.Top, color);
+		    gui.font.DrawText( gui.sprite, text, rc2, DrawTextFormat.NoClip | DrawTextFormat.Top, Color.FromArgb(gui.alpha,color));
         }
     }
 
@@ -424,104 +428,28 @@ namespace TgcViewer.Utils.Gui
         public override void Render(DXGui gui)
         {
             bool sel = gui.sel == nro_item ? true : false;
-            Color color = sel ? Color.FromArgb(255, 220, 220) : Color.FromArgb(130, 255, 130);
+            Color color = sel ? Color.FromArgb(gui.alpha, 255, 220, 220) : Color.FromArgb(gui.alpha,130, 255, 130);
             gui.RoundRect(rc.Left, rc.Top, rc.Right, rc.Bottom, radio, 2, color, false);
         }
     }
 
 
-    public class gui_kinect_circle_button : gui_item
-    {
-        public int image_width;
-        public int image_height;
-        public Color c_border = Color.FromArgb(0, 0, 0);
-        public Color c_interior_sel = Color.FromArgb(30, 240, 40);     
-
-
-
-        public gui_kinect_circle_button(DXGui gui, String s, String imagen,int id,int x, int y, int r) :
-            base(gui, s, x, y, r, r,id)
-        {
-            seleccionable = true;
-            // Cargo la imagen en el gui
-            if ((textura = DXGui.cargar_textura(imagen, true)) != null)
-            {
-                // Aprovecho para calcular el tamaño de la imagen del boton
-                SurfaceDescription desc = textura.GetLevelDescription(0);
-                image_width = desc.Width;
-                image_height = desc.Height;
-            }
-        }
-
-        public override void Render(DXGui gui)
-        {
-            bool sel = state==itemState.hover;
-            float tr = (float)(4 * (gui.delay_sel0 - gui.delay_sel));
-            Color color = sel ? c_selected : c_font;
-
-            Matrix matAnt = gui.sprite.Transform * Matrix.Identity;
-            float ex = gui.ex;
-            float ey = gui.ey;
-            // como este boton es un item scrolleable, tiene que aplicar tambien el origen sox,soy
-            float ox = gui.ox + gui.sox;
-            float oy = gui.oy + gui.soy;
-
-            if (sel)
-            {
-                float k = 1 + (float)(0.5 * (gui.delay_sel0 - gui.delay_sel));
-                ex *= k;
-                ey *= k;
-            }
-
-            Vector2 scale = new Vector2(ex, ey);
-            Vector2 offset = new Vector2(ox, oy);
-
-            gui.sprite.Transform = Matrix.Transformation2D(new Vector2(center.X, center.Y), 0, scale, new Vector2(0, 0), 0, offset) * gui.RTQ;
-
-            // dibujo el texto pp dicho
-            String buffer = text;
-            Rectangle pos_texto = new Rectangle(rc.Left, rc.Bottom+15, rc.Width, 32);
-            gui.font.DrawText(gui.sprite, buffer, pos_texto, DrawTextFormat.NoClip | DrawTextFormat.Top| DrawTextFormat.Center,
-                        sel ? c_selected : c_font);
-
-            // circulo 
-            gui.DrawCircle(new Vector2(rc.X + rc.Width / 2 + ox, rc.Y + rc.Height / 2+ oy), (int)(rc.Width / 2*ex), (int)(10*ex), c_border);
-
-            // relleno
-            if (sel)
-                gui.DrawDisc(new Vector2(rc.X + rc.Width / 2 + ox, rc.Y + rc.Height / 2 + oy), (int)((rc.Width / 2 - 10) * ex),
-                    Color.FromArgb((byte)(255 * tr), c_interior_sel.R, c_interior_sel.G, c_interior_sel.B));
-            else
-            if (state == itemState.pressed)
-            {
-                 gui.DrawDisc(new Vector2(rc.X + rc.Width / 2 + ox, rc.Y + rc.Height / 2 + oy), (int)((rc.Width / 2 - 10) * ex), Color.FromArgb(255, 255, 0, 0));
-                 float radio = (rc.Width / 2 + gui.delay_press * 100) * ex;
-                 gui.DrawCircle(new Vector2(rc.X + rc.Width / 2 + ox, rc.Y + rc.Height / 2 + oy), (int)radio, (int)(10 * ex), Color.FromArgb(255, 120, 120));
-             }
-
-
-            // dibujo el glyph 
-            if (textura!=null)
-            {
-                Vector3 pos = new Vector3(center.X, center.Y, 0);
-                Vector3 c0 = new Vector3(image_width / 2, image_height / 2, 0);
-                gui.sprite.Draw(textura, Rectangle.Empty, c0, pos, Color.FromArgb(255, 255, 255, 255));
-            }
-            // Restauro la transformacion del sprite
-            gui.sprite.Transform = matAnt;
-        }
-    }
-
+    
     public class gui_kinect_tile_button : gui_item
     {
         public int image_width;
         public int image_height;
+        public float ox, oy, ex, ey, k;
+        public bool sel;
+        public DXGui gui;
+        public bool border;
 
         public gui_kinect_tile_button(DXGui gui, String s, String imagen, int id, int x, int y, int dx,int dy,bool bscrolleable=true) :
             base(gui, s, x, y, dx, dy, id)
         {
             seleccionable = true;
             scrolleable = bscrolleable;
+            border = true;
             // Cargo la imagen en el gui
             if ((textura = DXGui.cargar_textura(imagen, true)) != null)
             {
@@ -532,81 +460,113 @@ namespace TgcViewer.Utils.Gui
             }
         }
 
-        public override void Render(DXGui gui)
-        {
-            bool sel = state == itemState.hover;
-            float tr = (float)(4 * (gui.delay_sel0 - gui.delay_sel));
-            Color color = sel ? c_selected : c_font;
 
-            Matrix matAnt = gui.sprite.Transform * Matrix.Identity;
-            float ex = gui.ex;
-            float ey = gui.ey;
-            float ox = gui.ox;
-            float oy = gui.oy;
+        public virtual void InitRender(DXGui p_gui)
+        {
+            // inicializacion comun a todos los controles
+            gui = p_gui;
+
+            // estado del control
+            sel = state == itemState.hover;
+
+            // Calcula la escala pp dicha
+            ex = gui.ex;
+            ey = gui.ey;
+            ox = gui.ox;
+            oy = gui.oy;
             if (scrolleable)
             {
                 // como este boton es un item scrolleable, tiene que aplicar tambien el origen sox,soy
                 ox += gui.sox;
                 oy += gui.soy;
             }
-            float k = 1;
+
+            // sobre escala por estar seleccionado
+            k = 1;
             if (sel)
             {
                 // aumento las escala
                 k = 1 + (float)(0.5 * (gui.delay_sel0 - gui.delay_sel));
-                ex *= k;
-                ey *= k;
+
+                // Le aplico una matriz de escalado adicional, solo sobre el TEXTO. 
+                // El glyph tiene su propia matriz
+
+                // Este kilombo es porque una cosa es la escala global que se aplica uniformemente en todo el gui
+                // y esta centrada en el origen. 
+                // Pero esta escala es local, del texto, que se aplica centra en centro del texto, luego de haberlo
+                // escalado por la escala global. 
+                gui.sprite.Transform = gui.sprite.Transform * Matrix.Transformation2D(new Vector2((center.X + ox) * ex, (center.Y + oy) * ey), 0, new Vector2(k, k),
+                        new Vector2(0, 0), 0, new Vector2(0, 0));
             }
+        }
 
-            Vector2 scale = new Vector2(ex, ey);
-            Vector2 offset = new Vector2(ox, oy);
-
-            gui.sprite.Transform = Matrix.Transformation2D(new Vector2(center.X, center.Y), 0, scale, new Vector2(0, 0), 0, offset) * gui.RTQ;
-
+        public virtual void RenderText()
+        {
             // dibujo el texto pp dicho
             String buffer = text;
-            Rectangle pos_texto = new Rectangle(rc.Left, rc.Bottom + 15, rc.Width, 32);
+            Color color = sel ? Color.FromArgb(gui.alpha, c_selected ): Color.FromArgb(gui.alpha, c_font);
+            Rectangle pos_texto = new Rectangle((int)ox + rc.Left, (int)oy + rc.Bottom + 15, rc.Width, 32);
             gui.font.DrawText(gui.sprite, buffer, pos_texto, DrawTextFormat.NoClip | DrawTextFormat.Top | DrawTextFormat.Center,
-                        sel ? Color.FromArgb(0, 32, 128) : c_font);
+                        sel ? Color.FromArgb(gui.alpha, 0, 32, 128) : Color.FromArgb(gui.alpha, c_font));
+        }
 
+        public virtual void RenderFrame()
+        {
             // Dibujo un rectangulo
-            int x0 = (int)(rc.Left+ox);
-            int x1 = (int)(rc.Right+ox);
-            int y0 = (int)(rc.Top+oy);
-            int y1 = (int)(rc.Bottom+oy);
+            int x0 = (int)(rc.Left + ox);
+            int x1 = (int)(rc.Right + ox);
+            int y0 = (int)(rc.Top + oy);
+            int y1 = (int)(rc.Bottom + oy);
 
             if (sel)
             {
-                int dmx = (int)(rc.Width * (k - 1) *0.5);
+                int dmx = (int)(rc.Width * (k - 1) * 0.5);
                 int dmy = (int)(rc.Height * (k - 1) * 0.5);
-                gui.RoundRect(x0 - dmx, y0 - dmy, x1 + dmx, y1 + dmy, 4, 2, Color.FromArgb(0, 0, 0),true);
+                gui.RoundRect(x0 - dmx, y0 - dmy, x1 + dmx, y1 + dmy, 4, 2, Color.FromArgb(gui.alpha, 0, 0, 0), true);
             }
             else
             if (state == itemState.pressed)
             {
-                gui.RoundRect(x0, y0, x1, y1, 4, 2, Color.FromArgb(32, 140, 55));
+                gui.RoundRect(x0, y0, x1, y1, 4, 2, Color.FromArgb(gui.alpha, 32, 140, 55));
                 float k2 = 1 + (float)(0.5 * gui.delay_press);
                 int dmx = (int)(rc.Width * (k2 - 1) * 1.1);
                 int dmy = (int)(rc.Height * (k2 - 1) * 1.1);
-                gui.RoundRect(x0 - dmx, y0 - dmy, x1 + dmx, y1 + dmy, 4, 8, Color.FromArgb(255, 0, 0));
+                gui.RoundRect(x0 - dmx, y0 - dmy, x1 + dmx, y1 + dmy, 4, 8, Color.FromArgb(gui.alpha, 255, 0, 0));
             }
             else
-                gui.RoundRect(x0, y0, x1, y1, 4, 2, Color.FromArgb(32, 140, 55));
+                gui.RoundRect(x0, y0, x1, y1, 4, 2, Color.FromArgb(gui.alpha, 32, 140, 55));
+        }
 
+        public virtual void RenderGlyph()
+        {
             // dibujo el glyph 
             if (textura != null)
             {
-                Vector3 pos = new Vector3(center.X, center.Y, 0);
-                Vector3 c0 = new Vector3(image_width / 2, image_height/ 2, 0);
-                
+                Vector3 pos = new Vector3(center.X * ex, center.Y * ey, 0);
+                Vector3 c0 = new Vector3(image_width / 2, image_height / 2, 0);
                 // Determino la escala para que entre justo
-                Vector2 scale2 = new Vector2(ex * (float)rc.Width / (float)image_width, ex * (float)rc.Height / (float)image_height);
-                gui.sprite.Transform = Matrix.Transformation2D(new Vector2(center.X, center.Y), 0, scale2, new Vector2(0, 0), 0, offset) * gui.RTQ;
-                gui.sprite.Draw(textura, c0, pos,Color.FromArgb(255, 255, 255, 255).ToArgb());
+                Vector2 scale = new Vector2(k * ex * (float)rc.Width / (float)image_width, k * ey * (float)rc.Height / (float)image_height);
+                Vector2 offset = new Vector2(ox * ex, oy * ey);
+                gui.sprite.Transform = Matrix.Transformation2D(new Vector2(center.X * ex, center.Y * ey), 0, scale, new Vector2(0, 0), 0, offset) * gui.RTQ;
+                gui.sprite.Draw(textura, c0, pos, Color.FromArgb(gui.alpha, 255, 255, 255).ToArgb());
             }
+        }
+
+        public override void Render(DXGui gui)
+        {
+            // Guardo la Matrix anterior
+            Matrix matAnt = gui.sprite.Transform * Matrix.Identity;
+            // Inicializo escalas, matrices, estados
+            InitRender(gui);
+            // Secuencia standard: texto + Frame + Glyph
+            RenderText();
+            if(border)
+                RenderFrame();
+            RenderGlyph();
             // Restauro la transformacion del sprite
             gui.sprite.Transform = matAnt;
         }
+        
     }
 
 
@@ -620,63 +580,41 @@ namespace TgcViewer.Utils.Gui
             seleccionable = false;
             auto_seleccionable = true;
         }
-
-        public override void Render(DXGui gui)
-        {
-            bool sel = state == itemState.hover;
-            float tr = (float)(4 * (gui.delay_sel0 - gui.delay_sel));
-            Color color = sel ? c_selected : c_font;
-
-            Matrix matAnt = gui.sprite.Transform * Matrix.Identity;
-            float ex = gui.ex;
-            float ey = gui.ey;
-            float ox = gui.ox;
-            float oy = gui.oy;
-            float k = 1;
-            if (sel)
-            {
-                // aumento las escala (muy levemente)
-                k = 1 + (float)(0.1 * (gui.delay_sel0 - gui.delay_sel));
-                ex *= k;
-                ey *= k;
-            }
-
-            Vector2 scale = new Vector2(ex, ey);
-            Vector2 offset = new Vector2(ox, oy);
-
-            gui.sprite.Transform = Matrix.Transformation2D(new Vector2(center.X, center.Y), 0, scale, new Vector2(0, 0), 0, offset) * gui.RTQ;
-
-            // Dibujo un rectangulo
-            int x0 = (int)(rc.Left + ox);
-            int x1 = (int)(rc.Right + ox);
-            int y0 = (int)(rc.Top + oy);
-            int y1 = (int)(rc.Bottom + oy);
-
-            if (sel || state == itemState.pressed)
-            {
-                int dmx = (int)(rc.Width * (k - 1) * 0.5);
-                int dmy = (int)(rc.Height * (k - 1) * 0.5);
-                gui.RoundRect(x0 - dmx, y0 - dmy, x1 + dmx, y1 + dmy, 4, 2, Color.FromArgb(0, 0, 0));
-            }
-            else
-                gui.RoundRect(x0, y0, x1, y1, 4, 2, Color.FromArgb(32, 140, 55));
-
-            // dibujo el glyph 
-            if (textura != null)
-            {
-                Vector3 pos = new Vector3(center.X, center.Y, 0);
-                Vector3 c0 = new Vector3(image_width / 2, image_height / 2, 0);
-
-                // Determino la escala para que entre justo
-                Vector2 scale2 = new Vector2(ex * (float)rc.Width / (float)image_width, ex * (float)rc.Height / (float)image_height);
-                gui.sprite.Transform = Matrix.Transformation2D(new Vector2(center.X, center.Y), 0, scale2, new Vector2(0, 0), 0, offset) * gui.RTQ;
-                gui.sprite.Draw(textura, c0, pos, Color.FromArgb(255, 255, 255, 255).ToArgb());
-            }
-            // Restauro la transformacion del sprite
-            gui.sprite.Transform = matAnt;
-        }
     }
 
+    public class gui_kinect_circle_button : gui_kinect_tile_button
+    {
+        public Color c_border = Color.FromArgb(0, 0, 0);
+        public Color c_interior_sel = Color.FromArgb(30, 240, 40);
+
+        public gui_kinect_circle_button(DXGui gui, String s, String imagen, int id, int x, int y, int r) :
+            base(gui, s,imagen,id, x, y, r, r)
+        {
+        }
+
+        public override void RenderFrame()
+        {
+            float tr = (float)(4 * (gui.delay_sel0 - gui.delay_sel));
+            // circulo 
+            int R = (int)(rc.Width / 2 * k);
+
+            gui.DrawCircle(new Vector2(rc.X + rc.Width / 2 + ox, rc.Y + rc.Height / 2 + oy), R, 10, Color.FromArgb(gui.alpha,c_border));
+
+            // relleno
+            if (sel)
+                gui.DrawDisc(new Vector2(rc.X + rc.Width / 2 + ox, rc.Y + rc.Height / 2 + oy), R - 10,
+                    Color.FromArgb((byte)(255 * tr), c_interior_sel.R, c_interior_sel.G, c_interior_sel.B));
+            
+            else
+            if (state == itemState.pressed)
+            {
+                gui.DrawDisc(new Vector2(rc.X + rc.Width / 2 + ox, rc.Y + rc.Height / 2 + oy), R-10, Color.FromArgb(255, 255, 0, 0));
+                int R2 = (int)(rc.Width / 2 + gui.delay_press * 100);
+                gui.DrawCircle(new Vector2(rc.X + rc.Width / 2 + ox, rc.Y + rc.Height / 2 + oy),R2, 10, Color.FromArgb(255, 120, 120));
+            }
+        }
+
+    }
 
     public class gui_mesh_button : gui_item
     {
@@ -693,11 +631,13 @@ namespace TgcViewer.Utils.Gui
             mesh = yparser.Mesh;
 
             mesh.AutoTransformEnable = false;
-            size = mesh.BoundingBox.calculateSize().Length() * 3;
+            size = mesh.BoundingBox.calculateSize().Length() * 1.2f;
             seleccionable = true;
             item3d = true;
 
         }
+
+            
 
         public override void Render(DXGui gui)
         {
@@ -708,25 +648,38 @@ namespace TgcViewer.Utils.Gui
             bool sel = state == itemState.hover;
             float tr = (float)(4 * (gui.delay_sel0 - gui.delay_sel));
             float k = 1;
+
+            float ox = gui.ox;
+            float oy = gui.oy;
+            float ex = gui.ex;
+            float ey = gui.ey;
+
             if (sel)
+            {
                 // aumento las escala
                 k = 1 / (1 + (float)(3 * (gui.delay_sel0 - gui.delay_sel)));
+                ex /= k;
+                ey /= k;
+            }
 
-            Vector3 viewDir = new Vector3((float)Math.Sin(ftime),0,(float)Math.Cos(ftime));
+            // Y roto la vista
+            float an = sel ? ftime : 0;
+            Vector3 viewDir = new Vector3((float)Math.Sin(an), 1.0f, (float)Math.Cos(an));
+            viewDir.Normalize();
             gui.camera.LookAt = mesh.Position;
-            gui.camera.LookFrom = mesh.Position + viewDir*(size*k);
+            gui.camera.LookFrom = mesh.Position + viewDir * (size );
             gui.camera.updateCamera();
             gui.camera.updateViewMatrix(d3dDevice);
 
             Viewport ant_viewport = d3dDevice.Viewport;
             Viewport btn_viewport = new Viewport();
-            btn_viewport.X = rc.X;
-            btn_viewport.Y = rc.Y;
-            btn_viewport.Width = rc.Width;
-            btn_viewport.Height = rc.Height;
+            btn_viewport.X = (int)(rc.X * ex);
+            btn_viewport.Y = (int)(rc.Y * ey);
+            btn_viewport.Width = (int)(rc.Width * ex);
+            btn_viewport.Height = (int)(rc.Height * ey);
             d3dDevice.Viewport = btn_viewport;
             d3dDevice.EndScene();
-            d3dDevice.Clear(ClearFlags.ZBuffer, 0, 1.0f, 0);
+            d3dDevice.Clear(ClearFlags.ZBuffer , 0, 1.0f, 0);
             d3dDevice.BeginScene();
             d3dDevice.SetRenderState(RenderStates.ZEnable, true);
             mesh.render();
@@ -736,6 +689,14 @@ namespace TgcViewer.Utils.Gui
 
             d3dDevice.Viewport = ant_viewport;
             d3dDevice.SetRenderState(RenderStates.ZEnable, false);
+
+            // Dibujo un rectangulo
+            int x0 = (int)(rc.Left + ox);
+            int x1 = (int)(rc.Right + ox);
+            int y0 = (int)(rc.Top + oy);
+            int y1 = (int)(rc.Bottom + oy);
+            gui.DrawRect(x0, y0, x1, y1,5, Color.FromArgb(gui.alpha, 32, 140, 55));
+
         }
 
         public void Dispose()
