@@ -40,6 +40,13 @@ namespace TgcViewer.Utils.Gui
         WM_COMMAND,
     }
 
+    public enum frameBorder
+    {
+        rectangular,
+        sin_borde,
+        redondeado,
+        solapa,
+    }
 
     public struct GuiMessage
     {
@@ -687,16 +694,15 @@ namespace TgcViewer.Utils.Gui
         }
 
         // Dialog Frame 
-        public gui_frame InsertFrame(String s, int x, int y, int dx, int dy,Color c_fondo)
+        public gui_frame InsertFrame(String s, int x, int y, int dx, int dy,Color c_fondo,frameBorder borde=frameBorder.rectangular)
         {
-            return (gui_frame)InsertItem(new gui_frame(this, s, x, y, dx, dy, c_fondo));
+            return (gui_frame)InsertItem(new gui_frame(this, s, x, y, dx, dy, c_fondo,borde));
         }
 
         // mesh buttons
-        public gui_mesh_button InsertMeshButton(int id, String s,String fname, int x, int y, int dx, int dy,
-            int xs, int ys, int dxs, int dys)
+        public gui_mesh_button InsertMeshButton(int id, String s,String fname, int x, int y, int dx, int dy)
         {
-            return (gui_mesh_button)InsertItem(new gui_mesh_button(this, s, fname, id, x, y, dx, dy, xs, ys, dxs, dys));
+            return (gui_mesh_button)InsertItem(new gui_mesh_button(this, s, fname, id, x, y, dx, dy));
         }
 
         public int GetDlgItemCtrl(int id)
@@ -917,7 +923,12 @@ namespace TgcViewer.Utils.Gui
 
 	        float da = M_PI/8.0f;
 	        float alfa;
-	
+
+            x0 += r;
+            y0 += r;
+            x1 -= r;
+            y1 -= r;
+
 	        int t =0;
 	        float x = x0;
 	        float y = y0;

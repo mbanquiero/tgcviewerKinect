@@ -321,7 +321,8 @@ namespace Examples.Test
             int r = 100;
             int r2 = 150;
 
-            gui.InsertFrame("Materiales utilizados en el Proyecto", x0, y0, dx, dy, Color.FromArgb(60, 120, 60));
+            gui.InsertFrame("Materiales utilizados en el Proyecto", x0, y0, dx, dy, Color.FromArgb(60, 120, 60),
+                    frameBorder.redondeado);
             y0 += 80;
             x0 = 80;
 
@@ -351,7 +352,6 @@ namespace Examples.Test
             int r = 100;
             int r2 = 150;
 
-            gui.InsertFrame("", x0, y0, 250, 150, Color.FromArgb(192, 192, 192));
             gui_kinect_circle_button static_item = abiertos ? gui.InsertKinectCircleButton(-1, "", "abiertos.png", x0+50, y0+20, r) :
                                               gui.InsertKinectCircleButton(-1, "", "cerrados.png", x0+50 ,y0+20, r);
             static_item.disabled = true;
@@ -359,7 +359,10 @@ namespace Examples.Test
 
             y0 = 150;
             gui.InsertFrame("Materiales Gabinetes " + (abiertos ? "abiertos" : "cerrados"),
-                    x0, y0, dx, dy, Color.FromArgb(60, 120, 60));
+                    x0, y0, dx, dy, Color.FromArgb(192, 192, 192));
+
+            gui.InsertFrame("", x0, 10, 250, 146, Color.FromArgb(192, 192, 192), frameBorder.solapa);
+
             x0 = 80;
             y0 += 80;
 
@@ -407,8 +410,7 @@ namespace Examples.Test
                 for (int j = 0; j < 2 && t < cant_texturas; ++j)
                 {
                     String s = "" + (t + 1);
-                    gui.InsertMeshButton(1000 + t, s, lista[t], x0 + i * (tdx + 20), y0 + j * (tdy + 20), tdx, tdy,
-                            x0+20,y0+20,300,300);
+                    gui.InsertMeshButton(1000 + t, s, lista[t], x0 + i * (tdx + 20), y0 + j * (tdy + 20), tdx, tdy);
                     ++t;
                 }
 
