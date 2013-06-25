@@ -705,6 +705,12 @@ namespace TgcViewer.Utils.Gui
             return (gui_mesh_button)InsertItem(new gui_mesh_button(this, s, fname, id, x, y, dx, dy));
         }
 
+        // Control de navegacion
+        public gui_navigate InsertNavigationControl( List<TgcMesh> p_meshes,int x, int y, int dx, int dy)
+        {
+            return (gui_navigate)InsertItem(new gui_navigate(this, p_meshes, x, y, dx, dy));
+        }
+
         public int GetDlgItemCtrl(int id)
         {
             int rta = -1;

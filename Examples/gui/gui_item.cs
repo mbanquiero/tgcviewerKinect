@@ -8,6 +8,7 @@ using System.Drawing;
 using TgcViewer.Utils.TgcSceneLoader;
 using TgcViewer.Utils.Input;
 using Examples.Focus;
+using TgcViewer.Utils.TgcGeometry;
 
 namespace TgcViewer.Utils.Gui
 {
@@ -759,6 +760,113 @@ namespace TgcViewer.Utils.Gui
             if (mesh != null)
                 mesh.dispose();
             base.Dispose();
+        }
+
+    }
+
+    public class gui_navigate : gui_item
+    {
+        float min_x,min_z;
+        float wdx, wdz;
+        private List<TgcMesh> _meshes;
+        float ex, ey;
+        public gui_navigate(DXGui gui, List<TgcMesh> p_meshes,int x, int y, int dx = 0, int dy = 0, int id = -1) :
+            base(gui, "", x, y, dx, dy, id)
+        {
+            _meshes = p_meshes;
+            seleccionable = false;
+            scrolleable = false;
+            // Calculo el bounding box de la escena
+            float x0 = 10000;
+            float z0 = 10000;
+            float x1= -10000;
+            float z1= -10000;
+            if (_meshes != null)
+                foreach (TgcMesh m in _meshes)
+                {
+                    TgcBoundingBox box = m.BoundingBox;
+                    if (box.PMin.X < x0)
+                        x0 = box.PMin.X;
+                    if (box.PMin.Z < z0)
+                        z0 = box.PMin.Z;
+                    if (box.PMax.X > x1)
+                        x1 = box.PMax.X;
+                    if (box.PMax.Z > z1)
+                        z1 = box.PMax.Z;
+                }
+
+            min_x = x0;
+            min_z = z0;
+            wdx = x1 - x0;
+            wdz = z1 - z0;
+
+            // Calculo la escala de toda la cocina
+            ex = (float)rc.Width / wdx;
+            ey = (float)rc.Height /wdz ;
+            if (ex < ey)
+                ey = ex;
+            else
+                ex = ey;
+
+
+        }
+
+        public override void Render(DXGui gui)
+        {
+            Device d3dDevice = GuiController.Instance.D3dDevice;
+
+            /*
+
+            Viewport ant_viewport = d3dDevice.Viewport;
+            Viewport btn_viewport = new Viewport();
+            btn_viewport.X = rc.X;
+            btn_viewport.Y = rc.Y;
+            btn_viewport.Width = rc.Width;
+            btn_viewport.Height = rc.Height;
+            d3dDevice.Viewport = btn_viewport;
+            d3dDevice.EndScene();
+
+            d3dDevice.Clear(ClearFlags.ZBuffer | ClearFlags.Target, Color.FromArgb(240, 250, 240), 1.0f, 0);
+            d3dDevice.BeginScene();
+            d3dDevice.SetRenderState(RenderStates.ZEnable, false);
+            // Guardo las trans. anteriores
+            Matrix ant_World = d3dDevice.Transform.World * Matrix.Identity;
+            Matrix ant_View = d3dDevice.Transform.View * Matrix.Identity;
+            Matrix ant_Proj = d3dDevice.Transform.Projection * Matrix.Identity;
+
+            // Seteo una vista ortogonal superior:
+            d3dDevice.Transform.Projection = Matrix.Identity;
+            d3dDevice.Transform.World  = Matrix.Identity;
+            float offset = Math.Min(min_x,min_z);
+            float ds = offset + Math.Max(wdx, wdz);
+            float k = (float)rc.Width / (float )rc.Height;
+
+            Matrix matView = new Matrix();
+            matView.M11 = 2.0f / ds;        matView.M12 = 0;                matView.M13 = 0;                matView.M14 = 0;
+            matView.M21 = 0;                matView.M22 = -2.0f / ds;       matView.M23 = 0;                matView.M24 = 0; 
+            matView.M31 = 0;                matView.M32 = 0;                matView.M33 = 0;                matView.M34 = 0; 
+            matView.M41 = -1 + offset / ds; matView.M42 = -1 + offset / ds; matView.M33 = -1+ offset / ds;  matView.M44 = 1;
+            d3dDevice.Transform.View = matView;
+            d3dDevice.RenderState.FillMode =  FillMode.WireFrame;
+
+            // dibujo la escena pp dicha
+            if (_meshes != null)
+                foreach (TgcMesh m in _meshes)
+                    m.render();
+
+            // Restuaro el viewport
+            d3dDevice.Viewport = ant_viewport;
+            // Restauro las transformaciones
+            d3dDevice.Transform.Projection = ant_Proj * Matrix.Identity;
+            d3dDevice.Transform.World = ant_World * Matrix.Identity;
+            d3dDevice.Transform.View = ant_View * Matrix.Identity;
+
+            d3dDevice.SetRenderState(RenderStates.AlphaBlendEnable, true);
+            d3dDevice.RenderState.FillMode = FillMode.Solid;
+             */ 
+
+            // Dibujo un rectangulo que representa toda la cocina
+            gui.DrawRect(rc.Left, rc.Top, (int)(rc.X+wdx*ex), (int)(rc.Y+wdz*ey), 4,Color.FromArgb(gui.alpha, 32, 140, 55));
         }
 
     }

@@ -167,7 +167,9 @@ namespace Examples.Test
 
                         case ID_MODO_NAVEGACION:
                             // Modo navegacion
-                            gui.MessageBox("Modo navegación Activado", "Focus Kinect Interaction");
+                            //gui.MessageBox("Modo navegación Activado", "Focus Kinect Interaction");
+                            // Paso a modo navegacion
+                            ModoNavegacion();
                             break;
 
                         case ID_APP_EXIT:
@@ -415,9 +417,18 @@ namespace Examples.Test
                 }
 
             gui.InsertKinectCircleButton(IDCANCEL, "Cancel", "cancel.png", x0 + dx - 300, y0+dy-250, 80);
-
-
         }
+
+
+        public void ModoNavegacion()
+        {
+            gui.InitDialog(false, false);
+            int dx = 250;
+            int W = (int)(GuiController.Instance.Panel3d.Width / gui.ex);
+            int H = (int)(GuiController.Instance.Panel3d.Height / gui.ey);
+            gui.InsertNavigationControl(_meshes,W-dx-5,5,dx,dx);
+        }
+
 
         /// <summary>
         /// Limpiar toda la escena
