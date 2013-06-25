@@ -33,6 +33,7 @@ namespace TgcViewer.Utils.Gui
         public bool right_hand_sel = true;
         public Gesture currentGesture = Gesture.Nothing;
         public TgcKinectSkeletonData kinectData;
+        public bool hay_sensor = false;             // indica si hay una kinect connectada
 
 		public kinect_input()
         {
@@ -59,81 +60,83 @@ namespace TgcViewer.Utils.Gui
 
         public void GetInputFromMouse()
         {
-            //Aplicar datos de kinect
-            right_hand.position.X = kinectData.Current.RightHandPos.X;
-            right_hand.position.Y = kinectData.Current.RightHandPos.Y;
-            right_hand.position.Z = 1;
-
-            left_hand.position.X = kinectData.Current.LefttHandPos.X;
-            left_hand.position.Y = kinectData.Current.LefttHandPos.Y;
-            left_hand.position.Z = 1;
-
-
-
-
-
-            /*
-            // boton derecho cambia de mano
-            if (GuiController.Instance.D3dInput.buttonPressed(Input.TgcD3dInput.MouseButtons.BUTTON_RIGHT))
+            if (hay_sensor)
             {
-                right_hand_sel = !right_hand_sel;
-                // llevo el mouse a la posicion de la mano
-                SetCursorPos();
-                // y termino de procesar
-                return;
-            }
+                // Si hay un sensor conectado
+                //Aplicar datos de kinect
+                right_hand.position.X = kinectData.Current.RightHandPos.X;
+                right_hand.position.Y = kinectData.Current.RightHandPos.Y;
+                right_hand.position.Z = 1;
 
-            //st_hand hand = right_hand_sel ? right_hand : left_hand;
-
-            float sx = GuiController.Instance.D3dInput.Xpos;
-            float sy = GuiController.Instance.D3dInput.Ypos;
-            float sz = GuiController.Instance.D3dInput.WheelPos;
-
-            if(right_hand_sel)
-            {
-                right_hand.position.X = sx;
-                right_hand.position.Y = sy;
-                right_hand.position.Z = sz;
+                left_hand.position.X = kinectData.Current.LefttHandPos.X;
+                left_hand.position.Y = kinectData.Current.LefttHandPos.Y;
+                left_hand.position.Z = 1;
             }
             else
             {
-                left_hand.position.X = sx;
-                left_hand.position.Y = sy;
-                left_hand.position.Z = sz;
-            }
-            */
+                // Simula el sensor con el mouse y el teclado
+                // boton derecho cambia de mano
+                if (GuiController.Instance.D3dInput.buttonPressed(Input.TgcD3dInput.MouseButtons.BUTTON_RIGHT))
+                {
+                    right_hand_sel = !right_hand_sel;
+                    // llevo el mouse a la posicion de la mano
+                    SetCursorPos();
+                    // y termino de procesar
+                    return;
+                }
 
+                //st_hand hand = right_hand_sel ? right_hand : left_hand;
+
+                float sx = GuiController.Instance.D3dInput.Xpos;
+                float sy = GuiController.Instance.D3dInput.Ypos;
+                float sz = GuiController.Instance.D3dInput.WheelPos;
+
+                if (right_hand_sel)
+                {
+                    right_hand.position.X = sx;
+                    right_hand.position.Y = sy;
+                    right_hand.position.Z = sz;
+                }
+                else
+                {
+                    left_hand.position.X = sx;
+                    left_hand.position.Y = sy;
+                    left_hand.position.Z = sz;
+                }
+            }
         }
 
         public void GestureRecognition()
         {
             currentGesture = Gesture.Nothing;
 
-            //Ver en que mano chequear gesto
-            int handIdx = right_hand_sel ? TgcKinectSkeletonData.RIGHT_HAND : TgcKinectSkeletonData.LEFT_HAND;
-
-            //Ver si la derivada en Z fue positiva (y poca varianza en x e y)
-            if (kinectData.HandsAnalysisData[handIdx].Z.DiffAvg > 0.1f && kinectData.HandsAnalysisData[handIdx].X.Variance < 1f && kinectData.HandsAnalysisData[handIdx].Y.Variance < 1f)
+            if (hay_sensor)
             {
-                currentGesture = Gesture.Pressing;
+                //Ver en que mano chequear gesto
+                int handIdx = right_hand_sel ? TgcKinectSkeletonData.RIGHT_HAND : TgcKinectSkeletonData.LEFT_HAND;
+
+                //Ver si la derivada en Z fue positiva (y poca varianza en x e y)
+                if (kinectData.HandsAnalysisData[handIdx].Z.DiffAvg > 0.1f && kinectData.HandsAnalysisData[handIdx].X.Variance < 1f && kinectData.HandsAnalysisData[handIdx].Y.Variance < 1f)
+                {
+                    currentGesture = Gesture.Pressing;
+                }
+
             }
-
-
-
-            /*
-            // Espacio para abrir / cerrar la mano
-            if (GuiController.Instance.D3dInput.keyPressed(Microsoft.DirectX.DirectInput.Key.Space))
+            else
             {
-                if (right_hand_sel)
-                    right_hand.gripping = !right_hand.gripping;
-                else
-                    left_hand.gripping = !left_hand.gripping;
-            }
+                // Espacio para abrir / cerrar la mano
+                if (GuiController.Instance.D3dInput.keyPressed(Microsoft.DirectX.DirectInput.Key.Space))
+                {
+                    if (right_hand_sel)
+                        right_hand.gripping = !right_hand.gripping;
+                    else
+                        left_hand.gripping = !left_hand.gripping;
+                }
 
-            // el wheel del mouse, representa la mano hacia atras, en el movimiento de seleccion
-            if ((right_hand_sel && right_hand.position.Z>0) || (!right_hand_sel && left_hand.position.Z > 0))
-                currentGesture = Gesture.Pressing;
-             */ 
+                // el wheel del mouse, representa la mano hacia atras, en el movimiento de seleccion
+                if ((right_hand_sel && right_hand.position.Z > 0) || (!right_hand_sel && left_hand.position.Z > 0))
+                    currentGesture = Gesture.Pressing;
+            }
         }
 
     }

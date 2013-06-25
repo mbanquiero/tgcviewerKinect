@@ -111,99 +111,98 @@ namespace Examples.Test
                 //Pasar data de kinect a GUI
                 gui.kinect.kinectData = data;
 
-
-                // ------------------------------------------------
-                GuiMessage msg = gui.Update(elapsedTime);
-                Vector3 ViewDir = camera.LookAt - camera.LookFrom;
-                // proceso el msg
-                switch (msg.message)
-                {
-                    case MessageType.WM_COMMAND:
-                        switch (msg.id)
-                        {
-                            case 0:
-                            case 1:
-                                // Resultados OK, y CANCEL del ultimo messagebox
-                                gui.EndDialog();
-                                break;
-
-                            case 100:
-                                // Abrir Proyecto
-                                OpenFileDlg();
-                                break;
-
-                            case 101:
-                                // Grabar Proyecto
-                                gui.MessageBox("Proyecto Grabado", "Focus Kinect Interaction");
-                                break;
-
-                            case 102:
-                                // Modo navegacion
-                                gui.MessageBox("Modo navegación Activado", "Focus Kinect Interaction");
-                                break;
-
-                            case 103:
-                                // Cambiar Textura
-                                texturasFocus.TextureGroupDlg(gui);
-                                break;
-
-                            case 104:
-                                // Cambiar Mesh
-                                MeshDlg();
-                                break;
-
-                            case 200:
-                                // Play, alejo el punto de vista
-                                camera.LookFrom = camera.LookFrom - ViewDir * 0.1f;
-                                camera.updateCamera();
-                                break;
-                            case 201:
-                                // Play, alejo el punto de vista
-                                camera.LookFrom = camera.LookFrom + ViewDir * 0.1f;
-                                camera.updateCamera();
-                                break;
-                            default:
-
-                                //Cambiar de escena
-                                if (msg.id >= 3000)
-                                {
-                                    disposeScene();
-
-                                    // Selecciono una escena Cargo la escena y Termino el dialogo
-                                    var loader = new FocusParser();
-                                    int nro_escena = msg.id - 3000 + 1;
-                                    string fileScene = GuiController.Instance.ExamplesMediaDir + "Focus\\escena" + nro_escena + ".dat";
-                                    loader.FromFile(fileScene);
-                                    _meshes = loader.Escene;
-                                    _conjuntos = loader._focusSets;
-                                    gui.EndDialog();
-                                }
-
-                                //Cambiar de textura
-                                else if (msg.id >= 2000)
-                                {
-                                    texturasFocus.applyTextureChange(_meshes, _conjuntos, msg.id);
-                                    gui.EndDialog();
-                                }
-
-                                //Seleccionar categoria de textura
-                                else if (msg.id >= 1000)
-                                {
-                                    gui.EndDialog();
-                                    texturasFocus.TextureDlg(gui, msg.id);
-                                }
-
-
-                                break;
-                        }
-                        break;
-                    default:
-                        break;
-                }
-
-
-
             }
+
+
+            // ------------------------------------------------
+            GuiMessage msg = gui.Update(elapsedTime);
+            Vector3 ViewDir = camera.LookAt - camera.LookFrom;
+            // proceso el msg
+            switch (msg.message)
+            {
+                case MessageType.WM_COMMAND:
+                    switch (msg.id)
+                    {
+                        case 0:
+                        case 1:
+                            // Resultados OK, y CANCEL del ultimo messagebox
+                            gui.EndDialog();
+                            break;
+
+                        case 100:
+                            // Abrir Proyecto
+                            OpenFileDlg();
+                            break;
+
+                        case 101:
+                            // Grabar Proyecto
+                            gui.MessageBox("Proyecto Grabado", "Focus Kinect Interaction");
+                            break;
+
+                        case 102:
+                            // Modo navegacion
+                            gui.MessageBox("Modo navegación Activado", "Focus Kinect Interaction");
+                            break;
+
+                        case 103:
+                            // Cambiar Textura
+                            texturasFocus.TextureGroupDlg(gui);
+                            break;
+
+                        case 104:
+                            // Cambiar Mesh
+                            MeshDlg();
+                            break;
+
+                        case 200:
+                            // Play, alejo el punto de vista
+                            camera.LookFrom = camera.LookFrom - ViewDir * 0.1f;
+                            camera.updateCamera();
+                            break;
+                        case 201:
+                            // Play, alejo el punto de vista
+                            camera.LookFrom = camera.LookFrom + ViewDir * 0.1f;
+                            camera.updateCamera();
+                            break;
+                        default:
+
+                            //Cambiar de escena
+                            if (msg.id >= 3000)
+                            {
+                                disposeScene();
+
+                                // Selecciono una escena Cargo la escena y Termino el dialogo
+                                var loader = new FocusParser();
+                                int nro_escena = msg.id - 3000 + 1;
+                                string fileScene = GuiController.Instance.ExamplesMediaDir + "Focus\\escena" + nro_escena + ".dat";
+                                loader.FromFile(fileScene);
+                                _meshes = loader.Escene;
+                                _conjuntos = loader._focusSets;
+                                gui.EndDialog();
+                            }
+
+                            //Cambiar de textura
+                            else if (msg.id >= 2000)
+                            {
+                                texturasFocus.applyTextureChange(_meshes, _conjuntos, msg.id);
+                                gui.EndDialog();
+                            }
+
+                            //Seleccionar categoria de textura
+                            else if (msg.id >= 1000)
+                            {
+                                gui.EndDialog();
+                                texturasFocus.TextureDlg(gui, msg.id);
+                            }
+
+
+                            break;
+                    }
+                    break;
+                default:
+                    break;
+            }
+
 
             if (_meshes != null)
             {
