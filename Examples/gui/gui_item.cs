@@ -124,7 +124,7 @@ namespace TgcViewer.Utils.Gui
 
             if (sel)
             {
-                gui.RoundRect(rc.Left - 1, rc.Top - 3, rc.Right + 1, rc.Bottom + 3, 6, 2, 
+                gui.RoundRect(rc.Left - 8, rc.Top - 6, rc.Right + 8, rc.Bottom + 6, 6, 3, 
                     Color.FromArgb(gui.alpha, DXGui.c_selected_frame), false);
                 int dy = rc.Height / 2;
 
@@ -291,11 +291,13 @@ namespace TgcViewer.Utils.Gui
     // Rectangular frame
     public class gui_frame :gui_item
     {
-
-        public gui_frame(DXGui gui, String s, int x, int y, int dx , int dy , Color color )  :
+        public frameBorder borde;
+        public gui_frame(DXGui gui, String s, int x, int y, int dx , int dy , Color color , 
+                frameBorder tipo_borde=frameBorder.rectangular)  :
             base(gui, s, x, y, dx, dy)
         {
             c_fondo = color;
+            borde = tipo_borde;
         }
 
 
@@ -303,11 +305,54 @@ namespace TgcViewer.Utils.Gui
         {
             bool sel = gui.sel == nro_item ? true: false;
 
-	        // interior
-		    gui.DrawRect(rc.X,rc.Y,rc.X+rc.Width , rc.Y + rc.Height,1,Color.FromArgb(gui.alpha,c_fondo),true);
+            switch (borde)
+            {
+                case frameBorder.sin_borde:
+                    // dibujo solo interior
+                    gui.DrawRect(rc.X, rc.Y, rc.X + rc.Width, rc.Y + rc.Height, 1, Color.FromArgb(gui.alpha, c_fondo), true);
+                    break;
 
-	        // contorno
-            gui.DrawRect(rc.X, rc.Y, rc.X + rc.Width, rc.Y + rc.Height, 6, Color.FromArgb(gui.alpha,DXGui.c_frame_border));
+                case frameBorder.redondeado:
+                    // Interior
+                    gui.RoundRect(rc.X, rc.Y, rc.X + rc.Width, rc.Y + rc.Height, 30, 6, Color.FromArgb(gui.alpha, c_fondo),true);
+                    // Contorno
+                    gui.RoundRect(rc.X, rc.Y, rc.X + rc.Width, rc.Y + rc.Height, 30, 6, Color.FromArgb(gui.alpha, DXGui.c_frame_border));
+                    break;
+
+                case frameBorder.solapa:
+                    {
+                        float r = 40;
+                        Vector2 []pt = new Vector2 [10];
+                        pt[0].X = rc.X;
+                        pt[0].Y = rc.Y + rc.Height;
+                        pt[1].X = rc.X;
+                        pt[1].Y = rc.Y;
+                        pt[2].X = rc.X + rc.Width - r;
+                        pt[2].Y = rc.Y;
+                        pt[3].X = rc.X + rc.Width;
+                        pt[3].Y = rc.Y + r;
+                        pt[4].X = rc.X + rc.Width;
+                        pt[4].Y = rc.Y + rc.Height;
+                        pt[5].X = rc.X;
+                        pt[5].Y = rc.Y + rc.Height;
+                        pt[6] = pt[0];
+
+                        gui.DrawSolidPoly(pt, 7, Color.FromArgb(gui.alpha, c_fondo),false);
+                        gui.DrawPoly(pt,5, 6,DXGui.c_frame_border);
+                    }
+
+                    break;
+
+                case frameBorder.rectangular:
+                default:
+
+                    // interior
+                    gui.DrawRect(rc.X, rc.Y, rc.X + rc.Width, rc.Y + rc.Height, 1, Color.FromArgb(gui.alpha, c_fondo), true);
+                    // contorno
+                    gui.DrawRect(rc.X, rc.Y, rc.X + rc.Width, rc.Y + rc.Height, 6, Color.FromArgb(gui.alpha, DXGui.c_frame_border));
+                    break;
+
+            }
 
 	        // Texto del frame
             Rectangle rc2 = new Rectangle(rc.X, rc.Y, rc.X + rc.Width, rc.Y + rc.Height);
@@ -619,11 +664,9 @@ namespace TgcViewer.Utils.Gui
     public class gui_mesh_button : gui_item
     {
         public float size;
-        public Rectangle rc_sel;
-        public gui_mesh_button(DXGui gui, String s, String fname, int id, int x, int y, int dx, int dy, int xs, int ys, int dxs, int dys) :
+        public gui_mesh_button(DXGui gui, String s, String fname, int id, int x, int y, int dx, int dy) :
             base(gui,s , x, y, dx, dy,id)
         {
-            rc_sel = new Rectangle(xs, ys, dxs, dys);
 
             //TgcSceneLoader.TgcSceneLoader loader = new TgcSceneLoader.TgcSceneLoader();
             //TgcSceneLoader.TgcScene currentScene = loader.loadSceneFromFile(fname);
