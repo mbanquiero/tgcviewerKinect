@@ -15,6 +15,7 @@ using Examples.Kinect;
 using TgcViewer.Utils.Gui;
 using TgcViewer.Utils.Input;
 using Examples.Expo;
+using Microsoft.Kinect;
 
 namespace Examples.Test
 {
@@ -84,6 +85,7 @@ namespace Examples.Test
             tgcKinect = new TgcKinect();
             tgcKinect.init();
             tgcKinect.DebugSkeleton.init();
+            gui.kinect.hay_sensor = !tgcKinect.sin_sensor;
 
 
             // levanto el GUI
@@ -118,7 +120,17 @@ namespace Examples.Test
             TgcKinectSkeletonData data = tgcKinect.update();
             if (data.Active)
             {
-                tgcKinect.DebugSkeleton.render(data.Current.KinectSkeleton);
+
+                if (data.Current.KinectSkeleton.Joints[JointType.HandRight].TrackingState == JointTrackingState.Tracked)
+                {
+                    tgcKinect.DebugSkeleton.render(data.Current.KinectSkeleton);
+                    gui.kinect.kinectData = data;
+
+                    Vector3 hipPos = TgcKinectUtils.toVector3(data.Current.KinectSkeleton.Joints[Microsoft.Kinect.JointType.HipCenter].Position);
+                    Vector3 handPos = TgcKinectUtils.toVector3(data.Current.KinectSkeleton.Joints[Microsoft.Kinect.JointType.HandRight].Position);
+                    Vector3 diff = handPos - hipPos;
+                    BigLogger.log("diff", diff.Z);
+                } 
             }
 
             if (_meshes != null)
@@ -275,6 +287,8 @@ namespace Examples.Test
             gui.Render();
             GuiController.Instance.FpsCamera.Enable = true;
 
+
+            BigLogger.renderLog();
 
         }
 

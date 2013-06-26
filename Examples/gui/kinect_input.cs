@@ -60,13 +60,27 @@ namespace TgcViewer.Utils.Gui
 
         public void GetInputFromMouse()
         {
-            if (hay_sensor)
+            if (hay_sensor && kinectData != null)
             {
-                // Si hay un sensor conectado
-                //Aplicar datos de kinect
+                /*
+                //Zona de seguridad
+                Vector3 hipPos = TgcKinectUtils.toVector3(kinectData.Current.KinectSkeleton.Joints[Microsoft.Kinect.JointType.HipCenter].Position);
+                Vector3 handPos = TgcKinectUtils.toVector3(kinectData.Current.KinectSkeleton.Joints[Microsoft.Kinect.JointType.HandRight].Position);
+                Vector3 diff = handPos - hipPos;
+                if (diff.Z >= -4f)
+                {
+                    // Si hay un sensor conectado
+                    //Aplicar datos de kinect
+                    right_hand.position.X = kinectData.Current.RightHandPos.X;
+                    right_hand.position.Y = kinectData.Current.RightHandPos.Y;
+                    right_hand.position.Z = 1;
+                }
+                */
+
                 right_hand.position.X = kinectData.Current.RightHandPos.X;
                 right_hand.position.Y = kinectData.Current.RightHandPos.Y;
                 right_hand.position.Z = 1;
+                
 
                 left_hand.position.X = kinectData.Current.LefttHandPos.X;
                 left_hand.position.Y = kinectData.Current.LefttHandPos.Y;
@@ -110,13 +124,16 @@ namespace TgcViewer.Utils.Gui
         {
             currentGesture = Gesture.Nothing;
 
-            if (hay_sensor)
+            if (hay_sensor && kinectData != null)
             {
                 //Ver en que mano chequear gesto
-                int handIdx = right_hand_sel ? TgcKinectSkeletonData.RIGHT_HAND : TgcKinectSkeletonData.LEFT_HAND;
+                Microsoft.Kinect.JointType handIdx = right_hand_sel ? Microsoft.Kinect.JointType.HandRight : Microsoft.Kinect.JointType.HandLeft;
 
-                //Ver si la derivada en Z fue positiva (y poca varianza en x e y)
-                if (kinectData.HandsAnalysisData[handIdx].Z.DiffAvg > 0.1f && kinectData.HandsAnalysisData[handIdx].X.Variance < 1f && kinectData.HandsAnalysisData[handIdx].Y.Variance < 1f)
+                //Ver si se quedo quieto
+                Vector3 hipPos = TgcKinectUtils.toVector3(kinectData.Current.KinectSkeleton.Joints[Microsoft.Kinect.JointType.HipCenter].Position);
+                Vector3 handPos = TgcKinectUtils.toVector3(kinectData.Current.KinectSkeleton.Joints[handIdx].Position);
+                Vector3 diff = handPos - hipPos;
+                if (diff.Z < -4.5f)
                 {
                     currentGesture = Gesture.Pressing;
                 }

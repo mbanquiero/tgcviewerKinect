@@ -73,7 +73,8 @@ namespace Examples.Test
             rightHandPointer = new TgcSprite();
             rightHandPointer.Texture = TgcTexture.createTexture(GuiController.Instance.ExamplesMediaDir + "right_pointer.png");
 
-            GuiController.Instance.Modifiers.addFloat("speed", 0.5f, 10f, 1f);
+            GuiController.Instance.Modifiers.addFloat("speedX", 0.5f, 10f, 1f);
+            GuiController.Instance.Modifiers.addFloat("speedY", 0.5f, 10f, 1f);
             GuiController.Instance.Modifiers.addBoolean("showValues", "showValues", false);
         }
 
@@ -87,7 +88,7 @@ namespace Examples.Test
             Device d3dDevice = GuiController.Instance.D3dDevice;
 
             //Velocidad de movimiento 2D
-            tgcKinect.Hands2dSpeed = (float)GuiController.Instance.Modifiers["speed"];
+            tgcKinect.Hands2dSpeed = new Vector2((float)GuiController.Instance.Modifiers["speedX"], (float)GuiController.Instance.Modifiers["speedY"]);
 
             //Actualizar estado de kinect
             TgcKinectSkeletonData data = tgcKinect.update();

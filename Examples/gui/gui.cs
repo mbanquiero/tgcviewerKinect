@@ -94,6 +94,9 @@ namespace TgcViewer.Utils.Gui
         public float M_PI = (float)Math.PI;
         public float M_PI_2 = (float)Math.PI * 0.5f;
 
+        public const float TIMER_QUIETO_PRESSING = 3;
+        public const float MENU_OFFSET = 200;
+        public const float MENU_OFFSET_SALIDA = 800;
 
         public gui_item[] items = new gui_item[MAX_GUI_ITEMS];
 		public int cant_items;
@@ -110,6 +113,7 @@ namespace TgcViewer.Utils.Gui
         public float delay_show;
         public bool hidden;
         public Matrix RTQ;              // Matriz de cambio de Rectangle to Quad (Trapezoidal quad)
+        public float timer_sel;
 
         // Estilos del dialogo actual
         public bool trapezoidal_style;
@@ -208,6 +212,7 @@ namespace TgcViewer.Utils.Gui
             cursor_izq = tipoCursor.sin_cursor;
             cursor_der = tipoCursor.targeting;
             alpha = 1;
+            timer_sel = 0;
 
         }
 
@@ -267,6 +272,7 @@ namespace TgcViewer.Utils.Gui
             foco = -1;
 	        rbt = -1;
 	        sel = -1;
+            timer_sel = 0;
             Show();
             delay_initDialog = delay?1.0f:0;
         }
@@ -322,13 +328,13 @@ namespace TgcViewer.Utils.Gui
 
             // Hardcodeado escala dinamica
 
-            if (GuiController.Instance.D3dInput.keyPressed(Microsoft.DirectX.DirectInput.Key.Subtract))
+            if (GuiController.Instance.D3dInput.keyPressed(Microsoft.DirectX.DirectInput.Key.F2))
             {
                 ex /= 1.1f;
                 ey = ex;
             }
             else
-            if (GuiController.Instance.D3dInput.keyPressed(Microsoft.DirectX.DirectInput.Key.Add))
+            if (GuiController.Instance.D3dInput.keyPressed(Microsoft.DirectX.DirectInput.Key.F3))
             {
                 ex *= 1.1f;
                 ey = ex;
@@ -348,11 +354,11 @@ namespace TgcViewer.Utils.Gui
             // Autohide dialog
             if (autohide)
             {
-                if (mouse_x < 10 && hidden)
+                if (mouse_x < MENU_OFFSET && hidden)
                     // El dialogo esta oculto y se mueve con el mouse a posicion izquierda
                     Show();
                 else
-                if (mouse_x > 400 && !hidden)
+                if (mouse_x > MENU_OFFSET_SALIDA && !hidden)
                     // El dialogo esta visible y se mueve con el mouse a posicion derecha
                     Show(false);
             }
@@ -432,29 +438,43 @@ namespace TgcViewer.Utils.Gui
 
                 // inicio el timer de seleccion
                 delay_sel0 = delay_sel = 0.5f;
+
+                // inicio el timer de quieto
+                timer_sel = 0;
             }
 
-            switch(kinect.currentGesture)
+            //Ver si se quedo quieto suficiente tiempo como para presionar boton
+            if (timer_sel > TIMER_QUIETO_PRESSING)
             {
-                case Gesture.Nothing:
-                default:
-                    break;
-
-                case Gesture.Pressing:
-                    // Presiona el item actual
-                    if (sel != -1)
-                    {
-                        items[sel].state = itemState.pressed;
-                        // inicio el timer de press
-                        delay_press0 = delay_press = 0.5f;
-                        // genero el mensaje
-                        msg.message = MessageType.WM_PRESSING;
-                        msg.id = items[sel].item_id;
-                        // guardo el item presionado, por si se mueve del mismo antes que se genere el evento wm_command
-                        item_pressed = sel;
-                    }
-                    break;
+                timer_sel = 0;
+                kinect.currentGesture = Gesture.Pressing;
             }
+
+            if (!hidden)
+            {
+                switch (kinect.currentGesture)
+                {
+                    case Gesture.Nothing:
+                    default:
+                        break;
+
+                    case Gesture.Pressing:
+                        // Presiona el item actual
+                        if (sel != -1)
+                        {
+                            items[sel].state = itemState.pressed;
+                            // inicio el timer de press
+                            delay_press0 = delay_press = 0.5f;
+                            // genero el mensaje
+                            msg.message = MessageType.WM_PRESSING;
+                            msg.id = items[sel].item_id;
+                            // guardo el item presionado, por si se mueve del mismo antes que se genere el evento wm_command
+                            item_pressed = sel;
+                        }
+                        break;
+                }
+            }
+            
 
             // Actualizo la pos del mouse
             mouse_x = sx;
@@ -475,6 +495,15 @@ namespace TgcViewer.Utils.Gui
                     delay_initDialog = 0;
             }
 
+            if (sel != -1)
+            {
+                timer_sel += elapsed_time;
+            }
+            else
+            {
+                timer_sel = 0;
+            }
+
 
             if (delay_show > 0)
             {
@@ -483,9 +512,9 @@ namespace TgcViewer.Utils.Gui
                     delay_show  = 0;
 
                 if(hidden)
-                    ox = -200 * (2-delay_show);
+                    ox = -MENU_OFFSET * (2-delay_show);
                 else
-                    ox = -200 * delay_show;
+                    ox = -MENU_OFFSET * delay_show;
             }
 
             if (delay_sel > 0)

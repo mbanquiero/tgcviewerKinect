@@ -6,6 +6,7 @@ using TgcViewer.Utils.TgcGeometry;
 using TgcViewer;
 using System.Drawing;
 using Microsoft.DirectX.Direct3D;
+using TgcViewer.Utils;
 
 namespace Examples.Kinect
 {
@@ -15,7 +16,7 @@ namespace Examples.Kinect
         KinectSensor sensor;
         KinectStatus lastStatus;
         Skeleton[] auxSkeletonData;
-        bool sin_sensor;
+        public bool sin_sensor;
 
         TgcKinectSkeletonData data;
         /// <summary>
@@ -77,11 +78,11 @@ namespace Examples.Kinect
             set { bodyProportion = value; }
         }
 
-        float hands2dSpeed;
+        Vector2 hands2dSpeed;
         /// <summary>
-        /// Factor de velocidad de movimiento de las manos en 2D
+        /// Factor de velocidad de movimiento de las manos en 2D en x e y
         /// </summary>
-        public float Hands2dSpeed
+        public Vector2 Hands2dSpeed
         {
             get { return hands2dSpeed; }
             set { hands2dSpeed = value; }
@@ -108,7 +109,7 @@ namespace Examples.Kinect
             data = new TgcKinectSkeletonData();
             historyFramesCount = 50;
             bodyProportion = 6;
-            hands2dSpeed = 1;
+            hands2dSpeed = new Vector2(1, 2);
             cursorSize = new Vector2(64, 64);
         }
 
@@ -248,27 +249,38 @@ namespace Examples.Kinect
         /// </summary>
         private void updateHandsScreenPos(Skeleton rawSkeleton, TgcKinectSkeletonData data)
         {
-            //Calcular boundingBox 2D para la mano derecha: entre la cabeza, el hombro derecho y la spine.
-            RectangleF rScreenRect = TgcKinectUtils.computeScreenRect(new SkeletonPoint[]{
-                rawSkeleton.Joints[JointType.ShoulderRight].Position,
-                rawSkeleton.Joints[JointType.Head].Position,
-                rawSkeleton.Joints[JointType.Spine].Position,
-            });
+            /*
+            Vector2 hipRight = TgcKinectUtils.toVector2(rawSkeleton.Joints[JointType.HipRight].Position);
+            Vector2 hipLeft = TgcKinectUtils.toVector2(rawSkeleton.Joints[JointType.HipLeft].Position);
+            Vector2 spine = TgcKinectUtils.toVector2(rawSkeleton.Joints[JointType.Spine].Position);
+            Vector2 head = TgcKinectUtils.toVector2(rawSkeleton.Joints[JointType.Head].Position);
 
-            //Calcular boundingBox 2D para la mano izquierda: entre la cabeza, el hombro izq y la spine.
-            RectangleF lScreenRect = TgcKinectUtils.computeScreenRect(new SkeletonPoint[]{
-                rawSkeleton.Joints[JointType.ShoulderLeft].Position,
-                rawSkeleton.Joints[JointType.Head].Position,
-                rawSkeleton.Joints[JointType.Spine].Position,
-            });
+            RectangleF bounds = new RectangleF();
+            bounds.X = hipLeft.X;
+            bounds.Width = hipRight.X - hipLeft.X;
 
-            //Agrandar ambos boundingBox hacia el lado donde esta la mano
-            rScreenRect.Width += rScreenRect.Width / 2;
-            lScreenRect.X -= lScreenRect.Width / 2;
+            float aspectRatio = TgcD3dDevice.aspectRatio;
+            bounds.Y = spine.Y + (head.Y - spine.Y) / 4;
+            bounds.Height = (bounds.Width / aspectRatio) * 2.5f;
+
+
+
+            RectangleF rScreenRect = new RectangleF();
+            rScreenRect.X = bounds.X + bounds.Width * 0.25f;
+            rScreenRect.Width = bounds.Width;
+            rScreenRect.Y = bounds.Y;
+            rScreenRect.Height = bounds.Height;
+
+            RectangleF lScreenRect = new RectangleF();
+            lScreenRect.X = bounds.X + bounds.Width * 0.25f;
+            lScreenRect.Width = bounds.Width;
+            lScreenRect.Y = bounds.Y;
+            lScreenRect.Height = bounds.Height;
+
 
             //Multiplicar posicion 2D de las manos por factor de velocidad
-            Vector2 rHand2dPos = TgcKinectUtils.toVector2(rawSkeleton.Joints[JointType.HandRight].Position) * hands2dSpeed;
-            Vector2 lHand2dPos = TgcKinectUtils.toVector2(rawSkeleton.Joints[JointType.HandLeft].Position) * hands2dSpeed;
+            Vector2 rHand2dPos = TgcKinectUtils.toVector2(rawSkeleton.Joints[JointType.HandRight].Position);
+            Vector2 lHand2dPos = TgcKinectUtils.toVector2(rawSkeleton.Joints[JointType.HandLeft].Position);
 
             //Clampear posicion 2D de manos segun el boundingBox 2D
             rHand2dPos = TgcKinectUtils.clampToRect(rHand2dPos, rScreenRect);
@@ -278,17 +290,52 @@ namespace Examples.Kinect
             Viewport screenViewport = GuiController.Instance.D3dDevice.Viewport;
             data.Current.RightHandPos = TgcKinectUtils.mapPointToScreen(rHand2dPos, rScreenRect, screenViewport, cursorSize);
             data.Current.LefttHandPos = TgcKinectUtils.mapPointToScreen(lHand2dPos, lScreenRect, screenViewport, cursorSize);
-
-            /* Forma MARIAN
-            SkeletonPoint p1 = rawSkeleton.Joints[JointType.HandRight].Position;
-            SkeletonPoint p2 = rawSkeleton.Joints[JointType.Head].Position;
-            data.Current.RightHandPos = new Vector2(
-                (((p1.X - p2.X) + 0.12f) / 0.37f) * GuiController.Instance.D3dDevice.Viewport.Width,
-                (1 - (((p1.Y - p2.Y) + 0.3f) / 0.36f)) * GuiController.Instance.D3dDevice.Viewport.Height);
-
-            p1 = rawSkeleton.Joints[JointType.HandLeft].Position;
-            data.Current.LefttHandPos = new Vector2(p1.X - p2.X, p1.Y - p2.Y);
             */
+
+
+
+            //0 a -0.15
+
+            float width = GuiController.Instance.D3dDevice.Viewport.Width;
+            float height = GuiController.Instance.D3dDevice.Viewport.Height;
+            float minX = -0.2f;
+            float maxX = 0f;
+            float minY = 0.1f;
+            float maxY = 0.5f;
+            Vector2 rHandPos = TgcKinectUtils.toVector2(rawSkeleton.Joints[JointType.HandRight].Position);
+            Vector2 headPos = TgcKinectUtils.toVector2(rawSkeleton.Joints[JointType.Head].Position);
+            Vector2 diff = headPos - rHandPos;
+
+            Vector2 rHandPos2D = new Vector2(
+                (1 - ((diff.X - minX) / (maxX - minX))) * width,
+                ((diff.Y - minY) / (maxY - minY)) * height
+                );
+
+            if (rHandPos2D.X < 0)
+            {
+                rHandPos2D.X = 0;
+            }
+            if (rHandPos2D.X >= width)
+            {
+                rHandPos2D.X = width;
+            }
+            if (rHandPos2D.Y < 0)
+            {
+                rHandPos2D.Y = 0;
+            }
+            if (rHandPos2D.Y >= height)
+            {
+                rHandPos2D.Y = height;
+            }
+
+            data.Current.RightHandPos = rHandPos2D;
+
+
+            data.Current.LefttHandPos = diff;
+
+
+
+
         }
 
         /// <summary>
@@ -396,6 +443,7 @@ namespace Examples.Kinect
             }
              */ 
 
+            /*
             //Ajuste de proporciones
             if (scalePos)
             {
@@ -414,7 +462,7 @@ namespace Examples.Kinect
                     destination.Joints[j] = temp;
                 }
             }
-
+            */
         }
 
 
@@ -467,16 +515,20 @@ namespace Examples.Kinect
                     // position corrections, so we will manually
                     // filter when these are complete.
 
-                    // Typical smoothing parameters for the joints:
-                     var parameters = new TransformSmoothParameters
-                     {
-                         Smoothing = 0.25f,
-                        Correction = 0.25f,
-                        Prediction = 0.75f,
-                        JitterRadius = 0.1f,
-                        MaxDeviationRadius = 0.04f 
-                     };
-                     this.sensor.SkeletonStream.Enable(parameters);
+                    // Smoothed with some latency.
+                    // Filters out medium jitters.
+                    // Good for a menu system that needs to be smooth but
+                    // doesn't need the reduced latency as much as gesture recognition does.
+                    TransformSmoothParameters smoothingParam = new TransformSmoothParameters();
+                    {
+                        smoothingParam.Smoothing = 0.5f;
+                        smoothingParam.Correction = 0.1f;
+                        smoothingParam.Prediction = 0.5f;
+                        smoothingParam.JitterRadius = 0.1f;
+                        smoothingParam.MaxDeviationRadius = 0.1f;
+                    };
+
+                    this.sensor.SkeletonStream.Enable(smoothingParam);
                      //this.sensor.ColorStream.Enable(ColorImageFormat.RgbResolution640x480Fps30);
                      this.sensor.DepthStream.Enable(DepthImageFormat.Resolution320x240Fps30);
                      this.sensor.SkeletonStream.EnableTrackingInNearRange = true; // Enable skeleton tracking in near mode

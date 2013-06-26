@@ -119,19 +119,17 @@ namespace Examples.Kinect
         /// </summary>
         public static Vector2 mapPointToScreen(Vector2 p, RectangleF rect, Viewport screenViewport, Vector2 cursorSize)
         {
-            Vector2 q = new Vector2();
+            Vector2 q = new Vector2(p.X, p.Y);
 
-            //Traslacion y escalado para screen-space
-            float translateX = screenViewport .X - rect.X;
-            float translateY = screenViewport.Y - rect.Y;
-            float scaleX = (screenViewport.Width - cursorSize.X) / rect.Width;
-            float scaleY = (screenViewport.Height - cursorSize.Y) / rect.Height;
+            q.X -= rect.X;
+            q.Y -= rect.Y;
 
-            //Invertir Y
-            p.Y = (rect.Y + rect.Height - p.Y) + rect.Y;
+            q.X /= rect.Width;
+            q.Y /= rect.Height;
 
-            q.X = (p.X + translateX) * scaleX;
-            q.Y = (p.Y + translateY) * scaleY;
+            q.X *= (screenViewport.Width - cursorSize.X);
+            q.Y = (1 - q.Y) * (screenViewport.Height - cursorSize.Y);
+
             return q;
         }
     }
