@@ -38,6 +38,7 @@ namespace TgcViewer.Utils.Gui
         WM_NOTHING,
         WM_PRESSING,
         WM_COMMAND,
+        WM_CLOSE,
     }
 
     public enum frameBorder
@@ -179,14 +180,14 @@ namespace TgcViewer.Utils.Gui
         public kinect_input kinect = new kinect_input();
 
         // Camara TGC
-        public FocusCamera camera;
+        public TgcFpsCamera camera;
 
         // Parametros srcoll automatico
         public float vel_scroll = 500;           // pixeles por segundo
         public float min_sox = -3000;
         public float max_sox = 3000;
 
-
+        public bool closing;                    // indica que el dialogo se esta cerrado. 
 
         public DXGui()
         {
@@ -204,6 +205,7 @@ namespace TgcViewer.Utils.Gui
             // The smallest button we’ve designed is 220 by 220px in 1920x1080 resolution
             KINECT_BUTTON_SIZE_X = (int)((float)KINECT_BUTTON_SIZE_X * W / 1920.0f);
             KINECT_BUTTON_SIZE_Y = (int)((float)KINECT_BUTTON_SIZE_Y * H/ 1080.0f);
+            closing = false;
 
         }
 
@@ -224,6 +226,7 @@ namespace TgcViewer.Utils.Gui
             cursor_der = tipoCursor.targeting;
             alpha = 1;
             timer_sel = 0;
+            closing = false;
         }
 
         public void Dispose()
@@ -286,6 +289,7 @@ namespace TgcViewer.Utils.Gui
             ox = oy = 0;
             Show();
             delay_initDialog = delay?1.0f:0;
+            closing = false;
         }
 
         public void EndDialog()
@@ -305,6 +309,13 @@ namespace TgcViewer.Utils.Gui
             // Resteo cualquier item seleccionado anterior y timer de seleccion
             sel = -1;
             timer_sel = 0;
+
+            // el closing puede tardar un huevo, porque usualmente despues de hacer el endialog, se ejecuta
+            // el comando que se selecciono, y si esa opcion tarda mucho, cuando se repinta el dialogo anterior
+            // todo el tiempo en iddle que esta almacenado en el elapsedtime, se asimila a la posicion del mouse
+            // y se puede dar el caso que se presione (hoover) un boton no deseado
+            // entonces, al cerrar ponemos este flag en true hasta el siguiente frame donde el sistema retome el control
+            closing = true;
         }
 
 
@@ -499,6 +510,18 @@ namespace TgcViewer.Utils.Gui
 
         public GuiMessage Update(float elapsed_time)
         {
+
+            if (closing)
+            {
+                // el dialogo se estaba cerrando, 
+                closing = false;
+                GuiMessage msg = new GuiMessage();
+                msg.message = MessageType.WM_CLOSE;
+                msg.id = -1;
+                item_pressed = -1;
+                return msg;     // y termino de procesar por este frame
+            }
+
             // Actualizo los timers
             time += elapsed_time;
 
@@ -584,6 +607,7 @@ namespace TgcViewer.Utils.Gui
 		public void Render()
         {
             Device d3dDevice = GuiController.Instance.D3dDevice;
+
 
             // elimino cualquier textura que me cague el modulate del vertex color
             d3dDevice.SetTexture(0, null);

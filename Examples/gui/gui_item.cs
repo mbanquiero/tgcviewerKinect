@@ -698,8 +698,8 @@ namespace TgcViewer.Utils.Gui
         public override void Render(DXGui gui)
         {
             Device d3dDevice = GuiController.Instance.D3dDevice;
-            Vector3 LA = gui.camera.LookAt*1;
-            Vector3 LF = gui.camera.LookFrom*1;
+            Vector3 LA = gui.camera.getLookAt();
+            Vector3 LF = gui.camera.getPosition();
 
             bool sel = state == itemState.hover;
             float tr = (float)(4 * (gui.delay_sel0 - gui.delay_sel));
@@ -741,9 +741,10 @@ namespace TgcViewer.Utils.Gui
             float an = sel ? ftime*1.5f : 0;
             Vector3 viewDir = new Vector3((float)Math.Sin(an), 0.3f, (float)Math.Cos(an));
             viewDir.Normalize();
-            gui.camera.LookAt = mesh.Position;
+            // LA = mesh.Position;
             float dist = sel ? size * 1.2f : size * 1.5f;
-            gui.camera.LookFrom = mesh.Position + viewDir * dist;
+            //  LF = mesh.Position + viewDir * dist;
+            gui.camera.setCamera(mesh.Position + viewDir * dist,mesh.Position);
             gui.camera.updateCamera();
             gui.camera.updateViewMatrix(d3dDevice);
 
@@ -760,8 +761,9 @@ namespace TgcViewer.Utils.Gui
             d3dDevice.SetRenderState(RenderStates.ZEnable, true);
             mesh.render();
 
-            gui.camera.LookAt = LA*1;
-            gui.camera.LookFrom = LF*1;
+            gui.camera.setCamera(LA, LF);
+            //gui.camera.LookAt = LA*1;
+            //gui.camera.LookFrom = LF*1;
 
             d3dDevice.Viewport = ant_viewport;
             d3dDevice.SetRenderState(RenderStates.ZEnable, false);
@@ -784,12 +786,10 @@ namespace TgcViewer.Utils.Gui
     {
         float min_x,min_z;
         float wdx, wdz;
-        private List<TgcMesh> _meshes;
         float ex, ey;
         public gui_navigate(DXGui gui, List<TgcMesh> p_meshes,int x, int y, int dx = 0, int dy = 0, int id = -1) :
             base(gui, "", x, y, dx, dy, id)
         {
-            _meshes = p_meshes;
             seleccionable = false;
             scrolleable = false;
             // Calculo el bounding box de la escena
@@ -797,8 +797,8 @@ namespace TgcViewer.Utils.Gui
             float z0 = 10000;
             float x1= -10000;
             float z1= -10000;
-            if (_meshes != null)
-                foreach (TgcMesh m in _meshes)
+            if (p_meshes != null)
+                foreach (TgcMesh m in p_meshes)
                 {
                     TgcBoundingBox box = m.BoundingBox;
                     if (box.PMin.X < x0)
@@ -830,59 +830,41 @@ namespace TgcViewer.Utils.Gui
         public override void Render(DXGui gui)
         {
             Device d3dDevice = GuiController.Instance.D3dDevice;
+            gui.camera.updateCamera();
 
-            /*
-
-            Viewport ant_viewport = d3dDevice.Viewport;
-            Viewport btn_viewport = new Viewport();
-            btn_viewport.X = rc.X;
-            btn_viewport.Y = rc.Y;
-            btn_viewport.Width = rc.Width;
-            btn_viewport.Height = rc.Height;
-            d3dDevice.Viewport = btn_viewport;
-            d3dDevice.EndScene();
-
-            d3dDevice.Clear(ClearFlags.ZBuffer | ClearFlags.Target, Color.FromArgb(240, 250, 240), 1.0f, 0);
-            d3dDevice.BeginScene();
-            d3dDevice.SetRenderState(RenderStates.ZEnable, false);
-            // Guardo las trans. anteriores
-            Matrix ant_World = d3dDevice.Transform.World * Matrix.Identity;
-            Matrix ant_View = d3dDevice.Transform.View * Matrix.Identity;
-            Matrix ant_Proj = d3dDevice.Transform.Projection * Matrix.Identity;
-
-            // Seteo una vista ortogonal superior:
-            d3dDevice.Transform.Projection = Matrix.Identity;
-            d3dDevice.Transform.World  = Matrix.Identity;
-            float offset = Math.Min(min_x,min_z);
-            float ds = offset + Math.Max(wdx, wdz);
-            float k = (float)rc.Width / (float )rc.Height;
-
-            Matrix matView = new Matrix();
-            matView.M11 = 2.0f / ds;        matView.M12 = 0;                matView.M13 = 0;                matView.M14 = 0;
-            matView.M21 = 0;                matView.M22 = -2.0f / ds;       matView.M23 = 0;                matView.M24 = 0; 
-            matView.M31 = 0;                matView.M32 = 0;                matView.M33 = 0;                matView.M34 = 0; 
-            matView.M41 = -1 + offset / ds; matView.M42 = -1 + offset / ds; matView.M33 = -1+ offset / ds;  matView.M44 = 1;
-            d3dDevice.Transform.View = matView;
-            d3dDevice.RenderState.FillMode =  FillMode.WireFrame;
-
-            // dibujo la escena pp dicha
-            if (_meshes != null)
-                foreach (TgcMesh m in _meshes)
-                    m.render();
-
-            // Restuaro el viewport
-            d3dDevice.Viewport = ant_viewport;
-            // Restauro las transformaciones
-            d3dDevice.Transform.Projection = ant_Proj * Matrix.Identity;
-            d3dDevice.Transform.World = ant_World * Matrix.Identity;
-            d3dDevice.Transform.View = ant_View * Matrix.Identity;
-
-            d3dDevice.SetRenderState(RenderStates.AlphaBlendEnable, true);
-            d3dDevice.RenderState.FillMode = FillMode.Solid;
-             */ 
+            float aspect_ratio = (float)GuiController.Instance.Panel3d.Width / (float)GuiController.Instance.Panel3d.Height;
+            float fov = (float)Math.PI / 4.0f * aspect_ratio;
+            Vector3 LA = gui.camera.getLookAt();
+            Vector3 LF = gui.camera.getPosition();
+            
+            Vector2 lf = new Vector2(LF.X, LF.Z);
+            Vector2 la = new Vector2(LA.X, LA.Z);
 
             // Dibujo un rectangulo que representa toda la cocina
             gui.DrawRect(rc.Left, rc.Top, (int)(rc.X+wdx*ex), (int)(rc.Y+wdz*ey), 4,Color.FromArgb(gui.alpha, 32, 140, 55));
+            // Dibujo el look from
+            gui.DrawDisc(new Vector2(rc.X + (lf.X - min_x) * ex, rc.Y + (wdz - lf.Y + min_z) * ey), 10, Color.FromArgb(0, 0, 0));
+
+
+            Vector2[] pt = new Vector2[100];
+            int cant_p = 1;
+            pt[0].X = rc.X + (lf.X - min_x) * ex;
+            pt[0].Y = rc.Y + (wdz - lf.Y + min_z) * ey;
+            for(int i=0;i<50;++i)
+            {
+                Matrix rot = Matrix.RotationY(-fov / 2.0f + (float)i / 50.0f * fov);
+                Vector3 A = LA - LF;
+                A.TransformNormal(rot);
+                Vector2 a = new Vector2(A.X, A.Z);
+                a.Normalize();
+                a = a * 2000 + lf;
+                pt[cant_p].X = rc.X + (a.X - min_x) * ex;
+                pt[cant_p].Y = rc.Y + (wdz - a.Y + min_z) * ey;
+                ++cant_p;
+            }
+            pt[cant_p++] = pt[0];
+            gui.DrawSolidPoly(pt,cant_p , Color.FromArgb(100, 100,255,100));
+
         }
 
     }

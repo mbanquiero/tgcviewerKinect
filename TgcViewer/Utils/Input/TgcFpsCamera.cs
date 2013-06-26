@@ -388,6 +388,7 @@ namespace TgcViewer.Utils.Input
         private void setPosition(Vector3 pos)
         {
             eye = pos;
+            lookAt = eye + viewDir;     // toco mariano
             reconstructViewMatrix(false);
         }
 
@@ -564,6 +565,7 @@ namespace TgcViewer.Utils.Input
                 viewDir = zAxis;
                 lookAt = eye + viewDir;
             }
+
 
             // Reconstruct the view matrix.
 

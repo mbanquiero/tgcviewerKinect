@@ -45,7 +45,7 @@ namespace Examples.Test
 
         // gui
         DXGui gui = new DXGui();
-        FocusCamera camera = new FocusCamera();
+        //FocusCamera camera = new FocusCamera();
 
 
 
@@ -107,7 +107,7 @@ namespace Examples.Test
             gui.InsertMenuItem(ID_APP_EXIT, "Salir", "salir.png",x0, y0 += dy2, dx, dy);
 
             // Camara para 3d support
-            gui.camera = camera;
+            gui.camera = GuiController.Instance.FpsCamera;
         }
 
         public override void render(float elapsedTime)
@@ -151,7 +151,6 @@ namespace Examples.Test
 
             // ------------------------------------------------
             GuiMessage msg = gui.Update(elapsedTime);
-            Vector3 ViewDir = camera.LookAt - camera.LookFrom;
             // proceso el msg
             switch (msg.message)
             {
@@ -231,17 +230,6 @@ namespace Examples.Test
                             texturasFocus.TextureDlg(gui, 1000);        // 1000 = maderas
                             break;
 
-                        case 200:
-                            // Play, alejo el punto de vista
-                            camera.LookFrom = camera.LookFrom - ViewDir * 0.1f;
-                            camera.updateCamera();
-                            break;
-                        case 201:
-                            // Play, alejo el punto de vista
-                            camera.LookFrom = camera.LookFrom + ViewDir * 0.1f;
-                            camera.updateCamera();
-                            break;
-
                         default:
                             if (msg.id >= 4000)
                             {
@@ -287,11 +275,7 @@ namespace Examples.Test
                 default:
                     break;
             }
-            camera.Enable = true;
             gui.Render();
-            GuiController.Instance.FpsCamera.Enable = true;
-
-
             BigLogger.renderLog();
 
         }
@@ -464,6 +448,9 @@ namespace Examples.Test
             int W = (int)(GuiController.Instance.Panel3d.Width / gui.ex);
             int H = (int)(GuiController.Instance.Panel3d.Height / gui.ey);
             gui.InsertNavigationControl(_meshes,W-dx-5,5,dx,dx);
+            gui_item cancel_btn = gui.InsertKinectCircleButton(IDCANCEL, "Cancel", "cancel.png", W - gui.KINECT_BUTTON_SIZE_X - 40,
+                    H- gui.KINECT_BUTTON_SIZE_X - 40, gui.KINECT_BUTTON_SIZE_X);
+
         }
 
 
