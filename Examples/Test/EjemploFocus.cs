@@ -93,21 +93,18 @@ namespace Examples.Test
 
             //Configurar todas las texturas que se pueden elegir para cambiar
             texturasFocus = new TexturasFocus();
-
-
-            // Inicio un dialogo modalless
             gui.InitDialog(true);
-            int x0 = 40;
-            int y0 = 40;
-            int dy = 45;
-            int dx = 350;
-            gui.InsertMenuItem(ID_FILE_OPEN, "Abrir Proyecto", x0, y0, dx, dy);
-            gui.InsertMenuItem(ID_FILE_SAVE, "Grabar Proyecto", x0, y0 += 40, dx, dy,false);
-            gui.InsertMenuItem(ID_MODO_NAVEGACION, "Modo Navegacion", x0, y0 += 40, dx, dy);
-            gui.InsertMenuItem(ID_CAMBIAR_MATERIALES, "Modificar Materiales", x0, y0 += 40, dx, dy);
-            gui.InsertMenuItem(ID_CAMBIAR_TEXTURAS, "Modificar Texturas", x0, y0 += 40, dx, dy, false);
-            gui.InsertMenuItem(ID_CAMBIAR_EMPUJADORES, "Cambiar Empujadores", x0, y0 += 40, dx, dy);
-            gui.InsertMenuItem(ID_APP_EXIT, "Salir", x0, y0 += 40, dx, dy);
+            int x0 = 70;
+            int y0 = 10;
+            int dy = 120;
+            int dy2 = dy;
+            int dx = 400;
+            gui.InsertMenuItem(ID_FILE_OPEN, "Abrir Proyecto","open.png", x0, y0, dx, dy);
+            gui.InsertMenuItem(ID_MODO_NAVEGACION, "Modo Navegacion", "navegar.png", x0, y0 += dy2, dx, dy);
+            gui.InsertMenuItem(ID_CAMBIAR_MATERIALES, "Modificar Materiales", "editmat.png", x0, y0 += dy2, dx, dy);
+            gui.InsertMenuItem(ID_CAMBIAR_TEXTURAS, "Modificar Texturas","edit_tex.png", x0, y0 += dy2, dx, dy);
+            gui.InsertMenuItem(ID_CAMBIAR_EMPUJADORES, "Modificar Manijas", "manijas.png",x0, y0 += dy2, dx, dy);
+            gui.InsertMenuItem(ID_APP_EXIT, "Salir", "salir.png",x0, y0 += dy2, dx, dy);
 
             // Camara para 3d support
             gui.camera = camera;
@@ -178,8 +175,6 @@ namespace Examples.Test
                             break;
 
                         case ID_MODO_NAVEGACION:
-                            // Modo navegacion
-                            //gui.MessageBox("Modo navegación Activado", "Focus Kinect Interaction");
                             // Paso a modo navegacion
                             ModoNavegacion();
                             break;
@@ -189,9 +184,13 @@ namespace Examples.Test
                             gui.MessageBox("Desea Salir del Sistema?", "Focus Kinect Interaction");
                             break;
 
+                        case ID_CAMBIAR_TEXTURAS:
+                            // Cambiar Texturas
+                            texturasFocus.TextureGroupDlg(gui);
+                            break;
+                        
                         case ID_CAMBIAR_MATERIALES:
                             // Cambiar Materiales
-                            //texturasFocus.TextureGroupDlg(gui);
                             MaterialesDlg();
                             break;
 
@@ -244,9 +243,14 @@ namespace Examples.Test
                             break;
 
                         default:
-                            //Cambiar de escena
+                            if (msg.id >= 4000)
+                            {
+                                //Cambiar de Empujador
+                            }
+                            else
                             if (msg.id >= 3000)
                             {
+                                //Cambiar de escena
                                 disposeScene();
 
                                 // Selecciono una escena Cargo la escena y Termino el dialogo
@@ -296,16 +300,30 @@ namespace Examples.Test
         {
             gui.InitDialog(false, false);
 
-            int x0 = -20;
-            int y0 = 10;
-            int dy = 400;
-            int dx = 1000;
-            int tdx = 200;
-            int tdy = 150;
+            int W = GuiController.Instance.Panel3d.Width;
+            int H = GuiController.Instance.Panel3d.Height;
 
-            gui.InsertFrame("Seleccione el Proyecto", x0, y0, dx, dy, Color.FromArgb(60, 120, 60));
-            x0 += 50;
-            y0 += 80;
+
+            int x0 = -20;
+            int y0 = 40;
+            int dy = 600;
+            int dx = W + 40;
+
+            gui.InsertFrame("Seleccione el Proyecto", x0, y0, dx, dy, Color.FromArgb(60, 120, 60),frameBorder.sin_borde);
+            int sdx = 500;
+            int sdy = 120;
+            gui.InsertKinectScrollButton(0, "scroll_left.png", x0+40, y0 + dy - sdy - 50, sdx, sdy);
+            gui.InsertKinectScrollButton(1, "scroll_right.png", x0+40 + sdx + 20, y0 + dy - sdy - 50, sdx, sdy);
+
+            gui_item cancel_btn = gui.InsertKinectCircleButton(IDCANCEL, "Cancel", "cancel.png", W - gui.KINECT_BUTTON_SIZE_X - 40,
+                    y0 + dy - gui.KINECT_BUTTON_SIZE_X - 50, gui.KINECT_BUTTON_SIZE_X);
+            cancel_btn.scrolleable = false;      // fijo el boton de cancelar
+
+
+            x0 += 40;
+            y0 += 140;
+            int tdx = 280;
+            int tdy = 200;
 
             List<string> lista = new List<string>();
             lista.Add("escenas\\escena1.png");
@@ -317,11 +335,8 @@ namespace Examples.Test
             for (int t = 0; t < cant_texturas; ++t)
             {
                 String s = "" + (t + 1);
-                gui.InsertKinectTileButton(3000 + t, s, lista[t], x0 + t * (tdx + 20), y0, tdx, tdy);
+                gui.InsertKinectTileButton(3000 + t, s, lista[t], x0 + t * (tdx + 40), y0, tdx, tdy);
             }
-
-            gui.InsertKinectScrollButton(0, "scroll_left.png", x0, y0 + dy - tdy - 40, dx / 2 - 40, 80);
-            gui.InsertKinectScrollButton(1, "scroll_right.png", x0 + dx / 2 + 20, y0 + dy - tdy - 40, dx / 2 - 40, 80);
 
 
         }
@@ -330,29 +345,37 @@ namespace Examples.Test
         {
             gui.InitDialog(false, false);
 
-            int x0 = 20;
-            int y0 = 20;
-            int dy = 500;
-            int dx = 800;
-            int r = 100;
-            int r2 = 150;
+            int W = GuiController.Instance.Panel3d.Width;
+            int H = GuiController.Instance.Panel3d.Height;
+
+            int x0 = 10;
+            int y0 = 10;
+            int dy = H - 20;
+            int dx = W - 20;
+            int r = 200;
+            int r2 = 300;
 
             gui.InsertFrame("Materiales utilizados en el Proyecto", x0, y0, dx, dy, Color.FromArgb(60, 120, 60),
                     frameBorder.redondeado);
-            y0 += 80;
+
+            gui_item cancel_btn = gui.InsertKinectCircleButton(IDCANCEL, "Cancel", "cancel.png", W - gui.KINECT_BUTTON_SIZE_X - 40,
+                    y0 + dy - gui.KINECT_BUTTON_SIZE_X - 50, gui.KINECT_BUTTON_SIZE_X);
+            cancel_btn.scrolleable = false;      // fijo el boton de cancelar
+
+            y0 += 100;
             x0 = 80;
 
             gui.InsertKinectCircleButton(400, "Abiertos", "abiertos.png", x0, y0, r);
             gui.InsertKinectCircleButton(401, "Cerrados", "cerrados.png", x0+=r2, y0, r);
             gui.InsertKinectCircleButton(402, "Puertas", "puertas.png", x0+=r2 , y0, r);
             gui.InsertKinectCircleButton(403, "Cajones", "cajones.png", x0+=r2, y0, r);
-            y0 += r + 100;
+            y0 += r + 120;
             x0 = 80;
             gui.InsertKinectCircleButton(404, "Zocalo", "zocalo.png", x0, y0, r);
             gui.InsertKinectCircleButton(405, "Patas", "patas.png", x0+=r2, y0, r);
             gui.InsertKinectCircleButton(406, "Manijas", "manijas.png", x0+=r2, y0, r);
 
-            gui.InsertKinectCircleButton(IDCANCEL, "Cancel", "cancel.png", 700, 350, r);
+         
 
 
         }
@@ -361,32 +384,28 @@ namespace Examples.Test
         {
             gui.InitDialog(false, false,true);
 
+            int W = GuiController.Instance.Panel3d.Width;
+            int H = GuiController.Instance.Panel3d.Height;
+
             int x0 = 20;
-            int y0 = 10;
-            int dy = 300;
-            int dx = 800;
-            int r = 100;
-            int r2 = 150;
+            int y0 = 20;
+            int dy = 600;
+            int dx = W - 20;
+            int r = 300;
+            int r2 = 350;
 
-            gui_kinect_circle_button static_item = abiertos ? gui.InsertKinectCircleButton(-1, "", "abiertos.png", x0+50, y0+20, r) :
-                                              gui.InsertKinectCircleButton(-1, "", "cerrados.png", x0+50 ,y0+20, r);
-            static_item.disabled = true;
-            static_item.border = false;
-
-            y0 = 150;
             gui.InsertFrame("Materiales Gabinetes " + (abiertos ? "abiertos" : "cerrados"),
                     x0, y0, dx, dy, Color.FromArgb(192, 192, 192));
-
-            gui.InsertFrame("", x0, 10, 250, 146, Color.FromArgb(192, 192, 192), frameBorder.solapa);
+            gui_item cancel_btn = gui.InsertKinectCircleButton(IDCANCEL, "Cancel", "cancel.png", W - gui.KINECT_BUTTON_SIZE_X - 40,
+                    y0 + dy - gui.KINECT_BUTTON_SIZE_X - 50, gui.KINECT_BUTTON_SIZE_X);
+            cancel_btn.scrolleable = false;      // fijo el boton de cancelar
 
             x0 = 80;
             y0 += 80;
 
             gui.InsertKinectTileButton(500, "Standard", "Maderas\\Blanco.jpg", x0, y0, r,r);
             gui.InsertKinectTileButton(501, "Fondo", "Maderas\\09-guindo.jpg", x0 += r2, y0, r, r);
-            gui.InsertKinectTileButton(502, "Tap.Mel", "Maderas\\09-guindo.jpg", x0 += r2, y0, r, r);
-            gui.InsertKinectTileButton(503, "Tap.Abs", "Maderas\\09-guindo.jpg", x0 += r2, y0, r, r);
-            gui.InsertKinectCircleButton(IDCANCEL, "Cancel", "cancel.png", x0 += r2, y0, r);
+            gui.InsertKinectTileButton(502, "Canto", "Maderas\\09-guindo.jpg", x0 += r2, y0, r, r);
 
 
         }
@@ -396,41 +415,45 @@ namespace Examples.Test
         {
             gui.InitDialog(false, false);
 
-            int x0 = -20;
-            int y0 = 10;
-            int dy = 400;
-            int dx = 1000;
-            int tdx = 150;
-            int tdy = 100;
+            int W = GuiController.Instance.Panel3d.Width;
+            int H = GuiController.Instance.Panel3d.Height;
 
-            gui.InsertFrame("Seleccione el empujador", x0, y0, dx, dy, Color.FromArgb(240, 240, 240));
+            int x0 = -20;
+            int y0 = 40;
+            int dy = 600;
+            int dx = W + 50;
+            int tdx = 260;
+            int tdy = 200;
+
+            gui.InsertFrame("Seleccione el empujador", x0, y0, dx, dy, Color.FromArgb(240, 240, 240),frameBorder.sin_borde);
+            gui_item cancel_btn = gui.InsertKinectCircleButton(IDCANCEL, "Cancel", "cancel.png", W - gui.KINECT_BUTTON_SIZE_X - 40,
+                    y0 + dy - gui.KINECT_BUTTON_SIZE_X - 50, gui.KINECT_BUTTON_SIZE_X);
+            cancel_btn.scrolleable = false;      // fijo el boton de cancelar
+            //int sdx = 500;
+            //int sdy = 120;
+            //gui.InsertKinectScrollButton(0, "scroll_left.png", x0 + 40, y0 + dy - sdy - 50, sdx, sdy);
+            //gui.InsertKinectScrollButton(1, "scroll_right.png", x0 + 40 + sdx + 20, y0 + dy - sdy - 50, sdx, sdy);
+
             x0 += 50;
             y0 += 80;
 
             List<string> lista = new List<string>();
             lista.Add(GuiController.Instance.ExamplesMediaDir + "Focus\\texturas\\dxf\\manija modulos\\msh\\10089945.y");
-
             lista.Add(GuiController.Instance.ExamplesMediaDir + "Focus\\texturas\\dxf\\manija modulos\\msh\\10090267.y");
             lista.Add(GuiController.Instance.ExamplesMediaDir + "Focus\\texturas\\dxf\\bachas\\msh\\405 E.y");
             lista.Add(GuiController.Instance.ExamplesMediaDir + "Focus\\texturas\\dxf\\adornos\\msh\\adorno13.y");
-            lista.Add(GuiController.Instance.ExamplesMediaDir + "Focus\\texturas\\dxf\\griferia\\msh\\griferia7.y");
-            lista.Add(GuiController.Instance.ExamplesMediaDir + "Focus\\texturas\\dxf\\microondas\\msh\\microondas7.y");
             lista.Add(GuiController.Instance.ExamplesMediaDir + "Focus\\texturas\\dxf\\manija modulos\\msh\\10090267.y");
-            lista.Add(GuiController.Instance.ExamplesMediaDir + "Focus\\texturas\\dxf\\bachas\\msh\\405 E.y");
-            lista.Add(GuiController.Instance.ExamplesMediaDir + "Focus\\texturas\\dxf\\adornos\\msh\\adorno13.y");
-            lista.Add(GuiController.Instance.ExamplesMediaDir + "Focus\\texturas\\dxf\\griferia\\msh\\griferia7.y");
 
             int cant_texturas = lista.Count;
             int t = 0;
-            for (int i = 0; i < 4 && t < cant_texturas; ++i)
-                for (int j = 0; j < 2 && t < cant_texturas; ++j)
+            for (int j = 0; j < 2 && t < cant_texturas; ++j)
+                for (int i = 0; i < 4 && t < cant_texturas; ++i)
                 {
                     String s = "" + (t + 1);
                     gui.InsertMeshButton(1000 + t, s, lista[t], x0 + i * (tdx + 20), y0 + j * (tdy + 20), tdx, tdy);
                     ++t;
                 }
-
-            gui.InsertKinectCircleButton(IDCANCEL, "Cancel", "cancel.png", x0 + dx - 300, y0+dy-250, 80);
+            
         }
 
 

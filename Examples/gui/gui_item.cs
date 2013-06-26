@@ -23,6 +23,8 @@ namespace TgcViewer.Utils.Gui
 		public Rectangle rc;
 		public String text;
         public Texture textura;
+        public int image_width;
+        public int image_height;
         public TgcMesh mesh;
 		public float ftime;
 		public Color c_fondo;		        // color del fondo
@@ -62,6 +64,7 @@ namespace TgcViewer.Utils.Gui
             center = Point.Empty;
             item3d = false;
             disabled = false;
+            image_width = image_height = 0;
         }
 
         public gui_item(DXGui gui, String s, int x, int y, int dx = 0, int dy = 0,int id=-1)
@@ -76,6 +79,18 @@ namespace TgcViewer.Utils.Gui
             len = s.Length;
         }
 
+        public void cargar_textura(String imagen)
+        {
+            // Cargo la imagen en el gui
+            if ((textura = DXGui.cargar_textura(imagen, true)) != null)
+            {
+                // Aprovecho para calcular el tamaño de la imagen del boton
+                SurfaceDescription desc = textura.GetLevelDescription(0);
+                image_width = desc.Width;
+                image_height = desc.Height;
+            }
+
+        }
         public void Dispose()
         {
             if (textura != null)
@@ -112,6 +127,7 @@ namespace TgcViewer.Utils.Gui
                 rc.Height = tw.Height + 10;
                 rc.X -= 10;
                 rc.Y -= 5;
+
                 // Recalcula el centro 
                 center = new Point(rc.X + rc.Width / 2, rc.Y + rc.Height / 2);
 
@@ -119,7 +135,7 @@ namespace TgcViewer.Utils.Gui
 
             if (textura!=null)
             {
-                Vector3 pos = new Vector3(rc.X - 64, rc.Y - 8, 0);
+                Vector3 pos = new Vector3(rc.X - image_width, rc.Y + (rc.Height-image_height)/2 , 0);
                 gui.sprite.Draw(textura, Rectangle.Empty, Vector3.Empty, pos, Color.FromArgb(gui.alpha, 255, 255, 255));
             }
 
@@ -191,11 +207,12 @@ namespace TgcViewer.Utils.Gui
     public class gui_menu_item : gui_item
     {
 
-        public gui_menu_item(DXGui gui, String s, int id, int x, int y, int dx = 0, int dy = 0, bool penabled=true) :
+        public gui_menu_item(DXGui gui, String s, String imagen,int id, int x, int y, int dx = 0, int dy = 0, bool penabled=true) :
             base(gui, s, x, y, dx, dy,id)
         {
             disabled = !penabled;
             seleccionable = true;
+            cargar_textura(imagen);
         }
     }
 
@@ -483,8 +500,6 @@ namespace TgcViewer.Utils.Gui
     
     public class gui_kinect_tile_button : gui_item
     {
-        public int image_width;
-        public int image_height;
         public float ox, oy, ex, ey, k;
         public bool sel;
         public DXGui gui;
@@ -497,13 +512,7 @@ namespace TgcViewer.Utils.Gui
             scrolleable = bscrolleable;
             border = true;
             // Cargo la imagen en el gui
-            if ((textura = DXGui.cargar_textura(imagen, true)) != null)
-            {
-                // Aprovecho para calcular el tamaño de la imagen del boton
-                SurfaceDescription desc = textura.GetLevelDescription(0);
-                image_width = desc.Width;
-                image_height = desc.Height;
-            }
+            cargar_textura(imagen);
         }
 
 
@@ -700,6 +709,12 @@ namespace TgcViewer.Utils.Gui
             float oy = gui.oy;
             float ex = gui.ex;
             float ey = gui.ey;
+            if (scrolleable)
+            {
+                // como este boton es un item scrolleable, tiene que aplicar tambien el origen sox,soy
+                ox += gui.sox;
+                oy += gui.soy;
+            }
 
             if (sel)
                 // aumento las escala
@@ -713,6 +728,7 @@ namespace TgcViewer.Utils.Gui
 
             float x0 = xm - rx + ox;
             float y0 = ym - ry + oy;
+             
             // El dx no deja poner viewport con origen negativo (pero si me puedo pasar por la derecha o por abajo)
             if (x0 < 0)
                 x0 = 0;

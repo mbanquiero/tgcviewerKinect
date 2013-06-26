@@ -25,7 +25,6 @@ namespace Examples.Expo
             Group group;
             int g = 1000;
             int t = 2000;
-            
 
             //Maderas
             group = new Group("Maderas", g++, "Maderas\\09-guindo.jpg");
@@ -101,23 +100,28 @@ namespace Examples.Expo
             int H = GuiController.Instance.Panel3d.Height;
 
             int x0 = -20;
-            int y0 = 10;
-            int dy = 400;
+            int y0 = 50;
+            int dy = 600;
             int dx = W + 40;
-            int tdx = 200;
-            int tdy = 150;
+            int tdx = 350;
+            int tdy = 250;
 
-            gui.InsertFrame("Seleccione la categoría", x0, y0, dx, dy, Color.FromArgb(192, 192, 192));
+            gui.InsertFrame("Seleccione la categoría", x0, y0, dx, dy, Color.FromArgb(192, 192, 192),frameBorder.sin_borde);
+            int sdx = 400;
+            int sdy = 120;
+            gui.InsertKinectScrollButton(0, "scroll_left.png", x0 + 40, y0 + dy - sdy - 50, sdx, sdy);
+            gui.InsertKinectScrollButton(1, "scroll_right.png", x0 + 40 + sdx + 20, y0 + dy - sdy - 50, sdx, sdy);
+            gui_item cancel_btn = gui.InsertKinectCircleButton(1, "Cancel", "cancel.png", W - gui.KINECT_BUTTON_SIZE_X - 40,
+                    y0 + dy - gui.KINECT_BUTTON_SIZE_X - 50, gui.KINECT_BUTTON_SIZE_X);
+            cancel_btn.scrolleable = false;      // fijo el boton de cancelar
+
 
             //Crear un boton por cada grupo de textura
             for (int i = 0; i < grupos.Count; i++)
             {
                 Group g = grupos[i];
-                gui.InsertKinectTileButton(g.guiId, g.name, g.iconPath, x0 + 50 + i * (tdx + 20), y0 + 50, tdx, tdy);
+                gui.InsertKinectTileButton(g.guiId, g.name, g.iconPath, x0 + 50 + i * (tdx + 20), y0 + 120, tdx, tdy);
             }
-
-            gui.InsertKinectScrollButton(0, "scroll_left.png", x0 + 40, y0 + dy - 100, (dx - 40) / 2 - 40, 80);
-            gui.InsertKinectScrollButton(1, "scroll_right.png", x0 + dx / 2 + 20, y0 + dy - 100, (dx - 49) / 2 - 40, 80);
 
         }
 
@@ -134,13 +138,20 @@ namespace Examples.Expo
             int H = GuiController.Instance.Panel3d.Height;
 
             int x0 = -20;
-            int y0 = 10;
-            int dy = 400;
+            int y0 = 50;
+            int dy = 600;
             int dx = W + 40;
-            int tdx = 200;
-            int tdy = 150;
+            int tdx = 250;
+            int tdy = 200;
 
             gui.InsertFrame("Seleccione la textura", x0, y0, dx, dy, Color.FromArgb(192, 192, 192));
+            int sdx = 500;
+            int sdy = 120;
+            gui.InsertKinectScrollButton(0, "scroll_left.png", x0 + 40, y0 + dy - sdy - 50, sdx, sdy);
+            gui.InsertKinectScrollButton(1, "scroll_right.png", x0 + 40 + sdx + 20, y0 + dy - sdy - 50, sdx, sdy);
+            gui_item cancel_btn = gui.InsertKinectCircleButton(1, "Cancel", "cancel.png", W - gui.KINECT_BUTTON_SIZE_X - 40,
+                    y0 + dy - gui.KINECT_BUTTON_SIZE_X - 50, gui.KINECT_BUTTON_SIZE_X);
+            cancel_btn.scrolleable = false;      // fijo el boton de cancelar
 
             //Buscar grupo con ese id de gui
             selectedGroup = null;
@@ -158,11 +169,9 @@ namespace Examples.Expo
             for (int i = 0; i < selectedGroup.textures.Count; i++)
             {
                 Texture t = selectedGroup.textures[i];
-                gui.InsertKinectTileButton(t.guiId, (i + 1).ToString(), t.path, x0 + 50 + i * (tdx + 20), y0 + 50, tdx, tdy);
+                gui.InsertKinectTileButton(t.guiId, (i + 1).ToString(), t.path, x0 + 50 + i * (tdx + 50), y0 + 100, tdx, tdy);
             }
 
-            gui.InsertKinectScrollButton(0, "scroll_left.png", x0 + 40, y0 + dy - 100, (dx - 40) / 2 - 40, 80);
-            gui.InsertKinectScrollButton(1, "scroll_right.png", x0 + dx / 2 + 20, y0 + dy - 100, (dx - 49) / 2 - 40, 80);
 
         }
 

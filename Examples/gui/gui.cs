@@ -95,8 +95,11 @@ namespace TgcViewer.Utils.Gui
         public float M_PI_2 = (float)Math.PI * 0.5f;
 
         public const float TIMER_QUIETO_PRESSING = 3;
-        public const float MENU_OFFSET = 200;
+        public const float MENU_OFFSET = 400;
         public const float MENU_OFFSET_SALIDA = 800;
+
+        public int KINECT_BUTTON_SIZE_X = 220;
+        public int KINECT_BUTTON_SIZE_Y = 220;
 
         public gui_item[] items = new gui_item[MAX_GUI_ITEMS];
 		public int cant_items;
@@ -194,6 +197,10 @@ namespace TgcViewer.Utils.Gui
             float H = GuiController.Instance.Panel3d.Height;
             RTQ = rectToQuad(0, 0, W, H,0, 0, W-50, 60, W-100, H-50,0, H);
 
+            // The smallest button we’ve designed is 220 by 220px in 1920x1080 resolution
+            KINECT_BUTTON_SIZE_X = (int)((float)KINECT_BUTTON_SIZE_X * W / 1920.0f);
+            KINECT_BUTTON_SIZE_Y = (int)((float)KINECT_BUTTON_SIZE_Y * H/ 1080.0f);
+
         }
 
         public void Reset()
@@ -202,7 +209,7 @@ namespace TgcViewer.Utils.Gui
             item_pressed = sel = -1;
 	        time = 0;
 	        item_0 = 0;
-	        ey = ex = 1.5f;
+	        ey = ex = 1;
 	        ox = oy = 0;
             sox = soy = 0;
             mouse_x = mouse_y = -1;
@@ -273,6 +280,7 @@ namespace TgcViewer.Utils.Gui
 	        rbt = -1;
 	        sel = -1;
             timer_sel = 0;
+            ox = oy = 0;
             Show();
             delay_initDialog = delay?1.0f:0;
         }
@@ -297,7 +305,8 @@ namespace TgcViewer.Utils.Gui
         public void Show(bool show=true)
         {
             hidden = !show;
-            delay_show = autohide?1:0;
+            delay_show = autohide ? 0.5f : 0f;
+            
         }
 		
         // Alerts 
@@ -444,7 +453,7 @@ namespace TgcViewer.Utils.Gui
             }
 
             //Ver si se quedo quieto suficiente tiempo como para presionar boton
-            if (timer_sel > TIMER_QUIETO_PRESSING)
+            if (timer_sel > TIMER_QUIETO_PRESSING && false)
             {
                 timer_sel = 0;
                 kinect.currentGesture = Gesture.Pressing;
@@ -509,10 +518,10 @@ namespace TgcViewer.Utils.Gui
             {
                 delay_show -= elapsed_time;
                 if (delay_show < 0)
-                    delay_show  = 0;
+                    delay_show = 0;
 
-                if(hidden)
-                    ox = -MENU_OFFSET * (2-delay_show);
+                if (hidden)
+                    ox = -MENU_OFFSET * (1 - delay_show);
                 else
                     ox = -MENU_OFFSET * delay_show;
             }
@@ -697,9 +706,9 @@ namespace TgcViewer.Utils.Gui
         }
 
         // Pop up menu item
-        public gui_menu_item InsertMenuItem(int id,String s, int x, int y, int dx = 0, int dy = 0,bool penabled=true)
+        public gui_menu_item InsertMenuItem(int id,String s, String imagen,int x, int y, int dx = 0, int dy = 0,bool penabled=true)
         {
-            return (gui_menu_item)InsertItem(new gui_menu_item(this, s, id, x, y, dx, dy, penabled));
+            return (gui_menu_item)InsertItem(new gui_menu_item(this, s,imagen, id, x, y, dx, dy, penabled));
         }
 
         // Standard push button
