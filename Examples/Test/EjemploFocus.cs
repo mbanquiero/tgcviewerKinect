@@ -450,7 +450,7 @@ namespace Examples.Test
                 for (int i = 0; i < 4 && t < cant_texturas; ++i)
                 {
                     String s = "" + (t + 1);
-                    gui.InsertMeshButton(1000 + t, s, lista[t], x0 + i * (tdx + 20), y0 + j * (tdy + 20), tdx, tdy);
+                    gui.InsertMeshButton(4000 + t, s, lista[t], x0 + i * (tdx + 20), y0 + j * (tdy + 20), tdx, tdy);
                     ++t;
                 }
             

@@ -79,6 +79,7 @@ namespace TgcViewer.Utils.Gui
         public int Height;
     }
 
+
     public class DXGui
     {
         // Defines
@@ -93,8 +94,11 @@ namespace TgcViewer.Utils.Gui
         // Otras
         public float M_PI = (float)Math.PI;
         public float M_PI_2 = (float)Math.PI * 0.5f;
+        // Pila de items seleccionados
+        public const int MAX_ITEMS_SEL = 300;
 
         public const float TIMER_QUIETO_PRESSING = 3;
+        public const float MIN_TIMER_PRESS = 0.3f;
         public const float MENU_OFFSET = 400;
         public const float MENU_OFFSET_SALIDA = 800;
 
@@ -220,7 +224,6 @@ namespace TgcViewer.Utils.Gui
             cursor_der = tipoCursor.targeting;
             alpha = 1;
             timer_sel = 0;
-
         }
 
         public void Dispose()
@@ -299,6 +302,9 @@ namespace TgcViewer.Utils.Gui
 	        // valores x defecto del scroll
 	        ox = oy = 0;
             sox = soy = 0;
+            // Resteo cualquier item seleccionado anterior y timer de seleccion
+            sel = -1;
+            timer_sel = 0;
         }
 
 
@@ -453,11 +459,8 @@ namespace TgcViewer.Utils.Gui
             }
 
             //Ver si se quedo quieto suficiente tiempo como para presionar boton
-            if (timer_sel > TIMER_QUIETO_PRESSING && false)
-            {
-                timer_sel = 0;
+            if (timer_sel > TIMER_QUIETO_PRESSING)
                 kinect.currentGesture = Gesture.Pressing;
-            }
 
             if (!hidden)
             {
@@ -469,11 +472,13 @@ namespace TgcViewer.Utils.Gui
 
                     case Gesture.Pressing:
                         // Presiona el item actual
-                        if (sel != -1)
+                        if (sel != -1 && timer_sel>=MIN_TIMER_PRESS)
                         {
                             items[sel].state = itemState.pressed;
                             // inicio el timer de press
                             delay_press0 = delay_press = 0.5f;
+                            // Reseteo el timer sel
+                            timer_sel = 0;
                             // genero el mensaje
                             msg.message = MessageType.WM_PRESSING;
                             msg.id = items[sel].item_id;
@@ -505,13 +510,9 @@ namespace TgcViewer.Utils.Gui
             }
 
             if (sel != -1)
-            {
                 timer_sel += elapsed_time;
-            }
             else
-            {
                 timer_sel = 0;
-            }
 
 
             if (delay_show > 0)
@@ -639,32 +640,9 @@ namespace TgcViewer.Utils.Gui
                 sprite.Begin(SpriteFlags.AlphaBlend);
                 items[item_sel].Render(this);
             }
-
-
-
-            // 2 - dibujo el cusor con la misma interface de prites
-            sprite.Transform = Matrix.Transformation2D(new Vector2(0, 0), 0, new Vector2(1,1), new Vector2(0, 0), 0, new Vector2(0, 0));
-
-            Vector2 scale_center = new Vector2(kinect.left_hand.position.X, kinect.left_hand.position.Y);
-            // mano derecha
-            if (kinect.right_hand.visible && cursores[(int)cursor_der]!=null)
-            {
-                sprite.Transform = Matrix.Transformation2D(scale_center, 0, new Vector2(1, 1), Vector2.Empty, 0, new Vector2(0, 0));
-                sprite.Draw(cursores[(int)cursor_der], Rectangle.Empty, new Vector3(32, 32, 0), kinect.right_hand.position, Color.FromArgb(255, 255, 255, 255));
-            }
-            // mano izquierda
-            if (kinect.left_hand.visible && cursores[(int)cursor_izq]!=null)
-            {
-                // dibujo espejado
-                scale.X *= -1;
-                sprite.Transform = Matrix.Transformation2D(scale_center, 0, new Vector2(1, 1), Vector2.Empty, 0, new Vector2(0, 0));
-                sprite.Draw(cursores[(int)cursor_izq], Rectangle.Empty, new Vector3(32, 32, 0), kinect.left_hand.position, Color.FromArgb(255, 255, 255, 255));
-            }
             sprite.End();
 
 
-            // Restauro la transformacion del sprite
-            sprite.Transform = matAnt;
 
             // 3- dibujo los items 3d a travez de la interface usual del TGC (usando la camara y un viewport)
             item_sel = -1;
@@ -683,6 +661,44 @@ namespace TgcViewer.Utils.Gui
                 items[item_sel].Render(this);
 
             d3dDevice.RenderState.ZBufferEnable = ant_zenable;
+
+            // 4 - dibujo el cusor con la misma interface de prites
+            sprite.Begin(SpriteFlags.AlphaBlend);
+            sprite.Transform = Matrix.Transformation2D(new Vector2(0, 0), 0, new Vector2(1, 1), new Vector2(0, 0), 0, new Vector2(0, 0));
+
+            // mano derecha
+            if (kinect.right_hand.visible && cursores[(int)cursor_der] != null)
+            {
+                sprite.Transform = Matrix.Transformation2D(new Vector2(0, 0), 0, new Vector2(1, 1), Vector2.Empty, 0, new Vector2(0, 0));
+                sprite.Draw(cursores[(int)cursor_der], Rectangle.Empty, new Vector3(32, 32, 0), kinect.right_hand.position, Color.FromArgb(255, 255, 255, 255));
+
+            }
+            // mano izquierda
+            if (kinect.left_hand.visible && cursores[(int)cursor_izq] != null)
+            {
+                // dibujo espejado
+                scale.X *= -1;
+                sprite.Transform = Matrix.Transformation2D(new Vector2(0, 0), 0, new Vector2(1, 1), Vector2.Empty, 0, new Vector2(0, 0));
+                sprite.Draw(cursores[(int)cursor_izq], Rectangle.Empty, new Vector3(32, 32, 0), kinect.left_hand.position, Color.FromArgb(255, 255, 255, 255));
+            }
+
+            // Hoover
+            if (timer_sel > 0.5)
+            {
+                float k = timer_sel / TIMER_QUIETO_PRESSING;
+                bool ant_trap_style = trapezoidal_style;
+                trapezoidal_style = false;
+                Vector2 pos = new Vector2(kinect.right_hand.position.X, kinect.right_hand.position.Y);
+                DrawCircle(pos, 48, 8, Color.FromArgb(255, 255, 255));
+                DrawArc(pos, 48, 0f, 2 * M_PI * k, 6, Color.FromArgb(0, 200, 255));
+                trapezoidal_style = ant_trap_style;
+            }
+            sprite.End();
+
+
+            // Restauro la transformacion del sprite
+            sprite.Transform = matAnt;
+
 
 
         }
@@ -776,14 +792,20 @@ namespace TgcViewer.Utils.Gui
                 float x = ox + pt[i].x*ex;
                 float y = oy + pt[i].y*ey;
 
-                pt[i].x = x * RTQ.M11 + y * RTQ.M21 + RTQ.M41;
-                pt[i].y = x * RTQ.M12 + y * RTQ.M22 + RTQ.M42;
-                float W = x * RTQ.M14 + y * RTQ.M24 + RTQ.M44;
+                if (trapezoidal_style)
+                {
+                    pt[i].x = x * RTQ.M11 + y * RTQ.M21 + RTQ.M41;
+                    pt[i].y = x * RTQ.M12 + y * RTQ.M22 + RTQ.M42;
+                    float W = x * RTQ.M14 + y * RTQ.M24 + RTQ.M44;
 
-                pt[i].x /= W;
-                pt[i].y /= W;
-
-
+                    pt[i].x /= W;
+                    pt[i].y /= W;
+                }
+                else
+                {
+                    pt[i].x = x;
+                    pt[i].y = y;
+                }
 	        }
         }
 
@@ -793,13 +815,21 @@ namespace TgcViewer.Utils.Gui
 	        {
                 float x = ox + pt[i].X * ex;
                 float y = oy + pt[i].Y * ey;
-                pt[i].X = x * RTQ.M11 + y * RTQ.M21 + RTQ.M41;
-                pt[i].Y = x * RTQ.M12 + y * RTQ.M22 + RTQ.M42;
-                float W = x * RTQ.M14 + y * RTQ.M24 + RTQ.M44;
 
-                pt[i].X /= W;
-                pt[i].Y /= W;
+                if (trapezoidal_style)
+                {
+                    pt[i].X = x * RTQ.M11 + y * RTQ.M21 + RTQ.M41;
+                    pt[i].Y = x * RTQ.M12 + y * RTQ.M22 + RTQ.M42;
+                    float W = x * RTQ.M14 + y * RTQ.M24 + RTQ.M44;
 
+                    pt[i].X /= W;
+                    pt[i].Y /= W;
+                }
+                else
+                {
+                    pt[i].X = x;
+                    pt[i].Y = y;
+                }
 
 
 
@@ -1123,6 +1153,60 @@ namespace TgcViewer.Utils.Gui
 
             pt[t++] = pt[0];      // Cierro el circulo
             pt[t++] = pt[1];      // Cierro el circulo
+
+            for (int j = 0; j < t; ++j)
+            {
+                pt[j].z = 0.5f;
+                pt[j].rhw = 1;
+                pt[j].color = color.ToArgb();
+            }
+
+            Transform(pt, t);
+
+            Device d3dDevice = GuiController.Instance.D3dDevice;
+            d3dDevice.VertexFormat = VertexFormats.Transformed | VertexFormats.Diffuse;
+            d3dDevice.DrawUserPrimitives(PrimitiveType.TriangleStrip, t - 2, pt);
+
+        }
+
+        public void DrawArc(Vector2 c, int r, float desde,float hasta,int esp, Color color)
+        {
+            // demasiado pequeño el radio
+            if (r - esp < 10)
+                return;
+
+            if (desde > hasta)
+            {
+                float aux = desde;
+                desde = hasta;
+                hasta = aux;
+            }
+
+            // quiero que cada linea como maximo tenga 5 pixeles
+            float da = 5.0f / (float)r;
+            float arc_len = hasta - desde;
+            int cant_ptos = (int)(arc_len/ da);
+
+            VERTEX2D[] pt = new VERTEX2D[2 * cant_ptos + 10];           // + 10 x las dudas
+
+            int t = 0;              // Cantidad de vertices
+
+
+            for (int i = 0; i < cant_ptos; ++i)
+            {
+                float an = desde+ (float)i / (float)cant_ptos * arc_len;
+
+                // alterno los radios interior y exterior entre los pares e impares
+
+                pt[t].x = c.X + (float)Math.Cos(an) * r;
+                pt[t].y = c.Y + (float)Math.Sin(an) * r;
+                ++t;
+
+                pt[t].x = c.X + (float)Math.Cos(an) * (r - esp);
+                pt[t].y = c.Y + (float)Math.Sin(an) * (r - esp);
+                ++t;
+
+            }
 
             for (int j = 0; j < t; ++j)
             {
