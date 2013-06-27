@@ -8,7 +8,6 @@ using TgcViewer;
 using TgcViewer.Utils.TgcGeometry;
 using TgcViewer.Utils.TgcSceneLoader;
 using System.Net;
-using TgcViewer.Utils.Gui;
 
 namespace Examples.Focus
 {
@@ -28,12 +27,9 @@ namespace Examples.Focus
         private TgcTexture[] _textures;
         private Vector3 minVert = new Vector3(float.MaxValue, float.MaxValue, float.MaxValue);
         private Vector3 maxVert = new Vector3(float.MinValue, float.MinValue, float.MinValue);
-        public gui_progress_bar progress_bar;
-        public string fname;
 
         public YParser()
         {
-            progress_bar = null;
         }
 
         public TgcMesh Mesh
@@ -43,7 +39,6 @@ namespace Examples.Focus
 
         public void FromFile(string path)
         {
-            fname = path;
             var fp = new FileStream(path, FileMode.Open, FileAccess.Read);
             _byteData = new BinaryReader(fp);
 
@@ -113,20 +108,9 @@ namespace Examples.Focus
 			
 			//bytes por vertice
 			_sizeofVertex = _byteData.ReadInt32();
-
-            if (progress_bar!= null)
-                progress_bar.SetRange(0, _cantVertices-1, fname);
 						
 			for (int i = 0; i < _cantVertices; i++)
 			{
-                if (i % 200 == 0)
-                {
-                    // Cada 200 vertices llamo al loop
-                    if (progress_bar != null)
-                        progress_bar.SetPos(i);
-                    GuiController.Instance.MessageLoop();
-
-                }
                 var p = new TgcSceneLoader.DiffuseMapVertex();
 				float x = _byteData.ReadSingle();
 				float z = _byteData.ReadSingle();

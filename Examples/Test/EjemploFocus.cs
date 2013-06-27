@@ -35,7 +35,6 @@ namespace Examples.Test
         public const int ID_CAMBIAR_EMPUJADORES = 104;
         public const int ID_APP_EXIT = 105;
         public const int ID_CAMBIAR_MATERIALES = 106;
-        public const int ID_PROGRESS1 = 107;
 
         private List<TgcMesh> _meshes;
         private FocusSet [] _conjuntos;
@@ -116,13 +115,13 @@ namespace Examples.Test
         {
             Device d3dDevice = GuiController.Instance.D3dDevice;
 
-            /*if (blocked)
+            if (blocked)
             {
                 // Solo hay gui, dibujo un fondo de presentacion
                 gui.DrawImage(GuiController.Instance.ExamplesMediaDir + "Focus\\texturas\\fondo.png", 0, 0,
                     GuiController.Instance.Panel3d.Width, GuiController.Instance.Panel3d.Height);
                 return;
-            }*/
+            }
 
             TgcKinectSkeletonData data = tgcKinect.update();
             if (data.Active)
@@ -193,10 +192,7 @@ namespace Examples.Test
                             //gui.MessageBox("Desea Salir del Sistema?", "Focus Kinect Interaction");
                             // Test de thread
                             {
-                                float total_time = 10;
                                 blocked = true;
-                                ProgressBarDlg();
-                                gui_progress_bar progress_bar = (gui_progress_bar)gui.GetDlgItem(ID_PROGRESS1);
                                 long T0 = TgcViewer.Utils.HighResolutionTimer.Ticks;
                                 float F =  (float)TgcViewer.Utils.HighResolutionTimer.Frequency;
                                 while(true)
@@ -204,13 +200,10 @@ namespace Examples.Test
                                     long T1 = TgcViewer.Utils.HighResolutionTimer.Ticks;
                                     float time = (float)(T1-T0)/F;
                                     GuiController.Instance.MessageLoop();
-                                    if (time > total_time)
+                                    if(time>10f)
                                         break;
-                                    else
-                                        progress_bar.SetPos((int)(time / total_time * 100));
                                 }
                                 blocked = false;
-                                gui.EndDialog();
                             }
                             break;
 
@@ -270,22 +263,16 @@ namespace Examples.Test
                             if (msg.id >= 3000)
                             {
                                 //Cambiar de escena
-                                // Termino el dialogo                                                                
-                                gui.EndDialog();
-                                   
-                                // libero la escena anterior
                                 disposeScene();
-                                // Cargo la escena 
-                                blocked = true;
-                                ProgressBarDlg();
-                                FocusParser loader = new FocusParser();
-                                loader.progress_bar = (gui_progress_bar)gui.GetDlgItem(ID_PROGRESS1);
+
+                                // Selecciono una escena Cargo la escena y Termino el dialogo
+                                var loader = new FocusParser();
                                 int nro_escena = msg.id - 3000 + 1;
                                 string fileScene = GuiController.Instance.ExamplesMediaDir + "Focus\\escena" + nro_escena + ".dat";
                                 loader.FromFile(fileScene);
                                 _meshes = loader.Escene;
                                 _conjuntos = loader._focusSets;
-                                gui.EndDialog();            // progress bar dialog
+                                gui.EndDialog();
 
                                 // Habilito los items de menu 
                                 gui.EnableItem(ID_FILE_SAVE);
@@ -491,25 +478,6 @@ namespace Examples.Test
         }
 
 
-        public void ProgressBarDlg()
-        {
-            gui.InitDialog(false, false);
-
-            int W = GuiController.Instance.Panel3d.Width;
-            int H = GuiController.Instance.Panel3d.Height;
-            int x0 = -20;
-            int y0 = 40;
-            int dy = 600;
-            int dx = W + 50;
-
-            gui.InsertFrame("Cargando escena", x0, y0, dx, dy, Color.FromArgb(240, 240, 240),frameBorder.sin_borde);
-            gui_progress_bar progress_bar = gui.InsertProgressBar(ID_PROGRESS1, 50, 50 + dy / 2 - 50, W - 100, 100);
-            progress_bar.SetPos(1);
-            
-            //gui_item cancel_btn = gui.InsertKinectCircleButton(IDCANCEL, "Cancel", "cancel.png", W - gui.KINECT_BUTTON_SIZE_X - 40,
-              //      H - gui.KINECT_BUTTON_SIZE_X - 40, gui.KINECT_BUTTON_SIZE_X);
-
-        }
         /// <summary>
         /// Limpiar toda la escena
         /// </summary>

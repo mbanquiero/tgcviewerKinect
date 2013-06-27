@@ -866,50 +866,6 @@ namespace TgcViewer.Utils.Gui
             gui.DrawSolidPoly(pt,cant_p , Color.FromArgb(100, 100,255,100));
 
         }
-    }
-
-    public class gui_progress_bar : gui_item
-    {
-        public int desde;
-        public int hasta;
-        public int pos;
-
-        public gui_progress_bar(DXGui gui, int x, int y, int dx, int dy,int id=-1) :
-            base(gui, "", x, y, dx, dy,id)
-        {
-            pos = desde = 1;
-            hasta = 100;
-            seleccionable = false;
-        }
-
-        public void SetRange(int d, int h,string s="")
-        {
-            desde = d;
-            hasta = h;
-            text = s;
-        }
-
-        public void SetPos(int p)
-        {
-            pos = p;
-        }
-
-
-
-        public override void Render(DXGui gui)
-        {
-            float k = (float)(pos - desde) / (float)(hasta - desde);
-            gui.DrawRect(rc.Left, rc.Top, rc.Right, rc.Bottom, 1, Color.FromArgb(240, 240, 240), true);
-            gui.DrawRect(rc.Left, rc.Top, rc.Right, rc.Bottom, 1, Color.FromArgb(0, 0, 0));
-            gui.DrawRect(rc.Left, rc.Top, rc.Left + (int)(rc.Width * k), rc.Bottom, 1, Color.FromArgb(0, 100, 255), true);
-            gui.DrawRect(rc.Left, rc.Top, rc.Left + (int)(rc.Width * k), rc.Bottom, 1, Color.FromArgb(0, 0, 0));
-
-            Rectangle rc2 = new Rectangle(rc.Left, rc.Top - 50, rc.Width, 50);
-            gui.font.DrawText(gui.sprite, text, rc2, DrawTextFormat.NoClip | DrawTextFormat.Top,c_font);
-
-        }
 
     }
-
-
 }
