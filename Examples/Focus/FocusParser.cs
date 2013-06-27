@@ -7,6 +7,7 @@ using TgcViewer;
 using TgcViewer.Utils.TgcGeometry;
 using TgcViewer.Utils.TgcSceneLoader;
 using System.Net;
+using TgcViewer.Utils.Gui;
 
 namespace Examples.Focus
 {
@@ -82,7 +83,10 @@ namespace Examples.Focus
         public static string WEB_TEXTURE_FOLDER = "http://lepton.com.ar/download/armarius/texturas/";
         public static string WEB_MESH_FOLDER = "http://lepton.com.ar/download/armarius/texturasy/";
         public static readonly TgcTexture NULL_TEXTURE = new TgcTexture("", "", null, false);
-		
+
+        public gui_progress_bar progress_bar;
+
+
 		/**
 		 * Loads a Viewer.dat Lepton File.
 		 */
@@ -122,10 +126,12 @@ namespace Examples.Focus
 			//cantidad de texturas
 			_cantTextures = _byteData.ReadInt32();
             _texturesId = new string[_cantTextures];
+
             
 			for(int i = 0 ; i < _cantTextures; i++)
 			{
-				//Texture Path
+
+                //Texture Path
 				
 				//saco el fullpath
                 string file = ReadString(260).ToLower();
@@ -156,8 +162,11 @@ namespace Examples.Focus
 			//cantidad de meshes
 			_cantMeshes = _byteData.ReadInt32();
             _meshesId = new string[_cantMeshes];
+
+
 			for (int i = 0; i < _cantMeshes; i++)
 			{
+
 				//Meshes Path
 
                 string file = ReadString(260);
@@ -179,8 +188,10 @@ namespace Examples.Focus
 			_cantFaces = _byteData.ReadInt32();
             _faces = new Face[_cantFaces];
             _vertices = new TgcSceneLoader.DiffuseMapVertex[_cantFaces * 4];
+
 			for (int i = 0; i < _cantFaces; i++)
 			{
+
 				var face = new Face();
 				
 				//tipo Face, Triangulo(3) o Rectangulo(1)
@@ -399,6 +410,9 @@ namespace Examples.Focus
 
         private void DownloadAssets()
         {
+            if (progress_bar != null)
+                progress_bar.SetRange(0, _meshesId.Length - 1, "Descargando archivos..");
+
             WebClient wc = new WebClient();
             for (int i = 0; i < _meshesId.Length; i++)
             {
@@ -409,7 +423,14 @@ namespace Examples.Focus
                     {
                         Directory.CreateDirectory(Path.GetDirectoryName(mn));
                         string webpath = WEB_MESH_FOLDER + mn.Substring(MESH_FOLDER.Length).Replace('\\', '/').Replace(" ", "%20").ToLower();
-                        GuiController.Instance.Logger.log("Descargando archivo: " + webpath);
+                        //GuiController.Instance.Logger.log("Descargando archivo: " + webpath);
+                        if (progress_bar != null)
+                        {
+                            progress_bar.SetPos(i);
+                            progress_bar.text = "Descargando archivo: " + webpath;
+                        }
+                        GuiController.Instance.MessageLoop();
+
                         wc.DownloadFile(webpath, mn);
                     }
                     catch (Exception)
@@ -423,9 +444,16 @@ namespace Examples.Focus
 
         private void LoadTextures()
         {
+            if (progress_bar != null)
+                progress_bar.SetRange(0, _cantTextures - 1, "Cargando texturas..");
+
             _textures = new TgcTexture[_cantTextures];
             for (int i = 0; i < _texturesId.Length; i++)
             {
+                if (progress_bar != null)
+                    progress_bar.SetPos(i);
+                GuiController.Instance.MessageLoop();
+
                 _textures[i] = FocusParser.getTexture(_texturesId[i]);
             }
         }
@@ -434,13 +462,14 @@ namespace Examples.Focus
 		{
 			if(_meshesId.Length == 0)
 				return;
-			
+
             _meshes = new TgcMesh[_cantMeshes];
 			for(int i = 0; i < _meshesId.Length; i++)
 			{
                 try
                 {
                     var yparser = new YParser();
+                    yparser.progress_bar = progress_bar;
 			        yparser.FromFile(_meshesId[i]);
 			        _meshes[i] = yparser.Mesh;
                 }
