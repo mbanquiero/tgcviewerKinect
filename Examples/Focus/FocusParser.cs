@@ -43,6 +43,11 @@ namespace Examples.Focus
 	    public int NroMesh = -1;
 	    public int NroTextura = -1;
 	    public int NroConjunto = -1;
+
+        public float kd;
+        public float ks;
+        public float kr;
+        public float kt;
     	
 	    public Layer [] Layers;
     	
@@ -237,10 +242,10 @@ namespace Examples.Focus
 				_byteData.ReadBytes(3);
 				
 				// parametros de iluminacion
-				float kd = _byteData.ReadSingle();
-				float ks = _byteData.ReadSingle();
-				float kr = _byteData.ReadSingle();
-				float kt = _byteData.ReadSingle();
+				face.kd = _byteData.ReadSingle();
+				face.ks = _byteData.ReadSingle();
+				face.kr = _byteData.ReadSingle();
+                face.kt = _byteData.ReadSingle();
 				
 				int nroConjunto = _byteData.ReadInt32();
 				if(nroConjunto == 65535)
@@ -539,6 +544,11 @@ namespace Examples.Focus
                         mesh.DiffuseMaps = new[] { new TgcTexture("", "", null, false) };
                     mesh.Enabled = true;
                     mesh.BoundingBox = new TgcBoundingBox(pMin, pMax);
+                    
+                    mesh.kd = f.kd;
+                    mesh.ks = f.ks;
+                    mesh.kr = f.kr;
+                    mesh.kt = f.kt;
 
                     if (f.NroConjunto == -1)
                         Escene.Add(mesh);
@@ -584,6 +594,12 @@ namespace Examples.Focus
 
             mesh.AutoTransformEnable = false;
 			mesh.Transform = face.MatWorld;
+
+            mesh.kd = face.kd;
+            mesh.ks = face.ks;
+            mesh.kr = face.kr;
+            mesh.kt = face.kt;
+
             var matLength = mesh.Materials.Length;
 			for (int j = 0; j < matLength; j++) 
 			{

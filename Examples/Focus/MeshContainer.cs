@@ -82,6 +82,7 @@ namespace Examples.Focus
 
             foreach (TgcMesh child in childs)
             {
+                child.updateMeshTransform();
                 Matrix childTransform = child.Transform;
                 child.AutoTransformEnable = false;
 
