@@ -163,11 +163,11 @@ namespace Examples.Test
                     m.Effect.SetValue("ambientColor", ColorValue.FromColor(Color.FromArgb(64, 64, 64)));
 
                     // Coef. de luz diffuse (para todos los layers)
-                    int kd = (int)(m.kd * 255);
+                    int kd = (int)(0.7f * 255.0f);
                     m.Effect.SetValue("diffuseColor", ColorValue.FromColor(Color.FromArgb(kd,kd,kd)));
 
                     // Coef. de luz specular (para todos los layers)
-                    int ks = (int)(m.ks * 255);
+                    int ks = (int)(0.3f * 255.0f);
                     m.Effect.SetValue("specularColor", ColorValue.FromColor(Color.FromArgb(ks, ks, ks)));
                     m.Effect.SetValue("specularExp", 5.0f);
 

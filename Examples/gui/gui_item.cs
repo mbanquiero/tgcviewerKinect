@@ -755,11 +755,13 @@ namespace TgcViewer.Utils.Gui
             btn_viewport.Width = (int)((x1-x0)* ex);
             btn_viewport.Height = (int)((y1-y0)* ey);
             d3dDevice.Viewport = btn_viewport;
+            /*
             d3dDevice.EndScene();
             d3dDevice.Clear(ClearFlags.ZBuffer | ClearFlags.Target, sel ? Color.FromArgb(240, 250, 240) : Color.FromArgb(192, 192, 192), 1.0f, 0);
             d3dDevice.BeginScene();
             d3dDevice.SetRenderState(RenderStates.ZEnable, true);
             mesh.render();
+             */
 
             gui.camera.setCamera(LA, LF);
             //gui.camera.LookAt = LA*1;
