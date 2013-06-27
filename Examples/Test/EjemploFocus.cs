@@ -293,6 +293,8 @@ namespace Examples.Test
                             if (msg.id >= 4000)
                             {
                                 //Cambiar de Empujador
+                                // Termino el dialogo                                                                
+                                gui.EndDialog();
                             }
                             else
                             if (msg.id >= 3000)
