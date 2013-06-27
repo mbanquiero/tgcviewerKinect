@@ -31,7 +31,7 @@ namespace TgcViewer.Utils
         //Valores de configuracion de la matriz de Proyeccion
         public static float fieldOfViewY = Geometry.DegreeToRadian(45.0f);
         public static float aspectRatio = -1f;
-        public static float zNearPlaneDistance = 1f;
+        public static float zNearPlaneDistance = 150f;
         public static float zFarPlaneDistance = 10000f;
 
         private Color clearColor;
@@ -72,7 +72,7 @@ namespace TgcViewer.Utils
             if (Manager.CheckDeviceMultiSampleType(Manager.Adapters.Default.Adapter, DeviceType.Hardware,
                 Manager.Adapters.Default.CurrentDisplayMode.Format, true, MultiSampleType.NonMaskable))
             {
-                d3dpp.MultiSample = MultiSampleType.NonMaskable;
+                d3dpp.MultiSample = MultiSampleType.TwoSamples;
                 d3dpp.MultiSampleQuality = 0;
             }
             else

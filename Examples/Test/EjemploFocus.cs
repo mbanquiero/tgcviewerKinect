@@ -148,7 +148,7 @@ namespace Examples.Test
             {
                 // Hay escena
                 Effect currentShader = GuiController.Instance.Shaders.TgcMeshPhongShader;
-
+                d3dDevice.SetRenderState(RenderStates.MultisampleAntiAlias, true);
 
                 foreach (TgcMesh m in _meshes)
                 {
@@ -161,10 +161,15 @@ namespace Examples.Test
                     m.Effect.SetValue("lightPosition", TgcParserUtils.vector3ToFloat4Array(lightMesh.Position));
                     m.Effect.SetValue("eyePosition", TgcParserUtils.vector3ToFloat4Array(GuiController.Instance.FpsCamera.getPosition()));
                     m.Effect.SetValue("ambientColor", ColorValue.FromColor(Color.FromArgb(64, 64, 64)));
-                    // Estos hay que conseguirlos del mesh
-                    m.Effect.SetValue("diffuseColor", ColorValue.FromColor(Color.FromArgb(128, 128, 128)));
-                    m.Effect.SetValue("specularColor", ColorValue.FromColor(Color.FromArgb(100,100,100)));
-                    m.Effect.SetValue("specularExp", 2.0f);
+
+                    // Coef. de luz diffuse (para todos los layers)
+                    int kd = (int)(m.kd * 255);
+                    m.Effect.SetValue("diffuseColor", ColorValue.FromColor(Color.FromArgb(kd,kd,kd)));
+
+                    // Coef. de luz specular (para todos los layers)
+                    int ks = (int)(m.ks * 255);
+                    m.Effect.SetValue("specularColor", ColorValue.FromColor(Color.FromArgb(ks, ks, ks)));
+                    m.Effect.SetValue("specularExp", 5.0f);
 
                     m.render();
                 }
