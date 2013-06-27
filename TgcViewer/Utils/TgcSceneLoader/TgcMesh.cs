@@ -476,7 +476,7 @@ namespace TgcViewer.Utils.TgcSceneLoader
         /// <summary>
         /// Aplicar transformaciones del mesh
         /// </summary>
-        protected void updateMeshTransform()
+        public void updateMeshTransform()
         {
             //Aplicar transformacion de malla
             if (autoTransformEnable)
