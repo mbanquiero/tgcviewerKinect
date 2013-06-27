@@ -40,9 +40,9 @@ namespace Examples.Test
         private List<TgcMesh> _meshes;
         private FocusSet [] _conjuntos;
         TgcBoundingBox bounds;
-        TgcBox center;
         TgcKinect tgcKinect;
         TexturasFocus texturasFocus;
+        TgcBox lightMesh;
 
         // gui
         DXGui gui = new DXGui();
@@ -79,8 +79,11 @@ namespace Examples.Test
             FocusParser.MESH_FOLDER = GuiController.Instance.ExamplesMediaDir + "Focus\\texturas\\";
 
 
-            center = TgcBox.fromSize(new Vector3(0, 0, 0), new Vector3(1, 1, 1), Color.Blue);
             bounds = new TgcBoundingBox(new Vector3(-10, 0, -10), new Vector3(10, 20, 10));
+
+            //Crear caja para indicar ubicacion de la luz
+            lightMesh = TgcBox.fromSize(new Vector3(300, 100, 300), Color.Yellow);
+
 
             //Iniciar kinect
             tgcKinect = new TgcKinect();
@@ -115,6 +118,8 @@ namespace Examples.Test
         {
             Device d3dDevice = GuiController.Instance.D3dDevice;
 
+
+
             /*if (blocked)
             {
                 // Solo hay gui, dibujo un fondo de presentacion
@@ -142,8 +147,25 @@ namespace Examples.Test
             if (_meshes != null)
             {
                 // Hay escena
+                Effect currentShader = GuiController.Instance.Shaders.TgcMeshPhongShader;
+
+
                 foreach (TgcMesh m in _meshes)
                 {
+                    //Aplicar al mesh el shader actual
+                    m.Effect = currentShader;
+                    //El Technique depende del tipo RenderType del mesh
+                    m.Technique = GuiController.Instance.Shaders.getTgcMeshTechnique(m.RenderType);
+
+                    //Cargar variables shader
+                    m.Effect.SetValue("lightPosition", TgcParserUtils.vector3ToFloat4Array(lightMesh.Position));
+                    m.Effect.SetValue("eyePosition", TgcParserUtils.vector3ToFloat4Array(GuiController.Instance.FpsCamera.getPosition()));
+                    m.Effect.SetValue("ambientColor", ColorValue.FromColor(Color.FromArgb(64, 64, 64)));
+                    // Estos hay que conseguirlos del mesh
+                    m.Effect.SetValue("diffuseColor", ColorValue.FromColor(Color.FromArgb(128, 128, 128)));
+                    m.Effect.SetValue("specularColor", ColorValue.FromColor(Color.FromArgb(100,100,100)));
+                    m.Effect.SetValue("specularExp", 2.0f);
+
                     m.render();
                 }
             }
@@ -154,8 +176,10 @@ namespace Examples.Test
                     GuiController.Instance.Panel3d.Width, GuiController.Instance.Panel3d.Height);
 
             }
-            center.render();
+            // bounding box de la escna
             bounds.render();
+            //Renderizar mesh de luz
+            lightMesh.render();
 
 
             // ------------------------------------------------
@@ -290,6 +314,38 @@ namespace Examples.Test
                                 gui.EnableItem(ID_FILE_SAVE);
                                 gui.EnableItem(ID_CAMBIAR_TEXTURAS); 
                                 gui.EnableItem(ID_CAMBIAR_MATERIALES);
+
+
+                                // Bounding box de la escena
+                                // Calculo el bounding box de la escena
+                                float x0 = 10000;
+                                float y0 = 10000;
+                                float z0 = 10000;
+                                float x1 = -10000;
+                                float y1 = -10000;
+                                float z1 = -10000;
+                                foreach (TgcMesh m in _meshes)
+                                {
+                                    TgcBoundingBox box = m.BoundingBox;
+                                    if (box.PMin.X < x0)
+                                        x0 = box.PMin.X;
+                                    if (box.PMin.Y < y0)
+                                        y0 = box.PMin.Y;
+                                    if (box.PMin.Z < z0)
+                                        z0 = box.PMin.Z;
+
+                                    if (box.PMax.X > x1)
+                                        x1 = box.PMax.X;
+                                    if (box.PMax.Y > y1)
+                                        y1 = box.PMax.Y;
+                                    if (box.PMax.Z > z1)
+                                        z1 = box.PMax.Z;
+                                }
+
+                                bounds = new TgcBoundingBox(new Vector3(x0, y0, z0), new Vector3(x1, y1, z1));
+                                // pongo una luz en el medio de la cocina, y a la altura del techo
+                                lightMesh.Position = new Vector3((x0 + x1) / 2, y1-200, (z0 + z1) / 2);
+
                             }
                             //Cambiar de textura
                             else if (msg.id >= 2000)
