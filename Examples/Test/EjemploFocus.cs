@@ -50,7 +50,6 @@ namespace Examples.Test
         public bool blocked = false;
 
 
-
         public override string getCategory()
         {
             return "Test";
@@ -312,8 +311,12 @@ namespace Examples.Test
                 default:
                     break;
             }
+
+
             gui.Render();
             BigLogger.renderLog();
+
+
 
         }
 
