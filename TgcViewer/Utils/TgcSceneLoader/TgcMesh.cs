@@ -20,6 +20,13 @@ namespace TgcViewer.Utils.TgcSceneLoader
     public class TgcMesh : IRenderObject, ITransformObject
     {
         protected Mesh d3dMesh;
+        // Parametros globales del material
+        public float kd = 0.7f;						// coef. luz diffusa
+        public float ks = 0.3f;						// coef. luz specular
+        public float kr = 0;						// coef. reflexion
+        public float kt = 0;						// coef. transparencia
+
+
         /// <summary>
         /// Mesh interna de DirectX
         /// </summary>
