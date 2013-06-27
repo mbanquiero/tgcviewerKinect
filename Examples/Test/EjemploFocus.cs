@@ -100,12 +100,12 @@ namespace Examples.Test
             gui.InitDialog(true);
             int x0 = 70;
             int y0 = 10;
-            int dy = 120;
+            int dy = 150;
             int dy2 = dy;
             int dx = 400;
             gui.InsertMenuItem(ID_FILE_OPEN, "Abrir Proyecto","open.png", x0, y0, dx, dy);
             gui.InsertMenuItem(ID_MODO_NAVEGACION, "Modo Navegacion", "navegar.png", x0, y0 += dy2, dx, dy);
-            gui.InsertMenuItem(ID_CAMBIAR_MATERIALES, "Modificar Materiales", "editmat.png", x0, y0 += dy2, dx, dy);
+            //gui.InsertMenuItem(ID_CAMBIAR_MATERIALES, "Modificar Materiales", "editmat.png", x0, y0 += dy2, dx, dy);
             gui.InsertMenuItem(ID_CAMBIAR_TEXTURAS, "Modificar Texturas","edit_tex.png", x0, y0 += dy2, dx, dy);
             gui.InsertMenuItem(ID_CAMBIAR_EMPUJADORES, "Modificar Manijas", "manijas.png",x0, y0 += dy2, dx, dy);
             gui.InsertMenuItem(ID_APP_EXIT, "Salir", "salir.png",x0, y0 += dy2, dx, dy);
@@ -117,16 +117,6 @@ namespace Examples.Test
         public override void render(float elapsedTime)
         {
             Device d3dDevice = GuiController.Instance.D3dDevice;
-
-
-
-            /*if (blocked)
-            {
-                // Solo hay gui, dibujo un fondo de presentacion
-                gui.DrawImage(GuiController.Instance.ExamplesMediaDir + "Focus\\texturas\\fondo.png", 0, 0,
-                    GuiController.Instance.Panel3d.Width, GuiController.Instance.Panel3d.Height);
-                return;
-            }*/
 
             TgcKinectSkeletonData data = tgcKinect.update();
             if (data.Active)
