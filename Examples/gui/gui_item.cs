@@ -941,7 +941,7 @@ namespace TgcViewer.Utils.Gui
             gui.DrawRect(rc.Left, rc.Top, rc.Left + (int)(rc.Width * k), rc.Bottom, 1, Color.FromArgb(0, 0, 0));
 
             Rectangle rc2 = new Rectangle(rc.Left, rc.Top - 50, rc.Width, 50);
-            gui.font.DrawText(gui.sprite, text, rc2, DrawTextFormat.NoClip | DrawTextFormat.Top,c_font);
+            gui.font.DrawText(gui.sprite, text, rc2, DrawTextFormat.NoClip | DrawTextFormat.Top,Color.FromArgb(0,0,0));
 
         }
 

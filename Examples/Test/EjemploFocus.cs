@@ -501,12 +501,13 @@ namespace Examples.Test
             int W = GuiController.Instance.Panel3d.Width;
             int H = GuiController.Instance.Panel3d.Height;
             int x0 = -20;
-            int y0 = 40;
-            int dy = 600;
+            int y0 = 100;
+            int dy = 350;
             int dx = W + 50;
 
-            gui.InsertFrame("Cargando escena", x0, y0, dx, dy, Color.FromArgb(240, 240, 240),frameBorder.sin_borde);
-            gui_progress_bar progress_bar = gui.InsertProgressBar(ID_PROGRESS1, 50, 50 + dy / 2 - 50, W - 100, 100);
+            gui_item frame = gui.InsertFrame("Cargando escena", x0, y0, dx, dy, Color.FromArgb(240, 240, 240),frameBorder.sin_borde);
+            frame.c_font = Color.FromArgb(0, 0, 0);
+            gui_progress_bar progress_bar = gui.InsertProgressBar(ID_PROGRESS1, 50, y0+150, W - 100, 60);
             progress_bar.SetPos(1);
             
             //gui_item cancel_btn = gui.InsertKinectCircleButton(IDCANCEL, "Cancel", "cancel.png", W - gui.KINECT_BUTTON_SIZE_X - 40,
