@@ -14,6 +14,9 @@ using TgcViewer.Utils.Input;
 
 namespace TgcViewer.Utils.Gui
 {
+
+
+    
     public enum tipoCursor
     {
         sin_cursor,
@@ -83,6 +86,8 @@ namespace TgcViewer.Utils.Gui
 
     public class DXGui
     {
+
+
         // Defines
         public const int MAX_GUI_ITEMS = 100;
         public const int MAX_BITMAPS = 10;
@@ -107,12 +112,12 @@ namespace TgcViewer.Utils.Gui
         public int KINECT_BUTTON_SIZE_Y = 220;
 
         public gui_item[] items = new gui_item[MAX_GUI_ITEMS];
-		public int cant_items;
-		public int item_0;
-		public int sel;		            // item seleccionado
+        public int cant_items;
+        public int item_0;
+        public int sel;		            // item seleccionado
         public int item_pressed;		// item prsionado
 
-		public int foco;		        // item con foco
+        public int foco;		        // item con foco
         public float delay_sel;
         public float delay_sel0;
         public float delay_press;
@@ -142,25 +147,25 @@ namespace TgcViewer.Utils.Gui
         public static Color c_frame_border = Color.FromArgb(130, 255, 130);     // Color borde los frames
         public static Color c_item_disabled = Color.FromArgb(128, 128, 128);    // color texto item deshabilitado
 
-        
-        // Cableados
-		public int rbt;				    // radio button transfer
-		public Color sel_color;		    // color seleccionado
 
-		// Escala y origen global de todo el dialogo
-        public float ex,ey,ox,oy;
+        // Cableados
+        public int rbt;				    // radio button transfer
+        public Color sel_color;		    // color seleccionado
+
+        // Escala y origen global de todo el dialogo
+        public float ex, ey, ox, oy;
         // origen de los items scrolleables
         public float sox, soy;
 
         // pila para dialogos
-		public st_dialog []dialog= new st_dialog[MAX_DIALOG];		// pila para guardar el primer item
+        public st_dialog[] dialog = new st_dialog[MAX_DIALOG];		// pila para guardar el primer item
         public int cant_dialog;
 
-		public Sprite sprite;
-		public Line line;
-		public Microsoft.DirectX.Direct3D.Font font;
+        public Sprite sprite;
+        public Line line;
+        public Microsoft.DirectX.Direct3D.Font font;
 
-		// Cursores
+        // Cursores
         public Texture[] cursores = new Texture[MAX_CURSOR];
         public tipoCursor cursor_der, cursor_izq;
 
@@ -189,10 +194,12 @@ namespace TgcViewer.Utils.Gui
 
         public bool closing;                    // indica que el dialogo se esta cerrado. 
 
+        public bool blocked;
+
         public DXGui()
         {
-        	cant_items = 0;
-	        cant_dialog = 0;
+            cant_items = 0;
+            cant_dialog = 0;
             trapezoidal_style = true;
             autohide = false;
             alpha = 255;
@@ -200,23 +207,23 @@ namespace TgcViewer.Utils.Gui
             // Computo la matrix de cambio rect to quad
             float W = GuiController.Instance.Panel3d.Width;
             float H = GuiController.Instance.Panel3d.Height;
-            RTQ = rectToQuad(0, 0, W, H,0, 0, W-50, 60, W-100, H-50,0, H);
+            RTQ = rectToQuad(0, 0, W, H, 0, 0, W - 50, 60, W - 100, H - 50, 0, H);
 
             // The smallest button we’ve designed is 220 by 220px in 1920x1080 resolution
             KINECT_BUTTON_SIZE_X = (int)((float)KINECT_BUTTON_SIZE_X * W / 1920.0f);
-            KINECT_BUTTON_SIZE_Y = (int)((float)KINECT_BUTTON_SIZE_Y * H/ 1080.0f);
+            KINECT_BUTTON_SIZE_Y = (int)((float)KINECT_BUTTON_SIZE_Y * H / 1080.0f);
             closing = false;
 
         }
 
         public void Reset()
         {
-	        cant_items = 0;
+            cant_items = 0;
             item_pressed = sel = -1;
-	        time = 0;
-	        item_0 = 0;
-	        ey = ex = 1;
-	        ox = oy = 0;
+            time = 0;
+            item_0 = 0;
+            ey = ex = 1;
+            ox = oy = 0;
             sox = soy = 0;
             mouse_x = mouse_y = -1;
             for (int i = 0; i < MAX_CURSOR; ++i)
@@ -239,16 +246,16 @@ namespace TgcViewer.Utils.Gui
                     cursores[i].Dispose();
 
             for (int i = 0; i < cant_bitmaps; ++i)
-                    bitmaps[i].texture.Dispose();
+                bitmaps[i].texture.Dispose();
 
         }
 
 
 
-		// interface
+        // interface
         public void Create()
         {
-	        Reset();
+            Reset();
             // Creo el sprite
             Device d3dDevice = GuiController.Instance.D3dDevice;
             sprite = new Sprite(d3dDevice);
@@ -269,42 +276,42 @@ namespace TgcViewer.Utils.Gui
         }
 
         // dialog support
-        public void InitDialog(bool pautohide=false,bool trapezoidal = true,bool delay=false)
+        public void InitDialog(bool pautohide = false, bool trapezoidal = true, bool delay = false)
         {
-	        // guardo el valor de item_0 en la pila
-	        dialog[cant_dialog].item_0 = item_0;
+            // guardo el valor de item_0 en la pila
+            dialog[cant_dialog].item_0 = item_0;
             // y el valor del estilo del dialogo actual
             dialog[cant_dialog].trapezoidal_style = trapezoidal_style;
             dialog[cant_dialog].autohide = autohide;
             ++cant_dialog;
-	        // y el primer item del nuevo dialog es cant items
-	        item_0 = cant_items;
+            // y el primer item del nuevo dialog es cant items
+            item_0 = cant_items;
             // y seteo el nuevo estilo de dialogo
             trapezoidal_style = trapezoidal;
             autohide = pautohide;
             foco = -1;
-	        rbt = -1;
-	        sel = -1;
+            rbt = -1;
+            sel = -1;
             timer_sel = 0;
             ox = oy = 0;
             Show();
-            delay_initDialog = delay?1.0f:0;
+            delay_initDialog = delay ? 1.0f : 0;
             closing = false;
         }
 
         public void EndDialog()
         {
-	        // actualizo la cantidad de items
-	        cant_items = item_0;
-	        // recupero el valor de item_0 y del estilo del dialogo
+            // actualizo la cantidad de items
+            cant_items = item_0;
+            // recupero el valor de item_0 y del estilo del dialogo
             --cant_dialog;
-	        item_0 = dialog[cant_dialog].item_0;
+            item_0 = dialog[cant_dialog].item_0;
             trapezoidal_style = dialog[cant_dialog].trapezoidal_style;
             autohide = dialog[cant_dialog].autohide;
             // Saco el foco
-	        foco = -1;
-	        // valores x defecto del scroll
-	        ox = oy = 0;
+            foco = -1;
+            // valores x defecto del scroll
+            ox = oy = 0;
             sox = soy = 0;
             // Resteo cualquier item seleccionado anterior y timer de seleccion
             sel = -1;
@@ -319,15 +326,15 @@ namespace TgcViewer.Utils.Gui
         }
 
 
-        public void Show(bool show=true)
+        public void Show(bool show = true)
         {
             hidden = !show;
             delay_show = autohide ? 0.5f : 0f;
-            
+
         }
-		
+
         // Alerts 
-        public void MessageBox(string msg,string titulo="")
+        public void MessageBox(string msg, string titulo = "")
         {
             InitDialog(false, false);
             float W = GuiController.Instance.Panel3d.Width / ex;
@@ -335,22 +342,22 @@ namespace TgcViewer.Utils.Gui
 
             int dx = (int)(650.0f / ex);
             int dy = (int)(400.0f / ey);
-            int x0 = (int)((W-dx) / 2);
-            int y0 = (int)((H-dy) / 2);
+            int x0 = (int)((W - dx) / 2);
+            int y0 = (int)((H - dy) / 2);
 
-            InsertFrame(titulo, x0, y0, dx, dy, Color.FromArgb(64,32,64));
-            InsertItem(msg, x0+50, y0+80);
+            InsertFrame(titulo, x0, y0, dx, dy, Color.FromArgb(64, 32, 64));
+            InsertItem(msg, x0 + 50, y0 + 80);
             InsertKinectCircleButton(0, "OK", "ok.png", x0 + 30, y0 + dy - 130, 80);
-            InsertKinectCircleButton(1, "CANCEL", "cancel.png", x0 + dx - 80 - 30 , y0 + dy - 130, 80);
+            InsertKinectCircleButton(1, "CANCEL", "cancel.png", x0 + dx - 80 - 30, y0 + dy - 130, 80);
         }
 
-		// input
+        // input
         public GuiMessage ProcessInput(float elapsed_time)
         {
             GuiMessage msg = new GuiMessage();
             msg.message = MessageType.WM_NOTHING;
             msg.id = -1;
-	        int ant_sel = sel;
+            int ant_sel = sel;
 
             // Hardcodeado escala dinamica
 
@@ -360,11 +367,11 @@ namespace TgcViewer.Utils.Gui
                 ey = ex;
             }
             else
-            if (GuiController.Instance.D3dInput.keyPressed(Microsoft.DirectX.DirectInput.Key.F3))
-            {
-                ex *= 1.1f;
-                ey = ex;
-            }
+                if (GuiController.Instance.D3dInput.keyPressed(Microsoft.DirectX.DirectInput.Key.F3))
+                {
+                    ex *= 1.1f;
+                    ey = ex;
+                }
 
 
             // Tomo el input de la kinect
@@ -373,7 +380,7 @@ namespace TgcViewer.Utils.Gui
             kinect.GestureRecognition();
 
             // Simulo que movio el mouse
-            st_hand hand = kinect.right_hand_sel? kinect.right_hand : kinect.left_hand;
+            st_hand hand = kinect.right_hand_sel ? kinect.right_hand : kinect.left_hand;
             float sx = hand.position.X;
             float sy = hand.position.Y;
 
@@ -384,14 +391,14 @@ namespace TgcViewer.Utils.Gui
                     // El dialogo esta oculto y se mueve con el mouse a posicion izquierda
                     Show();
                 else
-                if (mouse_x > MENU_OFFSET_SALIDA && !hidden)
-                    // El dialogo esta visible y se mueve con el mouse a posicion derecha
-                    Show(false);
+                    if (mouse_x > MENU_OFFSET_SALIDA && !hidden)
+                        // El dialogo esta visible y se mueve con el mouse a posicion derecha
+                        Show(false);
             }
 
 
             //if(mouse_x!=sx || mouse_y!=sy)
-                // mouse move...
+            // mouse move...
 
 
             if (kinect.right_hand_sel && kinect.right_hand.gripping)
@@ -409,13 +416,13 @@ namespace TgcViewer.Utils.Gui
                 int t = item_0;
                 while (t < cant_items && sel == -1)
                 {
-                    if ( !items[t].disabled && (items[t].seleccionable || items[t].auto_seleccionable) )
+                    if (!items[t].disabled && (items[t].seleccionable || items[t].auto_seleccionable))
                     {
-                        Point pt = new Point(0,0);
+                        Point pt = new Point(0, 0);
                         if (items[t].scrolleable)
                         {
-                            pt.X = (int)(sx - sox*ex);
-                            pt.Y = (int)(sy - soy*ey);
+                            pt.X = (int)(sx - sox * ex);
+                            pt.Y = (int)(sy - soy * ey);
                         }
                         else
                         {
@@ -441,11 +448,11 @@ namespace TgcViewer.Utils.Gui
                 switch (items[sel].item_id)
                 {
                     case EVENT_SCROLL_LEFT:
-                        if(sox<max_sox)
-                            sox += vel_scroll*elapsed_time;
+                        if (sox < max_sox)
+                            sox += vel_scroll * elapsed_time;
                         break;
                     case EVENT_SCROLL_RIGHT:
-                        if(sox>min_sox)
+                        if (sox > min_sox)
                             sox -= vel_scroll * elapsed_time;
                         break;
                 }
@@ -483,7 +490,7 @@ namespace TgcViewer.Utils.Gui
 
                     case Gesture.Pressing:
                         // Presiona el item actual
-                        if (sel != -1 && timer_sel>=MIN_TIMER_PRESS)
+                        if (sel != -1 && timer_sel >= MIN_TIMER_PRESS)
                         {
                             items[sel].state = itemState.pressed;
                             // inicio el timer de press
@@ -499,7 +506,7 @@ namespace TgcViewer.Utils.Gui
                         break;
                 }
             }
-            
+
 
             // Actualizo la pos del mouse
             mouse_x = sx;
@@ -525,9 +532,9 @@ namespace TgcViewer.Utils.Gui
             // Actualizo los timers
             time += elapsed_time;
 
-            if(delay_initDialog > 0)
+            if (delay_initDialog > 0)
             {
-                delay_initDialog  -= elapsed_time;
+                delay_initDialog -= elapsed_time;
                 if (delay_initDialog < 0)
                     delay_initDialog = 0;
             }
@@ -604,7 +611,7 @@ namespace TgcViewer.Utils.Gui
             return ProcessInput(elapsed_time);
         }
 
-		public void Render()
+        public void Render()
         {
             Device d3dDevice = GuiController.Instance.D3dDevice;
 
@@ -618,8 +625,8 @@ namespace TgcViewer.Utils.Gui
             // 1- dibujo los items 2d con una interface de sprites
             sprite.Begin(SpriteFlags.AlphaBlend);
             Matrix matAnt = sprite.Transform * Matrix.Identity;
-            Vector2 scale = new Vector2(ex,ey);
-            Vector2 offset = new Vector2(ox,oy);
+            Vector2 scale = new Vector2(ex, ey);
+            Vector2 offset = new Vector2(ox, oy);
             sprite.Transform = Matrix.Transformation2D(new Vector2(0, 0), 0, scale, new Vector2(0, 0), 0, offset) * RTQ;
 
             int item_desde = item_0;
@@ -739,22 +746,22 @@ namespace TgcViewer.Utils.Gui
         }
 
         // Inserta un item generico 
-        public gui_item InsertItem(String s, int x, int y, int dx=0, int dy=0)
+        public gui_item InsertItem(String s, int x, int y, int dx = 0, int dy = 0)
         {
             // Static text = item generico
             return InsertItem(new gui_item(this, s, x, y, dx, dy));
         }
 
         // Pop up menu item
-        public gui_menu_item InsertMenuItem(int id,String s, String imagen,int x, int y, int dx = 0, int dy = 0,bool penabled=true)
+        public gui_menu_item InsertMenuItem(int id, String s, String imagen, int x, int y, int dx = 0, int dy = 0, bool penabled = true)
         {
-            return (gui_menu_item)InsertItem(new gui_menu_item(this, s,imagen, id, x, y, dx, dy, penabled));
+            return (gui_menu_item)InsertItem(new gui_menu_item(this, s, imagen, id, x, y, dx, dy, penabled));
         }
 
         // Standard push button
         public gui_button InsertButton(int id, String s, int x, int y, int dx, int dy)
         {
-            return (gui_button)InsertItem(new gui_button(this, s,id, x, y, dx, dy));
+            return (gui_button)InsertItem(new gui_button(this, s, id, x, y, dx, dy));
         }
 
         // kinect button
@@ -762,9 +769,9 @@ namespace TgcViewer.Utils.Gui
         {
             return (gui_kinect_circle_button)InsertItem(new gui_kinect_circle_button(this, s, imagen, id, x, y, r));
         }
-        public gui_kinect_tile_button InsertKinectTileButton(int id, String s, String imagen, int x, int y, int dx,int dy,bool scrolleable=true)
+        public gui_kinect_tile_button InsertKinectTileButton(int id, String s, String imagen, int x, int y, int dx, int dy, bool scrolleable = true)
         {
-            return (gui_kinect_tile_button)InsertItem(new gui_kinect_tile_button(this, s, imagen, id, x, y, dx,dy,scrolleable));
+            return (gui_kinect_tile_button)InsertItem(new gui_kinect_tile_button(this, s, imagen, id, x, y, dx, dy, scrolleable));
         }
         public gui_kinect_scroll_button InsertKinectScrollButton(int tscroll, String imagen, int x, int y, int dx, int dy)
         {
@@ -772,19 +779,19 @@ namespace TgcViewer.Utils.Gui
         }
 
         // Dialog Frame 
-        public gui_frame InsertFrame(String s, int x, int y, int dx, int dy,Color c_fondo,frameBorder borde=frameBorder.rectangular)
+        public gui_frame InsertFrame(String s, int x, int y, int dx, int dy, Color c_fondo, frameBorder borde = frameBorder.rectangular)
         {
-            return (gui_frame)InsertItem(new gui_frame(this, s, x, y, dx, dy, c_fondo,borde));
+            return (gui_frame)InsertItem(new gui_frame(this, s, x, y, dx, dy, c_fondo, borde));
         }
 
         // mesh buttons
-        public gui_mesh_button InsertMeshButton(int id, String s,String fname, int x, int y, int dx, int dy)
+        public gui_mesh_button InsertMeshButton(int id, String s, String fname, int x, int y, int dx, int dy)
         {
             return (gui_mesh_button)InsertItem(new gui_mesh_button(this, s, fname, id, x, y, dx, dy));
         }
 
         // Control de navegacion
-        public gui_navigate InsertNavigationControl( List<TgcMesh> p_meshes,int x, int y, int dx, int dy)
+        public gui_navigate InsertNavigationControl(List<TgcMesh> p_meshes, int x, int y, int dx, int dy)
         {
             return (gui_navigate)InsertItem(new gui_navigate(this, p_meshes, x, y, dx, dy));
         }
@@ -794,27 +801,27 @@ namespace TgcViewer.Utils.Gui
             int rta = -1;
             int i = item_0;
             while (i < cant_items && rta == -1)
-                if(items[i].item_id==id)
+                if (items[i].item_id == id)
                     rta = i;
                 else
                     ++i;
             return rta;
         }
 
-        public void EnableItem(int id,bool enable=true)
+        public void EnableItem(int id, bool enable = true)
         {
             int nro_item = GetDlgItemCtrl(id);
             if (nro_item != -1)
                 items[nro_item].disabled = !enable;
         }
-         
-		// line support
-		public void Transform(VERTEX2D []pt,int cant_ptos)
+
+        // line support
+        public void Transform(VERTEX2D[] pt, int cant_ptos)
         {
-	        for(int i=0;i<cant_ptos;++i)
-	        {
-                float x = ox + pt[i].x*ex;
-                float y = oy + pt[i].y*ey;
+            for (int i = 0; i < cant_ptos; ++i)
+            {
+                float x = ox + pt[i].x * ex;
+                float y = oy + pt[i].y * ey;
 
                 if (trapezoidal_style)
                 {
@@ -830,13 +837,13 @@ namespace TgcViewer.Utils.Gui
                     pt[i].x = x;
                     pt[i].y = y;
                 }
-	        }
+            }
         }
 
-		public void Transform(Vector2 []pt,int cant_ptos)
+        public void Transform(Vector2[] pt, int cant_ptos)
         {
-	        for(int i=0;i<cant_ptos;++i)
-	        {
+            for (int i = 0; i < cant_ptos; ++i)
+            {
                 float x = ox + pt[i].X * ex;
                 float y = oy + pt[i].Y * ey;
 
@@ -857,155 +864,155 @@ namespace TgcViewer.Utils.Gui
 
 
 
-	        }
+            }
         }
 
-        public void DrawPoly(Vector2 []V,int cant_ptos,int dw,Color color)
+        public void DrawPoly(Vector2[] V, int cant_ptos, int dw, Color color)
         {
-	        if(dw<1)
-		        dw = 1;
-	        // Elimino ptos repetidos
-	        Vector2 []P = new Vector2 [1000];
-	        int cant = 1;
-	        P[0] = V[0];
-	        for(int i=1;i<cant_ptos;++i)
-		        if((V[i]-V[i-1]).Length()>0.01)
-			        P[cant++] = V[i];
+            if (dw < 1)
+                dw = 1;
+            // Elimino ptos repetidos
+            Vector2[] P = new Vector2[1000];
+            int cant = 1;
+            P[0] = V[0];
+            for (int i = 1; i < cant_ptos; ++i)
+                if ((V[i] - V[i - 1]).Length() > 0.01)
+                    P[cant++] = V[i];
 
-	        cant_ptos = cant;
-	        bool closed  = (P[0]-P[cant_ptos-1]).Length()<0.1;
-	
-	        // calculo el offset
-	        Vector2 []Q = new Vector2 [1000];
-	        Vector2 []N = new Vector2 [1000];
-	        for(int i=0;i<cant_ptos-1;++i)
-	        {
-		        Vector2 p0 = P[i];
-		        Vector2 p1 = P[i+1];
-		        Vector2 v = p1-p0;
-		        v.Normalize();
+            cant_ptos = cant;
+            bool closed = (P[0] - P[cant_ptos - 1]).Length() < 0.1;
+
+            // calculo el offset
+            Vector2[] Q = new Vector2[1000];
+            Vector2[] N = new Vector2[1000];
+            for (int i = 0; i < cant_ptos - 1; ++i)
+            {
+                Vector2 p0 = P[i];
+                Vector2 p1 = P[i + 1];
+                Vector2 v = p1 - p0;
+                v.Normalize();
                 // N = V.normal()
-		        N[i].X = -v.Y;
-		        N[i].Y = v.X;
-	        }
+                N[i].X = -v.Y;
+                N[i].Y = v.X;
+            }
 
-	        // ptos intermedios
-	        int i0 = closed?0:1;
-	        for(int i=i0;i<cant_ptos;++i)
-	        {
-		        int ia = i!=0?i-1:cant_ptos-2;
-		        Vector2 n = N[ia]+N[i];
-		        n.Normalize();
-		        float r = Vector2.Dot(N[ia],n);
-		        if(r!=0)
-			        Q[i] = P[i] + n*((float)dw/r);
-		        else
-			        Q[i] = P[i];
+            // ptos intermedios
+            int i0 = closed ? 0 : 1;
+            for (int i = i0; i < cant_ptos; ++i)
+            {
+                int ia = i != 0 ? i - 1 : cant_ptos - 2;
+                Vector2 n = N[ia] + N[i];
+                n.Normalize();
+                float r = Vector2.Dot(N[ia], n);
+                if (r != 0)
+                    Q[i] = P[i] + n * ((float)dw / r);
+                else
+                    Q[i] = P[i];
 
-	        }
+            }
 
-	        if(!closed)
-	        {
-		        // poligono abierto: primer y ultimo punto: 
-		        Q[0] = P[0] + N[0]*dw;
-		        Q[cant_ptos-1] = P[cant_ptos-1] + N[cant_ptos-2]*dw;
-	        }
-	        else
-		        Q[cant_ptos-1] = Q[0];
-	
-
-	        VERTEX2D []pt = new VERTEX2D [4000];
-	        int t = 0;
-	        for(int i=0;i<cant_ptos-1;++i)
-	        {
-		        // 1er triangulo
-		        pt[t].x = P[i].X;
-		        pt[t].y = P[i].Y;
-		        pt[t+1].x = Q[i].X;
-		        pt[t+1].y = Q[i].Y;
-		        pt[t+2].x = P[i+1].X;
-		        pt[t+2].y = P[i+1].Y;
+            if (!closed)
+            {
+                // poligono abierto: primer y ultimo punto: 
+                Q[0] = P[0] + N[0] * dw;
+                Q[cant_ptos - 1] = P[cant_ptos - 1] + N[cant_ptos - 2] * dw;
+            }
+            else
+                Q[cant_ptos - 1] = Q[0];
 
 
-		        // segundo triangulo
-		        pt[t+3].x = Q[i].X;
-		        pt[t+3].y = Q[i].Y;
-		        pt[t+4].x = P[i+1].X;
-		        pt[t+4].y = P[i+1].Y;
-		        pt[t+5].x = Q[i+1].X;
-		        pt[t+5].y = Q[i+1].Y;
+            VERTEX2D[] pt = new VERTEX2D[4000];
+            int t = 0;
+            for (int i = 0; i < cant_ptos - 1; ++i)
+            {
+                // 1er triangulo
+                pt[t].x = P[i].X;
+                pt[t].y = P[i].Y;
+                pt[t + 1].x = Q[i].X;
+                pt[t + 1].y = Q[i].Y;
+                pt[t + 2].x = P[i + 1].X;
+                pt[t + 2].y = P[i + 1].Y;
 
-		        for(int j=0;j<6;++j)
-		        {
-			        pt[t].z = 0.5f;
-			        pt[t].rhw = 1;
-			        pt[t].color = color.ToArgb();
-			        ++t;
-		        }
-	        }
 
-	        Transform(pt,t);
+                // segundo triangulo
+                pt[t + 3].x = Q[i].X;
+                pt[t + 3].y = Q[i].Y;
+                pt[t + 4].x = P[i + 1].X;
+                pt[t + 4].y = P[i + 1].Y;
+                pt[t + 5].x = Q[i + 1].X;
+                pt[t + 5].y = Q[i + 1].Y;
 
-	        // dibujo como lista de triangulos
+                for (int j = 0; j < 6; ++j)
+                {
+                    pt[t].z = 0.5f;
+                    pt[t].rhw = 1;
+                    pt[t].color = color.ToArgb();
+                    ++t;
+                }
+            }
+
+            Transform(pt, t);
+
+            // dibujo como lista de triangulos
             Device d3dDevice = GuiController.Instance.D3dDevice;
-	        d3dDevice.VertexFormat = VertexFormats.Transformed | VertexFormats.Diffuse;
-	        d3dDevice.DrawUserPrimitives(PrimitiveType.TriangleList,2*(cant_ptos-1),pt);
+            d3dDevice.VertexFormat = VertexFormats.Transformed | VertexFormats.Diffuse;
+            d3dDevice.DrawUserPrimitives(PrimitiveType.TriangleList, 2 * (cant_ptos - 1), pt);
 
         }
 
-        public void DrawSolidPoly(Vector2 []P,int cant_ptos,Color color,bool gradiente=true)
+        public void DrawSolidPoly(Vector2[] P, int cant_ptos, Color color, bool gradiente = true)
         {
-	        // calculo el centro de gravedad
-	        float xc = 0;
-	        float yc = 0;
-	        float ymin = 100000;
-	        float ymax = -100000;
+            // calculo el centro de gravedad
+            float xc = 0;
+            float yc = 0;
+            float ymin = 100000;
+            float ymax = -100000;
 
-	        for(int i=0;i<cant_ptos-1;++i)
-	        {
-		        xc+=P[i].X;
-		        yc+=P[i].Y;
+            for (int i = 0; i < cant_ptos - 1; ++i)
+            {
+                xc += P[i].X;
+                yc += P[i].Y;
 
-		        if(P[i].Y>ymax)
-			        ymax = P[i].Y;
-		        if(P[i].Y<ymin)
-			        ymin = P[i].Y;
+                if (P[i].Y > ymax)
+                    ymax = P[i].Y;
+                if (P[i].Y < ymin)
+                    ymin = P[i].Y;
 
-	        }
+            }
 
-	        xc/=(float )(cant_ptos-1);
-	        yc/=(float )(cant_ptos-1);
+            xc /= (float)(cant_ptos - 1);
+            yc /= (float)(cant_ptos - 1);
 
-	        float dy = Math.Max(1,ymax - ymin);
+            float dy = Math.Max(1, ymax - ymin);
 
-	        byte a =  color.A;
-	        byte r =  color.R;
-	        byte g =  color.G;
-	        byte b =  color.B;
+            byte a = color.A;
+            byte r = color.R;
+            byte g = color.G;
+            byte b = color.B;
 
-	        VERTEX2D []pt = new VERTEX2D [4000];
-	        pt[0].x = xc;
-	        pt[0].y = yc;
-	        for(int i=0;i<cant_ptos;++i)
-	        {
-		        pt[i+1].x = P[i].X;
-		        pt[i+1].y = P[i].Y;
-	        }
+            VERTEX2D[] pt = new VERTEX2D[4000];
+            pt[0].x = xc;
+            pt[0].y = yc;
+            for (int i = 0; i < cant_ptos; ++i)
+            {
+                pt[i + 1].x = P[i].X;
+                pt[i + 1].y = P[i].Y;
+            }
 
-	        for(int i=0;i<cant_ptos+1;++i)
-	        {
-		        pt[i].z = 0.5f;
-		        pt[i].rhw = 1;
-		        if(gradiente)
-		        {
-			        double k = 1 - (pt[i].y - ymin) / dy * 0.5;
-                    pt[i].color = Color.FromArgb(a,(byte)Math.Min(255, r * k), (byte)Math.Min(255, g * k), (byte)Math.Min(255, r * b)).ToArgb();
-		        }
-		        else
-			        pt[i].color = color.ToArgb();
-	        }
+            for (int i = 0; i < cant_ptos + 1; ++i)
+            {
+                pt[i].z = 0.5f;
+                pt[i].rhw = 1;
+                if (gradiente)
+                {
+                    double k = 1 - (pt[i].y - ymin) / dy * 0.5;
+                    pt[i].color = Color.FromArgb(a, (byte)Math.Min(255, r * k), (byte)Math.Min(255, g * k), (byte)Math.Min(255, r * b)).ToArgb();
+                }
+                else
+                    pt[i].color = color.ToArgb();
+            }
 
-	        Transform(pt,cant_ptos+1);
+            Transform(pt, cant_ptos + 1);
 
             Device d3dDevice = GuiController.Instance.D3dDevice;
             d3dDevice.VertexFormat = VertexFormats.Transformed | VertexFormats.Diffuse;
@@ -1013,71 +1020,71 @@ namespace TgcViewer.Utils.Gui
 
         }
 
-        public void RoundRect(int x0,int y0,int x1,int y1,int r,int dw,Color color,bool solid=false)
+        public void RoundRect(int x0, int y0, int x1, int y1, int r, int dw, Color color, bool solid = false)
         {
-	        if(dw<1)
-		        dw = 1;
-	        Vector2  []pt = new Vector2[1000];
+            if (dw < 1)
+                dw = 1;
+            Vector2[] pt = new Vector2[1000];
 
-	        float da = M_PI/8.0f;
-	        float alfa;
+            float da = M_PI / 8.0f;
+            float alfa;
 
             x0 += r;
             y0 += r;
             x1 -= r;
             y1 -= r;
 
-	        int t =0;
-	        float x = x0;
-	        float y = y0;
-	        for(alfa =0;alfa<M_PI_2;alfa+=da)
-	        {
+            int t = 0;
+            float x = x0;
+            float y = y0;
+            for (alfa = 0; alfa < M_PI_2; alfa += da)
+            {
                 pt[t].X = x - r * (float)Math.Cos(alfa);
                 pt[t].Y = y - r * (float)Math.Sin(alfa);
-		        ++t;
-	        }
-	        pt[t].X = x;
-	        pt[t].Y = y-r;
-	        ++t;
+                ++t;
+            }
+            pt[t].X = x;
+            pt[t].Y = y - r;
+            ++t;
 
-	        x = x1;
-	        y = y0;
-	        for(alfa =M_PI_2;alfa<M_PI;alfa+=da)
-	        {
+            x = x1;
+            y = y0;
+            for (alfa = M_PI_2; alfa < M_PI; alfa += da)
+            {
                 pt[t].X = x - r * (float)Math.Cos(alfa);
                 pt[t].Y = y - r * (float)Math.Sin(alfa);
-		        ++t;
-	        }
-	        pt[t].X = x+r;
-	        pt[t].Y = y;
-	        ++t;
+                ++t;
+            }
+            pt[t].X = x + r;
+            pt[t].Y = y;
+            ++t;
 
-	        x = x1;
-	        y = y1;
-	        for(alfa =0;alfa<M_PI_2;alfa+=da)
-	        {
+            x = x1;
+            y = y1;
+            for (alfa = 0; alfa < M_PI_2; alfa += da)
+            {
                 pt[t].X = x + r * (float)Math.Cos(alfa);
                 pt[t].Y = y + r * (float)Math.Sin(alfa);
                 ++t;
-	        }
-	        pt[t].X = x;
-	        pt[t].Y = y+r;
-	        ++t;
+            }
+            pt[t].X = x;
+            pt[t].Y = y + r;
+            ++t;
 
-	        x = x0;
-	        y = y1;
-	        for(alfa =M_PI_2;alfa<M_PI;alfa+=da)
-	        {
+            x = x0;
+            y = y1;
+            for (alfa = M_PI_2; alfa < M_PI; alfa += da)
+            {
                 pt[t].X = x + r * (float)Math.Cos(alfa);
                 pt[t].Y = y + r * (float)Math.Sin(alfa);
                 ++t;
-	        }
-	        pt[t++] = pt[0];
+            }
+            pt[t++] = pt[0];
 
-	        if(solid)
-		        DrawSolidPoly(pt,t,color,false);
-	        else
-		        DrawPoly(pt,t,dw,color);
+            if (solid)
+                DrawSolidPoly(pt, t, color, false);
+            else
+                DrawPoly(pt, t, dw, color);
         }
 
 
@@ -1106,7 +1113,7 @@ namespace TgcViewer.Utils.Gui
         public void DrawDisc(Vector2 c, int r, Color color)
         {
             // demasiado pequeño el radio
-            if(r<10)
+            if (r < 10)
                 return;
 
             // quiero que cada linea como maximo tenga 3 pixeles
@@ -1114,7 +1121,7 @@ namespace TgcViewer.Utils.Gui
             int cant_ptos = (int)(2 * M_PI / da);
 
             VERTEX2D[] pt = new VERTEX2D[cant_ptos + 10];           // + 10 x las dudas
-            
+
             int t = 0;              // Cantidad de vertices
             // el primer vertice es el centro del circulo
             pt[t].x = c.X;
@@ -1144,25 +1151,25 @@ namespace TgcViewer.Utils.Gui
 
         }
 
-        public void DrawCircle(Vector2 c, int r,int esp, Color color)
+        public void DrawCircle(Vector2 c, int r, int esp, Color color)
         {
             // demasiado pequeño el radio
-            if (r - esp <10)
+            if (r - esp < 10)
                 return;
 
             // quiero que cada linea como maximo tenga 5 pixeles
             float da = 5.0f / (float)r;
             int cant_ptos = (int)(2 * M_PI / da);
 
-            VERTEX2D[] pt = new VERTEX2D[2*cant_ptos + 10];           // + 10 x las dudas
+            VERTEX2D[] pt = new VERTEX2D[2 * cant_ptos + 10];           // + 10 x las dudas
 
             int t = 0;              // Cantidad de vertices
 
-            
+
             for (int i = 0; i < cant_ptos; ++i)
             {
                 float an = (float)i / (float)cant_ptos * 2 * M_PI;
-                   
+
                 // alterno los radios interior y exterior entre los pares e impares
 
                 pt[t].x = c.X + (float)Math.Cos(an) * r;
@@ -1193,7 +1200,7 @@ namespace TgcViewer.Utils.Gui
 
         }
 
-        public void DrawArc(Vector2 c, int r, float desde,float hasta,int esp, Color color)
+        public void DrawArc(Vector2 c, int r, float desde, float hasta, int esp, Color color)
         {
             // demasiado pequeño el radio
             if (r - esp < 10)
@@ -1209,7 +1216,7 @@ namespace TgcViewer.Utils.Gui
             // quiero que cada linea como maximo tenga 5 pixeles
             float da = 5.0f / (float)r;
             float arc_len = hasta - desde;
-            int cant_ptos = (int)(arc_len/ da);
+            int cant_ptos = (int)(arc_len / da);
 
             VERTEX2D[] pt = new VERTEX2D[2 * cant_ptos + 10];           // + 10 x las dudas
 
@@ -1218,7 +1225,7 @@ namespace TgcViewer.Utils.Gui
 
             for (int i = 0; i < cant_ptos; ++i)
             {
-                float an = desde+ (float)i / (float)cant_ptos * arc_len;
+                float an = desde + (float)i / (float)cant_ptos * arc_len;
 
                 // alterno los radios interior y exterior entre los pares e impares
 
@@ -1253,7 +1260,7 @@ namespace TgcViewer.Utils.Gui
             // Verifico si la imagen ya esta cargada
             bool flag = false;
             int i = 0;
-            while(i < cant_bitmaps && !flag)
+            while (i < cant_bitmaps && !flag)
                 if (fname == bitmaps[i].fname)
                     flag = true;
                 else
@@ -1271,11 +1278,11 @@ namespace TgcViewer.Utils.Gui
                 bitmaps[i].Height = desc.Height;
             }
 
-            Vector3 pos = new Vector3((x0+x1)/2, (y0+y1)/2, 0);
-            Vector3 c0 = new Vector3(bitmaps[i].Width / 2, bitmaps[i].Height/ 2, 0);
+            Vector3 pos = new Vector3((x0 + x1) / 2, (y0 + y1) / 2, 0);
+            Vector3 c0 = new Vector3(bitmaps[i].Width / 2, bitmaps[i].Height / 2, 0);
             // Determino la escala para que entre justo
-            Vector2 scale2 = new Vector2((float)(x1 - x0) / (float)bitmaps[i].Width, (float)(y1-y0) / (float)bitmaps[i].Height);
-            sprite.Transform = Matrix.Transformation2D(new Vector2(pos.X, pos.Y), 0, scale2, new Vector2(0, 0), 0, new Vector2(0,0));
+            Vector2 scale2 = new Vector2((float)(x1 - x0) / (float)bitmaps[i].Width, (float)(y1 - y0) / (float)bitmaps[i].Height);
+            sprite.Transform = Matrix.Transformation2D(new Vector2(pos.X, pos.Y), 0, scale2, new Vector2(0, 0), 0, new Vector2(0, 0));
 
             Device d3dDevice = GuiController.Instance.D3dDevice;
             d3dDevice.SetTexture(0, null);
@@ -1289,14 +1296,14 @@ namespace TgcViewer.Utils.Gui
         }
 
         // Helper para cargar una textura 
-        public static Texture cargar_textura(String filename,bool alpha_channel=false)
+        public static Texture cargar_textura(String filename, bool alpha_channel = false)
         {
             Texture textura = null;
             filename.TrimEnd();
-		    // cargo la textura
+            // cargo la textura
             Device d3dDevice = GuiController.Instance.D3dDevice;
             String fname_aux = GuiController.Instance.ExamplesMediaDir + "gui\\" + filename;
-            if(!File.Exists(fname_aux))
+            if (!File.Exists(fname_aux))
                 // Pruebo con la carpeta de texturas
                 fname_aux = GuiController.Instance.ExamplesMediaDir + "focus\\texturas\\" + filename;
             if (!File.Exists(fname_aux))
@@ -1312,14 +1319,14 @@ namespace TgcViewer.Utils.Gui
                 if (alpha_channel)
                 {
                     textura = TextureLoader.FromFile(d3dDevice, fname_aux, -2, -2, 1, Usage.None,
-                        Format.A8B8G8R8,Pool.Managed,Filter.None,Filter.None,0);
+                        Format.A8B8G8R8, Pool.Managed, Filter.None, Filter.None, 0);
                     // Mask transparente
                     SetAlphaChannel(textura, 255, 0, 255);
                 }
                 else
                     textura = TextureLoader.FromFile(d3dDevice, fname_aux, -2, -2, 1, Usage.None,
                         Format.A8B8G8R8, Pool.Managed, Filter.None, Filter.None, 0);
-                    //textura = TextureLoader.FromFile(d3dDevice, fname_aux);
+                //textura = TextureLoader.FromFile(d3dDevice, fname_aux);
             }
             catch (System.Exception error)
             {
@@ -1351,7 +1358,7 @@ namespace TgcViewer.Utils.Gui
                 {
                     for (int x = 0; x < m_dwWidth; x++)
                     {
-                        int dwOffset = y * pitch + x*4;
+                        int dwOffset = y * pitch + x * 4;
                         byte b = buffer[dwOffset];
                         byte g = buffer[dwOffset + 1];
                         byte r = buffer[dwOffset + 2];
@@ -1372,8 +1379,8 @@ namespace TgcViewer.Utils.Gui
             return 1;
         }
 
-         Matrix rectToQuad(float X,float Y,float W,float H,
-                            float x1, float y1,float x2, float y2,float x3, float y3,float x4, float y4)
+        Matrix rectToQuad(float X, float Y, float W, float H,
+                           float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4)
         {
             float y21 = y2 - y1;
             float y32 = y4 - y2;
@@ -1382,45 +1389,45 @@ namespace TgcViewer.Utils.Gui
             float y31 = y4 - y1;
             float y42 = y3 - y2;
 
-            float a = -H*(x2*x4*y14 + x2*x3*y31 - x1*x3*y32 + x1*x4*y42);
-            float b = W*(x2*x4*y14 + x4*x3*y21 + x1*x3*y32 + x1*x2*y43);
-            float c = H*X*(x2*x4*y14 + x2*x3*y31 - x1*x3*y32 + x1*x4*y42) - H*W*x1*(x3*y32 - x4*y42 + x2*y43) - W*Y*(x2*x4*y14 + x4*x3*y21 + x1*x3*y32 + x1*x2*y43);
+            float a = -H * (x2 * x4 * y14 + x2 * x3 * y31 - x1 * x3 * y32 + x1 * x4 * y42);
+            float b = W * (x2 * x4 * y14 + x4 * x3 * y21 + x1 * x3 * y32 + x1 * x2 * y43);
+            float c = H * X * (x2 * x4 * y14 + x2 * x3 * y31 - x1 * x3 * y32 + x1 * x4 * y42) - H * W * x1 * (x3 * y32 - x4 * y42 + x2 * y43) - W * Y * (x2 * x4 * y14 + x4 * x3 * y21 + x1 * x3 * y32 + x1 * x2 * y43);
 
-            float d = H*(-x3*y21*y4 + x2*y1*y43 - x1*y2*y43 - x4*y1*y3 + x4*y2*y3);
-            float e = W*(x3*y2*y31 - x4*y1*y42 - x2*y31*y3 + x1*y4*y42);
-            float f = -(W*(x3*(Y*y2*y31 + H*y1*y32) - x4*(H + Y)*y1*y42 + H*x2*y1*y43 + x2*Y*(y1 - y4)*y3 + x1*Y*y4*(-y2 + y3)) - H*X*(x3*y21*y4 - x2*y1*y43 + x4*(y1 - y2)*y3 + x1*y2*(-y4 + y3)));
+            float d = H * (-x3 * y21 * y4 + x2 * y1 * y43 - x1 * y2 * y43 - x4 * y1 * y3 + x4 * y2 * y3);
+            float e = W * (x3 * y2 * y31 - x4 * y1 * y42 - x2 * y31 * y3 + x1 * y4 * y42);
+            float f = -(W * (x3 * (Y * y2 * y31 + H * y1 * y32) - x4 * (H + Y) * y1 * y42 + H * x2 * y1 * y43 + x2 * Y * (y1 - y4) * y3 + x1 * Y * y4 * (-y2 + y3)) - H * X * (x3 * y21 * y4 - x2 * y1 * y43 + x4 * (y1 - y2) * y3 + x1 * y2 * (-y4 + y3)));
 
-            float g = H*(x4*y21 - x3*y21 + (-x1 + x2)*y43);
-            float h = W*(-x2*y31 + x3*y31 + (x1 - x4)*y42);
-            float i = W*Y*(x2*y31 - x3*y31 - x1*y42 + x4*y42) + H*(X*(-(x4*y21) + x3*y21 + x1*y43 - x2*y43) + W*(-(x4*y2) + x3*y2 + x2*y4 - x3*y4 - x2*y3 + x4*y3));
+            float g = H * (x4 * y21 - x3 * y21 + (-x1 + x2) * y43);
+            float h = W * (-x2 * y31 + x3 * y31 + (x1 - x4) * y42);
+            float i = W * Y * (x2 * y31 - x3 * y31 - x1 * y42 + x4 * y42) + H * (X * (-(x4 * y21) + x3 * y21 + x1 * y43 - x2 * y43) + W * (-(x4 * y2) + x3 * y2 + x2 * y4 - x3 * y4 - x2 * y3 + x4 * y3));
 
             const double ep = 0.0001;
 
-            if(Math.Abs(i) < ep)
+            if (Math.Abs(i) < ep)
             {
-                i = (float)(ep* (i > 0 ? 1.0f : -1.0f));
+                i = (float)(ep * (i > 0 ? 1.0f : -1.0f));
             }
 
             Matrix transform = new Matrix();
 
-             // X
+            // X
             transform.M11 = a / i;
             transform.M21 = b / i;
             transform.M31 = 0;
             transform.M41 = c / i;
-             // Y
+            // Y
             transform.M12 = d / i;
             transform.M22 = e / i;
             transform.M32 = 0;
             transform.M42 = f / i;
-            
-             // Z
+
+            // Z
             transform.M13 = 0;
             transform.M23 = 0;
             transform.M33 = 1;
             transform.M43 = 0;
 
-             // W
+            // W
             transform.M14 = g / i;
             transform.M24 = h / i;
             transform.M34 = 0;
@@ -1428,6 +1435,7 @@ namespace TgcViewer.Utils.Gui
 
             return transform;
         }
+
     }
     
 }

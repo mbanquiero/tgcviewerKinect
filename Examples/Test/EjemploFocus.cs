@@ -46,6 +46,7 @@ namespace Examples.Test
         // gui
         DXGui gui = new DXGui();
         //FocusCamera camera = new FocusCamera();
+        public bool blocked = false;
 
 
 
@@ -114,6 +115,14 @@ namespace Examples.Test
         {
             Device d3dDevice = GuiController.Instance.D3dDevice;
 
+            if (blocked)
+            {
+                // Solo hay gui, dibujo un fondo de presentacion
+                gui.DrawImage(GuiController.Instance.ExamplesMediaDir + "Focus\\texturas\\fondo.png", 0, 0,
+                    GuiController.Instance.Panel3d.Width, GuiController.Instance.Panel3d.Height);
+                return;
+            }
+
             TgcKinectSkeletonData data = tgcKinect.update();
             if (data.Active)
             {
@@ -180,7 +189,22 @@ namespace Examples.Test
 
                         case ID_APP_EXIT:
                             // Salir
-                            gui.MessageBox("Desea Salir del Sistema?", "Focus Kinect Interaction");
+                            //gui.MessageBox("Desea Salir del Sistema?", "Focus Kinect Interaction");
+                            // Test de thread
+                            {
+                                blocked = true;
+                                long T0 = TgcViewer.Utils.HighResolutionTimer.Ticks;
+                                float F =  (float)TgcViewer.Utils.HighResolutionTimer.Frequency;
+                                while(true)
+                                {
+                                    long T1 = TgcViewer.Utils.HighResolutionTimer.Ticks;
+                                    float time = (float)(T1-T0)/F;
+                                    GuiController.Instance.MessageLoop();
+                                    if(time>10f)
+                                        break;
+                                }
+                                blocked = false;
+                            }
                             break;
 
                         case ID_CAMBIAR_TEXTURAS:

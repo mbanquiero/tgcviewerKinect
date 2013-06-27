@@ -18,9 +18,37 @@ using TgcViewer.Utils.Ui;
 using TgcViewer.Utils.Fog;
 using TgcViewer.Utils._2D;
 using TgcViewer.Utils.Shaders;
+using System.Runtime.InteropServices;
 
 namespace TgcViewer
 {
+
+    /// <summary>
+    /// Garompa para el peekmessage
+    /// </summary>
+    public struct POINTAPI
+    {
+        public Int32 x;
+        public Int32 y;
+    }
+
+    public struct MSG
+    {
+        public Int32 hwmd;
+        public Int32 message;
+        public Int32 wParam;
+        public Int32 lParam;
+        public Int32 time;
+        public POINTAPI pt;
+    }
+
+
+    public enum PeekMessageOption
+    {
+        PM_NOREMOVE = 0,
+        PM_REMOVE
+    }
+
     /// <summary>
     /// Controlador principal de la aplicación
     /// </summary>
@@ -47,6 +75,21 @@ namespace TgcViewer
         }
 
         #endregion
+
+        [DllImport("user32.dll", SetLastError = true)]
+        private static extern bool PeekMessage(
+                           ref MSG lpMsg,
+                           Int32 hwnd,
+                           Int32 wMsgFilterMin,
+                           Int32 wMsgFilterMax,
+                           PeekMessageOption wRemoveMsg);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        private static extern bool TranslateMessage(ref MSG lpMsg);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        private static extern Int32 DispatchMessage(ref MSG lpMsg);
+        public const Int32 WM_QUIT = 0x12;
 
         MainForm mainForm;
         Control panel3d;
@@ -688,9 +731,25 @@ namespace TgcViewer
         }
 
 
-        #endregion
+        public bool MessageLoop()
+        {
+            MSG msg = new MSG();
+            PeekMessage(ref msg, 0, 0, 0, PeekMessageOption.PM_REMOVE);
+            if (msg.message == WM_QUIT)
+                return false;
+            TranslateMessage(ref msg);
+            DispatchMessage(ref msg);
 
-        
+            Device d3dDevice = tgcD3dDevice.D3dDevice;
+            d3dDevice.EndScene();
+            render();
+            d3dDevice.BeginScene();
+            return true;
+        }
+
+
+
+        #endregion
 
 
 
