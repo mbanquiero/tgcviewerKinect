@@ -741,9 +741,16 @@ namespace TgcViewer
             DispatchMessage(ref msg);
 
             Device d3dDevice = tgcD3dDevice.D3dDevice;
-            d3dDevice.EndScene();
-            render();
-            d3dDevice.BeginScene();
+            if (currentExample != null)
+            {            
+                //esta en el renderloop del example y ya hay un beginscene hecho
+                d3dDevice.EndScene();
+                render();
+                d3dDevice.BeginScene();
+            }else
+                //esta fuera del renderloop.
+                render();
+
             return true;
         }
 
