@@ -796,6 +796,12 @@ namespace TgcViewer.Utils.Gui
             return (gui_navigate)InsertItem(new gui_navigate(this, p_meshes, x, y, dx, dy));
         }
 
+        // Progress bar
+        public gui_progress_bar InsertProgressBar(int id,int x, int y, int dx, int dy)
+        {
+            return (gui_progress_bar)InsertItem(new gui_progress_bar(this, x, y, dx, dy,id));
+        }
+
         public int GetDlgItemCtrl(int id)
         {
             int rta = -1;
@@ -806,6 +812,19 @@ namespace TgcViewer.Utils.Gui
                 else
                     ++i;
             return rta;
+        }
+
+        public gui_item GetDlgItem(int id)
+        {
+            int rta = -1;
+            int i = item_0;
+            while (i < cant_items && rta == -1)
+                if (items[i].item_id == id)
+                    rta = i;
+                else
+                    ++i;
+            
+            return rta!=-1? items[rta] : null;
         }
 
         public void EnableItem(int id, bool enable = true)
