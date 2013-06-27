@@ -499,6 +499,7 @@ namespace Examples.Test
         public void EmpujadorDlg()
         {
             gui.InitDialog(false, false);
+            gui.hoover_enabled = false;             // deshabilito el hoover para esta pantalla
 
             int W = GuiController.Instance.Panel3d.Width;
             int H = GuiController.Instance.Panel3d.Height;
@@ -525,9 +526,8 @@ namespace Examples.Test
             List<string> lista = new List<string>();
             lista.Add(GuiController.Instance.ExamplesMediaDir + "Focus\\texturas\\dxf\\manija modulos\\msh\\10089945.y");
             lista.Add(GuiController.Instance.ExamplesMediaDir + "Focus\\texturas\\dxf\\manija modulos\\msh\\10090267.y");
-            lista.Add(GuiController.Instance.ExamplesMediaDir + "Focus\\texturas\\dxf\\bachas\\msh\\405 E.y");
-            lista.Add(GuiController.Instance.ExamplesMediaDir + "Focus\\texturas\\dxf\\adornos\\msh\\adorno13.y");
-            lista.Add(GuiController.Instance.ExamplesMediaDir + "Focus\\texturas\\dxf\\manija modulos\\msh\\10090267.y");
+            lista.Add(GuiController.Instance.ExamplesMediaDir + "Focus\\texturas\\dxf\\manija modulos\\msh\\16053.y");
+            lista.Add(GuiController.Instance.ExamplesMediaDir + "Focus\\texturas\\dxf\\manija modulos\\msh\\117_97.y");
 
             int cant_texturas = lista.Count;
             int t = 0;

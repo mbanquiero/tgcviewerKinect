@@ -698,9 +698,6 @@ namespace TgcViewer.Utils.Gui
         public override void Render(DXGui gui)
         {
             Device d3dDevice = GuiController.Instance.D3dDevice;
-            Vector3 LA = gui.camera.getLookAt();
-            Vector3 LF = gui.camera.getPosition();
-
             bool sel = state == itemState.hover;
             float tr = (float)(4 * (gui.delay_sel0 - gui.delay_sel));
             float k = 1;
@@ -741,12 +738,21 @@ namespace TgcViewer.Utils.Gui
             float an = sel ? ftime*1.5f : 0;
             Vector3 viewDir = new Vector3((float)Math.Sin(an), 0.3f, (float)Math.Cos(an));
             viewDir.Normalize();
-            // LA = mesh.Position;
-            float dist = sel ? size * 1.2f : size * 1.5f;
-            //  LF = mesh.Position + viewDir * dist;
-            gui.camera.setCamera(mesh.Position + viewDir * dist,mesh.Position);
-            gui.camera.updateCamera();
-            gui.camera.updateViewMatrix(d3dDevice);
+            Vector3 LA = mesh.Position;
+            float dist = sel ? size * 1.5f : size * 2f;
+            Vector3 LF = mesh.Position + viewDir * dist;
+            Matrix ant_matView = d3dDevice.Transform.View * Matrix.Identity;
+            d3dDevice.Transform.View = Matrix.LookAtLH(LF, LA, new Vector3(0, 1, 0));
+
+            Matrix ant_matProj = d3dDevice.Transform.Projection * Matrix.Identity;
+            float W = (float)GuiController.Instance.Panel3d.Width;
+            float H = (float)GuiController.Instance.Panel3d.Height;
+            float aspect_ratio = W / H;
+            d3dDevice.Transform.Projection = Matrix.PerspectiveFovLH((float)Math.PI / 4.0f, aspect_ratio, 1f, 1000f);
+
+            Effect currentShader = GuiController.Instance.Shaders.TgcMeshShader;
+            mesh.Effect = currentShader;
+            mesh.Technique = GuiController.Instance.Shaders.getTgcMeshTechnique(mesh.RenderType);
 
             Viewport ant_viewport = d3dDevice.Viewport;
             Viewport btn_viewport = new Viewport();
@@ -755,20 +761,17 @@ namespace TgcViewer.Utils.Gui
             btn_viewport.Width = (int)((x1-x0)* ex);
             btn_viewport.Height = (int)((y1-y0)* ey);
             d3dDevice.Viewport = btn_viewport;
-            /*
+
             d3dDevice.EndScene();
             d3dDevice.Clear(ClearFlags.ZBuffer | ClearFlags.Target, sel ? Color.FromArgb(240, 250, 240) : Color.FromArgb(192, 192, 192), 1.0f, 0);
             d3dDevice.BeginScene();
             d3dDevice.SetRenderState(RenderStates.ZEnable, true);
             mesh.render();
-             */
-
-            gui.camera.setCamera(LA, LF);
-            //gui.camera.LookAt = LA*1;
-            //gui.camera.LookFrom = LF*1;
-
+             
             d3dDevice.Viewport = ant_viewport;
             d3dDevice.SetRenderState(RenderStates.ZEnable, false);
+            d3dDevice.Transform.View = ant_matView*Matrix.Identity;
+            d3dDevice.Transform.Projection = ant_matProj * Matrix.Identity;
 
             // Dibujo un rectangulo
             gui.DrawRect((int)x0, (int)y0, (int)x1, (int)y1, sel?5:2, Color.FromArgb(gui.alpha, 32, 140, 55));

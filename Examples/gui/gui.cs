@@ -72,6 +72,7 @@ namespace TgcViewer.Utils.Gui
         public int item_0;
         public bool trapezoidal_style;
         public bool autohide;
+        public bool hoover_enabled;
     };
 
 
@@ -192,8 +193,8 @@ namespace TgcViewer.Utils.Gui
         public float min_sox = -3000;
         public float max_sox = 3000;
 
+        public bool hoover_enabled;             // indica si esta habilitado que si se queda parado en un lugar sintetize un press
         public bool closing;                    // indica que el dialogo se esta cerrado. 
-
         public bool blocked;
 
         public DXGui()
@@ -202,6 +203,7 @@ namespace TgcViewer.Utils.Gui
             cant_dialog = 0;
             trapezoidal_style = true;
             autohide = false;
+            hoover_enabled = true;
             alpha = 255;
 
             // Computo la matrix de cambio rect to quad
@@ -213,7 +215,6 @@ namespace TgcViewer.Utils.Gui
             KINECT_BUTTON_SIZE_X = (int)((float)KINECT_BUTTON_SIZE_X * W / 1920.0f);
             KINECT_BUTTON_SIZE_Y = (int)((float)KINECT_BUTTON_SIZE_Y * H / 1080.0f);
             closing = false;
-
         }
 
         public void Reset()
@@ -283,12 +284,15 @@ namespace TgcViewer.Utils.Gui
             // y el valor del estilo del dialogo actual
             dialog[cant_dialog].trapezoidal_style = trapezoidal_style;
             dialog[cant_dialog].autohide = autohide;
+            dialog[cant_dialog].hoover_enabled = hoover_enabled;
+
             ++cant_dialog;
             // y el primer item del nuevo dialog es cant items
             item_0 = cant_items;
             // y seteo el nuevo estilo de dialogo
             trapezoidal_style = trapezoidal;
             autohide = pautohide;
+            hoover_enabled = true;           // X defecto tiene el hoover enabled
             foco = -1;
             rbt = -1;
             sel = -1;
@@ -308,6 +312,7 @@ namespace TgcViewer.Utils.Gui
             item_0 = dialog[cant_dialog].item_0;
             trapezoidal_style = dialog[cant_dialog].trapezoidal_style;
             autohide = dialog[cant_dialog].autohide;
+            hoover_enabled = dialog[cant_dialog].hoover_enabled;
             // Saco el foco
             foco = -1;
             // valores x defecto del scroll
@@ -477,7 +482,7 @@ namespace TgcViewer.Utils.Gui
             }
 
             //Ver si se quedo quieto suficiente tiempo como para presionar boton
-            if (timer_sel > TIMER_QUIETO_PRESSING)
+            if (timer_sel > TIMER_QUIETO_PRESSING && hoover_enabled)
                 kinect.currentGesture = Gesture.Pressing;
 
             if (!hidden)
@@ -714,7 +719,7 @@ namespace TgcViewer.Utils.Gui
             }
 
             // Hoover
-            if (timer_sel > 0.5)
+            if (timer_sel > 0.5 && hoover_enabled)
             {
                 float k = timer_sel / TIMER_QUIETO_PRESSING;
                 bool ant_trap_style = trapezoidal_style;
