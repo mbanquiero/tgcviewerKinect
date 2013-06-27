@@ -632,8 +632,15 @@ namespace Examples.Focus
         {
             if (Path.GetFileNameWithoutExtension(path).Length == 0)
                 return NULL_TEXTURE;
+
+            string pngpath = Path.ChangeExtension(path, ".png");
+            string jpgpath = Path.ChangeExtension(path, ".jpg");
+
+            if (File.Exists(jpgpath))
+                path = jpgpath;
+            else
+                path = pngpath;
             
-            path = Path.ChangeExtension(path,".png");
 
             if (!downloadTexture(path))
             {
