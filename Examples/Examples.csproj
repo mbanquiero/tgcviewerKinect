@@ -107,6 +107,7 @@
     <Compile Include="Kinect\TgcKinectSkeletalMesh.cs" />
     <Compile Include="Kinect\TgcKinectSkeletonData.cs" />
     <Compile Include="Kinect\TgcKinectUtils.cs" />
+    <Compile Include="Test\EjemploEsqueletoEnFocus.cs" />
     <Compile Include="Test\EjemploHandsCursor.cs" />
     <Compile Include="Test\EjemploFocus.cs" />
     <Compile Include="Focus\FocusParser.cs" />
