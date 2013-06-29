@@ -21,7 +21,13 @@ namespace TgcViewer.Utils.TgcSkeletalAnimation
         /// </summary>
         public const int MAX_BONE_COUNT = 26;
 
-
+        private TgcDXMesh elipsoid;
+        private TgcDXMesh bola;
+        private TgcDXMesh culo;
+        private TgcDXMesh torso;
+        private TgcDXMesh cabeza;
+        private float[] boneRadio;
+            
         /// <summary>
         /// Mesh de DirectX
         /// </summary>
@@ -866,7 +872,7 @@ namespace TgcViewer.Utils.TgcSkeletalAnimation
             effect.SetValue("bonesMatWorldArray", this.boneSpaceFinalTransforms);
 
             //Renderizar malla
-            if (!renderSkeleton)
+            if (!renderSkeleton && false)
             {
                 //Renderizar segun el tipo de render de la malla
                 effect.Technique = this.technique;
@@ -980,20 +986,132 @@ namespace TgcViewer.Utils.TgcSkeletalAnimation
         /// <summary>
         /// Dibujar el esqueleto de la malla
         /// </summary>
+        bool primera = true;
         protected void renderSkeletonMesh()
         {
             Device device = GuiController.Instance.D3dDevice;
             Vector3 ceroVec = new Vector3(0, 0, 0);
 
+            if (primera)
+            {
+
+                //TgcSceneLoader.TgcSceneLoader loader = new TgcSceneLoader.TgcSceneLoader();
+                //TgcSceneLoader.TgcScene currentScene = loader.loadSceneFromFile(GuiController.Instance.ExamplesMediaDir +
+                //    "ModelosTgc\\Zapato\\Zapato-TgcScene.xml");
+                ////+ "ModelosTgc\\CopaMadera\\CopaMadera-TgcScene.xml");
+
+                //TgcMesh mesh = currentScene.Meshes[0];
+                //mesh.AutoTransformEnable = false;
+
+                elipsoid = new TgcDXMesh();
+                elipsoid.loadMesh(GuiController.Instance.ExamplesMediaDir + "ModelosX\\pieza.x");
+                bola = new TgcDXMesh();
+                bola.loadMesh(GuiController.Instance.ExamplesMediaDir + "ModelosX\\ball.x");
+                culo = new TgcDXMesh();
+                culo.loadMesh(GuiController.Instance.ExamplesMediaDir + "ModelosX\\culo.x");
+                torso = new TgcDXMesh();
+                torso.loadMesh(GuiController.Instance.ExamplesMediaDir + "ModelosX\\torso.x");
+                cabeza = new TgcDXMesh();
+                cabeza.loadMesh(GuiController.Instance.ExamplesMediaDir + "ModelosX\\cabeza.x");
+                primera = false;
+
+                boneRadio = new float[MAX_BONE_COUNT];
+
+                int i = 0;
+                boneRadio[i++] = 200.0f;
+                boneRadio[i++] = 200.0f;
+                boneRadio[i++] = 200.0f;
+                boneRadio[i++] = 200.0f;
+                boneRadio[i++] = 200.0f;
+                boneRadio[i++] = 200.0f;
+                boneRadio[i++] = 200.0f;
+                boneRadio[i++] = 200.0f;
+                boneRadio[i++] = 200.0f;
+                boneRadio[i++] = 200.0f;
+                boneRadio[i++] = 200.0f;
+                boneRadio[i++] = 200.0f;
+                boneRadio[i++] = 200.0f;
+                boneRadio[i++] = 200.0f;
+                boneRadio[i++] = 200.0f;
+                boneRadio[i++] = 200.0f;
+                boneRadio[i++] = 200.0f;
+                boneRadio[i++] = 200.0f;
+                boneRadio[i++] = 200.0f;
+                boneRadio[i++] = 200.0f;
+                boneRadio[i++] = 200.0f;
+                boneRadio[i++] = 200.0f;
+                boneRadio[i++] = 200.0f;
+                boneRadio[i++] = 200.0f;
+                boneRadio[i++] = 200.0f;
+                boneRadio[i++] = 200.0f;
+
+            }
+
+            Matrix ant_view = device.Transform.View * Matrix.Identity;
+
             //Dibujar huesos y joints
             for (int i = 0; i < bones.Length; i++)
             {
                 TgcSkeletalBone bone = bones[i];
-
+                
                 //Renderizar Joint
-                TgcBox jointBox = skeletonRenderJoints[i];
-                jointBox.Transform = bone.MatFinal * this.transform;
-                jointBox.render();
+                //TgcBox jointBox = skeletonRenderJoints[i];
+                //jointBox.Transform = bone.MatFinal * this.transform;
+                //jointBox.render();
+                
+                Vector3 PStart = new Vector3(bone.MatFinal.M41, bone.MatFinal.M42, bone.MatFinal.M43);
+                float joint_size = 120.0f;
+                float radio = 200;
+                TgcDXMesh p_mesh = bola;
+                switch (i)
+                {
+                    case 1:
+                        // culo
+                        joint_size = 280.0f;
+                        p_mesh = culo;
+                        break;
+
+                    case 3:
+                        // pelvis
+                        p_mesh = torso;
+                        joint_size = 360.0f;
+                        break;
+                    case 4:
+                        // cuello
+                        joint_size = 40.0f;
+                        break;
+                    case 5:
+                        // Cabeza
+                        joint_size = 200.0f;
+                        p_mesh = cabeza;
+                        break;
+                }
+
+
+
+                float k = joint_size / p_mesh.size.Y;
+                p_mesh.transform =   Matrix.Translation(-p_mesh.center) * Matrix.Scaling(k, k, k) * Matrix.Translation(PStart);
+                p_mesh.render();
+
+                if (bone.ParentBone != null)
+                {
+                    Vector3 PEnd = new Vector3(bone.ParentBone.MatFinal.M41, bone.ParentBone.MatFinal.M42, bone.ParentBone.MatFinal.M43);
+
+                    //Vector3 mesh_size = mesh.BoundingBox.calculateSize();
+                    //mesh.Transform = calcularMatriz(mesh_size.Y,PStart, PEnd);
+                    //mesh.render();
+
+                    /*TgcLine boneLine = skeletonRenderBones[i];
+                    boneLine.PStart = TgcVectorUtils.transform(ceroVec, bone.MatFinal * this.transform);
+                    boneLine.PEnd = TgcVectorUtils.transform(ceroVec, bone.ParentBone.MatFinal * this.transform);
+                    boneLine.updateValues();
+                     */
+
+                    elipsoid.transform = calcularMatriz(elipsoid.size, PStart, PEnd, radio);
+                    elipsoid.render();
+                }
+
+                /*
 
                 //Modificar línea del bone
                 if (bone.ParentBone != null)
@@ -1004,20 +1122,86 @@ namespace TgcViewer.Utils.TgcSkeletalAnimation
                     boneLine.PEnd = TgcVectorUtils.transform(ceroVec, bone.ParentBone.MatFinal * this.transform);
                     boneLine.updateValues();
                 }
+                */
             }
 
+            device.Transform.View = ant_view * Matrix.Identity;
+
             //Dibujar bones
-            foreach (TgcLine boneLine in skeletonRenderBones)
-            {
-                if (boneLine != null)
-                {
-                    boneLine.render();
-                }
-            }
+            //foreach (TgcLine boneLine in skeletonRenderBones)
+            //{
+            //    if (boneLine != null)
+            //    {
+            //        boneLine.render();
+            //    }
+            //}
+
+            //if (currentScene != null)
+            //{
+            //    currentScene.disposeAll();
+            //}
+
+           
+
+
         }
 
 
+        public Matrix calcularMatriz(Vector3 size,Vector3 PStart,Vector3 PEnd, float radio)
+        {
+            Vector3 N = PEnd - PStart;
+            N.Normalize();
+            Vector3 VUP;
+            if (Math.Abs(N.X) <= Math.Abs(N.Y) && Math.Abs(N.X) <= Math.Abs(N.Z))
+                VUP = new Vector3(1, 0, 0);
+            else
+                if (Math.Abs(N.Y) <= Math.Abs(N.X) && Math.Abs(N.Y) <= Math.Abs(N.Z))
+                    VUP = new Vector3(0, 1, 0);
+                else
+                    VUP = new Vector3(0, 0, 1);
 
+            Vector3 U = Vector3.Cross(N, VUP);
+            Vector3 V = Vector3.Cross(U, N);
+
+            Matrix transform = new Matrix();
+
+            // Determino la escala para que la dimension en altura vaya desde PStart a PEnd
+            float l = (PStart - PEnd).Length();
+            float ky = l / size.Y;
+            float kr = radio / size.X;
+
+            // X
+            transform.M11 = U.X;
+            transform.M12 = U.Y;
+            transform.M13 = U.Z;
+
+            // Y
+            transform.M21 = N.X;
+            transform.M22 = N.Y;
+            transform.M23 = N.Z;
+
+            // Z
+            transform.M31 = V.X;
+            transform.M32 = V.Y;
+            transform.M33 = V.Z;
+
+            // Traslacion
+            transform.M41 = PStart.X;
+            transform.M42 = PStart.Y;
+            transform.M43 = PStart.Z;
+
+            // W
+            transform.M14 = 0;
+            transform.M24 = 0;
+            transform.M34 = 0;
+            transform.M44 = 1.0f;
+
+            return Matrix.Scaling(kr, ky, kr) * transform;
+            
+
+        }
+
+        
         /// <summary>
         /// Actualiza el cuadro actual de animacion y renderiza la malla.
         /// Es equivalente a llamar a updateAnimation() y luego a render()
@@ -1105,6 +1289,12 @@ namespace TgcViewer.Utils.TgcSkeletalAnimation
             //VertexDeclaration
             vertexDeclaration.Dispose();
             vertexDeclaration = null;
+
+            elipsoid.close();
+            bola.close();
+            culo.close();
+            torso.close();
+            cabeza.close();
         }
 
 

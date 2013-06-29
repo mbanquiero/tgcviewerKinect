@@ -160,8 +160,8 @@ namespace Examples.Focus
         public new TgcBoundingBox createBoundingBox()
         {
 
-            Vector3 min = new Vector3(float.MinValue, float.MinValue, float.MinValue);
-            Vector3 max = new Vector3(float.MaxValue, float.MaxValue, float.MaxValue);
+            Vector3 min = new Vector3(float.MaxValue, float.MaxValue, float.MaxValue);
+            Vector3 max = new Vector3(float.MinValue, float.MinValue, float.MinValue);
 
             //hacer dispose de los submeshes
             foreach (TgcMesh child in childs)

@@ -595,6 +595,13 @@ namespace Examples.Focus
             mesh.AutoTransformEnable = false;
 			mesh.Transform = face.MatWorld;
 
+
+            Vector3 pmin = Vector3.TransformCoordinate(mesh.BoundingBox.PMin, mesh.Transform);
+            Vector3 pmax = Vector3.TransformCoordinate(mesh.BoundingBox.PMax, mesh.Transform);
+
+
+            mesh.BoundingBox.setExtremes(Vector3.Minimize(pmin, pmax), Vector3.Maximize(pmax,pmin));
+
             mesh.kd = face.kd;
             mesh.ks = face.ks;
             mesh.kr = face.kr;
@@ -629,7 +636,7 @@ namespace Examples.Focus
             m.Enabled = true;
             m.DiffuseMaps = (TgcTexture[])tgcMesh.DiffuseMaps.Clone();
             m.Materials = (Material[])tgcMesh.Materials.Clone();
-            m.BoundingBox = tgcMesh.BoundingBox;
+            m.BoundingBox = tgcMesh.BoundingBox.clone();
             m.AlphaBlendEnable = tgcMesh.AlphaBlendEnable;
 
             return m;

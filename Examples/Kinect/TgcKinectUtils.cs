@@ -6,6 +6,8 @@ using Microsoft.Kinect;
 using Microsoft.DirectX;
 using System.Drawing;
 using Microsoft.DirectX.Direct3D;
+using TgcViewer;
+using TgcViewer.Utils.TgcGeometry;
 
 namespace Examples.Kinect
 {
@@ -83,7 +85,7 @@ namespace Examples.Kinect
                     maxY = points[i].Y;
                 }
             }
-            
+
             return new RectangleF(minX, minY, maxX - minX, maxY - minY);
         }
 
@@ -127,10 +129,54 @@ namespace Examples.Kinect
             q.X /= rect.Width;
             q.Y /= rect.Height;
 
-            q.X *= (screenViewport.Width - cursorSize.X);
-            q.Y = (1 - q.Y) * (screenViewport.Height - cursorSize.Y);
+            q.X *= (screenViewport.Width/* - cursorSize.X*/);
+            q.Y = (1 - q.Y) * (screenViewport.Height/* - cursorSize.Y*/);
 
             return q;
         }
+
+        public static Vector2 computeHand2DPos(SkeletonPoint handPosition, SkeletonPoint headPosition, float minX, float maxX, float minY, float maxY, bool rightHand)
+        {
+            float width = GuiController.Instance.D3dDevice.Viewport.Width;
+            float height = GuiController.Instance.D3dDevice.Viewport.Height;
+            Vector2 handPos = TgcKinectUtils.toVector2(handPosition);
+            Vector2 headPos = TgcKinectUtils.toVector2(headPosition);
+            Vector2 diff = headPos - handPos;
+
+            Vector2 handPos2D = new Vector2();
+            if (rightHand)
+            {
+                handPos2D = new Vector2(
+                (1 - ((diff.X - minX) / (maxX - minX))) * width,
+                ((diff.Y - minY) / (maxY - minY)) * height
+                );
+            }
+            else
+            {
+                handPos2D = new Vector2(
+                (1 - ((diff.X - minX)) / (maxX - minX)) * width,
+                ((diff.Y - minY) / (maxY - minY)) * height
+                );
+            }
+
+            if (handPos2D.X < 0)
+            {
+                handPos2D.X = 0;
+            }
+            if (handPos2D.X >= width)
+            {
+                handPos2D.X = width;
+            }
+            if (handPos2D.Y < 0)
+            {
+                handPos2D.Y = 0;
+            }
+            if (handPos2D.Y >= height)
+            {
+                handPos2D.Y = height;
+            }
+            return handPos2D;
+        }
+
     }
 }

@@ -55,7 +55,7 @@ namespace Examples.Focus
             this.Max = 0;
             this.Vector = new Vector3(0, 0, 0);
             this.Apertura = 0;
-            this.AnimDur = 1;
+            this.AnimDur = 2;
         }
 
         public void animate()
@@ -63,7 +63,7 @@ namespace Examples.Focus
             if (playing)
                 return;
 			if(Apertura < 1)
-				Apertura += 0.25f;
+				Apertura += 1.0f;
 			else
 				Apertura = 0;
 			
@@ -140,11 +140,18 @@ namespace Examples.Focus
 
             if (deltaMove >= 1)
             {
-                playing = false || loop;
+                if (deltaMove >= 2 || Apertura == 0)
+                {
+                    playing = loop;
+                    deltaAcum = 0;
+                    if(Apertura == 1)
+                        animate();
+                }
+
                 pos = eposition;
                 rot = erotate;
                 scale = sscale;
-                deltaAcum = 0;
+                
             }
 
             container.Position = pos;

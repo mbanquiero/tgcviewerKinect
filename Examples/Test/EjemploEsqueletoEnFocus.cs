@@ -21,8 +21,7 @@ namespace Examples.Test
         TgcBoundingBox bounds;
         TgcBox center;
         private List<TgcMesh> _meshes;
-        private FocusSet[] _conjuntos;
-
+        private FocusSet[] _conjuntos;        
 
         public override string getCategory()
         {
@@ -66,39 +65,48 @@ namespace Examples.Test
 
 
             //Achicar y mover toda la escena
-            Vector3 scale = new Vector3(0.01f, 0.01f, 0.01f);
-            Vector3 translate = new Vector3(0, 0, 0);
-            foreach (TgcMesh m in _meshes)
-            {
-                m.Scale = scale;
-                m.move(translate);
-            }
-            foreach (FocusSet c in _conjuntos)
-            {
-                c.container.Scale = scale;
-                c.container.move(translate);
-                foreach (TgcMesh m in c.container.Childs)
-                {
-                    m.Scale = scale;
-                    m.move(translate);
-                }
-            }
+            //Vector3 scale = new Vector3(0.01f, 0.01f, 0.01f);
+            //Vector3 translate = new Vector3(0, 0, 0);
+            //foreach (TgcMesh m in _meshes)
+            //{
+            //    m.Scale = scale;
+            //    m.move(translate);
+            //}
+            //foreach (FocusSet c in _conjuntos)
+            //{
+            //    c.container.Scale = scale;
+            //    c.container.move(translate);
+            //    foreach (TgcMesh m in c.container.Childs)
+            //    {
+            //        m.Scale = scale;
+            //        m.move(translate);
+            //    }
+            //}
         }
 
-        
 
-
-
-
+        bool primera = true;
         public override void render(float elapsedTime)
         {
             Device d3dDevice = GuiController.Instance.D3dDevice;
-
-
+            
             TgcKinectSkeletonData data = tgcKinect.update();
+
             if (data.Active)
             {
                 tgcKinect.DebugSkeleton.render(data.Current.KinectSkeleton);
+
+                if (primera)
+                {
+                    if (data.Current.KinectSkeleton.Joints[JointType.HipCenter].TrackingState == JointTrackingState.Tracked)
+                    {
+                        Vector3 pos = new Vector3(2000 - data.Current.KinectSkeleton.Joints[JointType.HipCenter].Position.X, 100, -2000 - data.Current.KinectSkeleton.Joints[JointType.HipCenter].Position.Z);
+                         tgcKinect.PositionTranslate = pos;
+
+                        primera = false;
+                    }
+                }
+
             }
 
             foreach (TgcMesh m in _meshes)
@@ -108,7 +116,7 @@ namespace Examples.Test
             foreach (FocusSet c in _conjuntos)
             {
                 //c.animate();
-                //c.Render();
+                c.Render();
             }
 
 
