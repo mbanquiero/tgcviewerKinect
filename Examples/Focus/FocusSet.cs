@@ -140,6 +140,10 @@ namespace Examples.Focus
 
             if (deltaMove >= 1)
             {
+                pos = eposition;
+                rot = erotate;
+                scale = sscale;
+                
                 if (deltaMove >= 2 || Apertura == 0)
                 {
                     playing = loop;
@@ -147,11 +151,6 @@ namespace Examples.Focus
                     if(Apertura == 1)
                         animate();
                 }
-
-                pos = eposition;
-                rot = erotate;
-                scale = sscale;
-                
             }
 
             container.Position = pos;
