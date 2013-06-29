@@ -11,13 +11,26 @@ using Examples.Expo;
 
 namespace Examples.Kinect
 {
+    // kinect physicall interaction region
+    public struct KPIR
+    {
+        public float x_min;
+        public float x_max;
+        public float y_min;
+        public float y_max;
+    }
+
     public class TgcKinect
     {
 
         KinectSensor sensor;
         KinectStatus lastStatus;
-        Skeleton[] auxSkeletonData;
+        public Skeleton[] auxSkeletonData;
         public bool sin_sensor;
+        public Vector3 raw_pos_mano;
+        public int skeleton_sel;
+        public KPIR right_pir= new KPIR();          // right physicall interaction region
+        public KPIR left_pir= new KPIR();           // left physicall interaction region
 
         TgcKinectSkeletonData data;
         /// <summary>
@@ -120,6 +133,20 @@ namespace Examples.Kinect
             hands2dSpeed = new Vector2(1, 2);
             cursorSize = new Vector2(64, 64);
             skeletonCenter = new Vector3();
+            // PIR
+            //X: -0.05 a -0.2
+            //Y: 0.3 a 0.5
+            right_pir.x_min = -0.2f;
+            right_pir.x_max = -0.05f;
+            right_pir.y_min = 0.3f;
+            right_pir.y_max = 0.5f;
+            //Left
+            //X: 0.05 a 0.2
+            left_pir.x_min = 0.05f;
+            left_pir.x_max = 0.2f;
+            left_pir.y_min = 0.3f;
+            left_pir.y_max = 0.5f;
+
         }
 
         /// <summary>
@@ -139,6 +166,7 @@ namespace Examples.Kinect
         public TgcKinectSkeletonData update()
         {
             this.data.Active = false;
+            skeleton_sel = -1;
 
             // If the sensor is not found, not running, or not connected, stop now
             if (null == this.sensor || false == this.sensor.IsRunning || this.sensor.Status != KinectStatus.Connected)
@@ -168,6 +196,7 @@ namespace Examples.Kinect
                         if (auxSkeletonData[i].TrackingState == SkeletonTrackingState.Tracked)
                         {
                             rawSkeleton = auxSkeletonData[i];
+                            skeleton_sel = i;
                             break;
                         }
                     }
@@ -373,31 +402,31 @@ namespace Examples.Kinect
                 halfBodyHeight = rawSkeleton.Joints[JointType.Head].Position.Y - rawSkeleton.Joints[JointType.Spine].Position.Y;
             }
 
-            //Right
-            //X: -0.05 a -0.2
-            //Y: 0.1 a 0.5
-            data.Current.RightHandPos = TgcKinectUtils.computeHand2DPos(
-                rawSkeleton.Joints[JointType.HandRight].Position,
-                rawSkeleton.Joints[JointType.Head].Position,
-                -0.2f,
-                -0.05f,
-                0.1f,
-                0.5f,
-                true);
+            if (rawSkeleton.Joints[JointType.HandRight].TrackingState == JointTrackingState.Tracked &&
+                rawSkeleton.Joints[JointType.Head].TrackingState == JointTrackingState.Tracked)
+            {
+                //Right
+                // Actualizo esta posicion tal como viene de la kinect, para debuggear
+                raw_pos_mano = new Vector3(rawSkeleton.Joints[JointType.HandRight].Position.X - rawSkeleton.Joints[JointType.Head].Position.X,
+                                            rawSkeleton.Joints[JointType.HandRight].Position.Y - rawSkeleton.Joints[JointType.Head].Position.Y,
+                                            rawSkeleton.Joints[JointType.HandRight].Position.Z - rawSkeleton.Joints[JointType.Head].Position.Z);
+                //X: -0.05 a -0.2
+                //Y: 0.1 a 0.5
+                data.Current.RightHandPos = TgcKinectUtils.computeHand2DPos(
+                    rawSkeleton.Joints[JointType.HandRight].Position,
+                    rawSkeleton.Joints[JointType.Head].Position,right_pir,true);
+            }
 
-
-            //Left
-            //X: 0.05 a 0.2
-            //Y: 0.1 a 0.5
-            data.Current.LefttHandPos = TgcKinectUtils.computeHand2DPos(
-                rawSkeleton.Joints[JointType.HandLeft].Position,
-                rawSkeleton.Joints[JointType.Head].Position,
-                0.05f,
-                0.2f,
-                0.1f,
-                0.5f,
-                false);
-
+            if (rawSkeleton.Joints[JointType.HandLeft].TrackingState == JointTrackingState.Tracked &&
+                rawSkeleton.Joints[JointType.Head].TrackingState == JointTrackingState.Tracked)
+            {
+                //Left
+                //X: 0.05 a 0.2
+                //Y: 0.1 a 0.5
+                data.Current.LefttHandPos = TgcKinectUtils.computeHand2DPos(
+                    rawSkeleton.Joints[JointType.HandLeft].Position,
+                    rawSkeleton.Joints[JointType.Head].Position, left_pir, false);
+            }
         }
 
         /// <summary>

@@ -9,6 +9,7 @@ using TgcViewer.Utils.TgcSceneLoader;
 using TgcViewer.Utils.Input;
 using Examples.Focus;
 using TgcViewer.Utils.TgcGeometry;
+using Microsoft.Kinect;
 
 namespace TgcViewer.Utils.Gui
 {
@@ -950,6 +951,132 @@ namespace TgcViewer.Utils.Gui
 
         }
 
+    }
+
+
+    public class gui_skeleton: gui_item
+    {
+        public int cant_joints = 0;
+        public Vector3[] joints = new Vector3[26];
+        public bool [] importante = new bool[26];
+        public int cant_huesos = 0;
+        public int[] hueso_desde = new int[26];
+        public int[] hueso_hasta = new int[26];
+        float min_x, min_y, max_x, max_y;
+        float escala = 1f;
+        public float pir_min_x, pir_min_y, pir_max_x, pir_max_y;
+        public Vector2 head_pos = new Vector2();
+
+        public gui_skeleton(DXGui gui, int x, int y, int dx = 0, int dy = 0) :
+            base(gui, "", x, y, dx, dy, -1)
+        {
+            seleccionable = false;
+            scrolleable = false;
+        }
+
+        public void SkeletonUpdate(Skeleton rawSkeleton)
+        {
+            //Actualizar datos
+            min_x = float.MaxValue;
+            min_y = float.MaxValue;
+            max_x = float.MinValue;
+            max_y = float.MinValue;
+            cant_huesos = cant_joints = 0;
+            for (int i = 0; i < rawSkeleton.Joints.Count; ++i)
+            {
+                SkeletonPoint pos =  rawSkeleton.Joints[(JointType)i].Position;
+                if (pos.X < min_x)
+                    min_x = pos.X;
+                if (pos.X > max_x)
+                    max_x = pos.X;
+                if (pos.Y < min_y)
+                    min_y = pos.Y;
+                if (pos.Y > max_y)
+                    max_y = pos.Y;
+
+                importante[cant_joints] = false;
+                joints[cant_joints++] = new Vector3(pos.X, pos.Y, pos.Z);
+            }
+            importante[(int)JointType.Head] = true;
+            importante[(int)JointType.HandLeft] = true;
+            importante[(int)JointType.HandRight] = true;
+            importante[(int)JointType.HipCenter] = true;
+
+            // Un hueso va entre 2 joints
+            for(int i=0;i < rawSkeleton.BoneOrientations.Count;++i)
+            {
+                hueso_desde[cant_huesos] = (int)rawSkeleton.BoneOrientations[(JointType)i].StartJoint;
+                hueso_hasta[cant_huesos] = (int)rawSkeleton.BoneOrientations[(JointType)i].EndJoint;
+                cant_huesos++;
+            }
+
+
+
+            // Head Raw position
+            SkeletonPoint cabeza =  rawSkeleton.Joints[JointType.Head].Position;
+            head_pos = new Vector2(cabeza.X,cabeza.Y);
+
+
+            // Calculo la escala
+            float ex = rc.Width / (max_x - min_x);
+            float ey = rc.Height / (max_y - min_y);
+            escala = Math.Min(ex, ey);
+            
+        }
+
+
+        public override void Render(DXGui gui)
+        {
+            Device d3dDevice = GuiController.Instance.D3dDevice;
+            float W = (float)GuiController.Instance.Panel3d.Width;
+            float H = (float)GuiController.Instance.Panel3d.Height;
+            float aspect_ratio = W / H;
+
+            // pongo la matriz identidad
+            Matrix matAnt = gui.sprite.Transform * Matrix.Identity;
+            gui.sprite.Transform = Matrix.Identity;
+
+            float ant_ox = gui.ox;
+            float ant_oy = gui.oy;
+            gui.oy = gui.ox = 0;
+            bool ant_trap = gui.trapezoidal_style;
+            gui.trapezoidal_style = false;
+
+            gui.DrawRect(rc.Left, rc.Top, rc.Right, rc.Bottom, 1, Color.FromArgb(0, 0, 0), true);
+
+            // Dibujo los huesos
+            for (int t = 0; t < cant_huesos; ++t)
+            {
+                int i = hueso_desde[t];
+                int j = hueso_hasta[t];
+                float x0 = (joints[i].X - min_x) * escala + rc.X;
+                float y0 = rc.Y + rc.Height - (joints[i].Y - min_y) * escala;
+                float x1 = (joints[j].X - min_x) * escala + rc.X;
+                float y1 = rc.Y + rc.Height - (joints[j].Y - min_y) * escala;
+                gui.DrawLine(x0, y0,x1,y1, 3, Color.Blue);
+            }
+
+            // Dibujo las articulaciones
+            for (int i = 0; i < cant_joints; ++i)
+            {
+                float x = (joints[i].X - min_x) * escala + rc.X;
+                float y = rc.Y + rc.Height - (joints[i].Y - min_y) * escala;
+                int r = importante[i] ? 4 : 2;
+                gui.DrawRect((int)x - r, (int)y - r, (int)x + r, (int)y + r, 1, Color.WhiteSmoke, true);
+            }
+
+            // Area de interaccion fisica de la kinect
+            gui.DrawRect((int)((-pir_min_x + head_pos.X - min_x) * escala + rc.X), (int)(rc.Y + rc.Height - (-pir_min_y + head_pos.Y  - min_y) * escala),
+                (int)((-pir_max_x + head_pos.X - min_x) * escala + rc.X), (int)(rc.Y + rc.Height - (-pir_max_y + head_pos.Y - min_y) * escala),
+                    1, Color.FromArgb(100,240, 255,120), true);
+
+            gui.ox = ant_ox;
+            gui.oy = ant_oy;
+            gui.trapezoidal_style = ant_trap;
+            // Restauro la transformacion del sprite
+            gui.sprite.Transform = matAnt;
+
+        }
     }
 
 

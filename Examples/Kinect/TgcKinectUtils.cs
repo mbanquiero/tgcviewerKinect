@@ -135,8 +135,13 @@ namespace Examples.Kinect
             return q;
         }
 
-        public static Vector2 computeHand2DPos(SkeletonPoint handPosition, SkeletonPoint headPosition, float minX, float maxX, float minY, float maxY, bool rightHand)
+        public static Vector2 computeHand2DPos(SkeletonPoint handPosition, SkeletonPoint headPosition, KPIR pir,bool rightHand)
         {
+            float minX = pir.x_min;
+            float maxX = pir.x_max;
+            float minY = pir.y_min;
+            float maxY = pir.y_max;
+
             float width = GuiController.Instance.D3dDevice.Viewport.Width;
             float height = GuiController.Instance.D3dDevice.Viewport.Height;
             Vector2 handPos = TgcKinectUtils.toVector2(handPosition);

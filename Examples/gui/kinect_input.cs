@@ -129,6 +129,7 @@ namespace TgcViewer.Utils.Gui
                 //Ver en que mano chequear gesto
                 Microsoft.Kinect.JointType handIdx = right_hand_sel ? Microsoft.Kinect.JointType.HandRight : Microsoft.Kinect.JointType.HandLeft;
 
+                /*
                 //Ver si se quedo quieto
                 Vector3 hipPos = TgcKinectUtils.toVector3(kinectData.Current.KinectSkeleton.Joints[Microsoft.Kinect.JointType.HipCenter].Position);
                 Vector3 handPos = TgcKinectUtils.toVector3(kinectData.Current.KinectSkeleton.Joints[handIdx].Position);
@@ -137,6 +138,7 @@ namespace TgcViewer.Utils.Gui
                 {
                     currentGesture = Gesture.Pressing;
                 }
+                 */
 
             }
             else

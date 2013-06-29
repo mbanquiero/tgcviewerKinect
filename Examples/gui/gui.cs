@@ -616,6 +616,7 @@ namespace TgcViewer.Utils.Gui
             return ProcessInput(elapsed_time);
         }
 
+
         public void Render()
         {
             Device d3dDevice = GuiController.Instance.D3dDevice;
@@ -743,6 +744,28 @@ namespace TgcViewer.Utils.Gui
         }
 
 
+        public void TextOut(int x,int y,string text)
+        {
+            Device d3dDevice = GuiController.Instance.D3dDevice;
+            // elimino cualquier textura que me cague el modulate del vertex color
+            d3dDevice.SetTexture(0, null);
+            // Desactivo el zbuffer
+            bool ant_zenable = d3dDevice.RenderState.ZBufferEnable;
+            d3dDevice.RenderState.ZBufferEnable = false;
+            // pongo la matriz identidad
+            Matrix matAnt = sprite.Transform * Matrix.Identity;
+            sprite.Transform = Matrix.Identity;
+
+            Rectangle rc = new Rectangle(x, y, x+600, y+100);
+            sprite.Begin(SpriteFlags.AlphaBlend);
+            font.DrawText(sprite, text, rc, DrawTextFormat.NoClip | DrawTextFormat.Top | DrawTextFormat.Center, Color.Black);
+            sprite.End();
+
+            // Restauro el zbuffer
+            d3dDevice.RenderState.ZBufferEnable = ant_zenable;
+            // Restauro la transformacion del sprite
+            sprite.Transform = matAnt;
+        }
 
         // Interface para agregar items al UI
         public gui_item InsertItem(gui_item item)
@@ -809,6 +832,13 @@ namespace TgcViewer.Utils.Gui
         {
             return (gui_progress_bar)InsertItem(new gui_progress_bar(this, x, y, dx, dy,id));
         }
+
+        // skeleton
+        public gui_skeleton InsertKinectSkeletonControl(int x, int y, int dx, int dy)
+        {
+            return (gui_skeleton)InsertItem(new gui_skeleton(this,x, y, dx, dy));
+        }
+
 
         public int GetDlgItemCtrl(int id)
         {
@@ -893,6 +923,59 @@ namespace TgcViewer.Utils.Gui
 
             }
         }
+
+        public void DrawLine(float x0, float y0, float x1,float y1, int dw, Color color)
+        {
+            Vector2[] V = new Vector2[4];
+            V[0].X = x0;
+            V[0].Y = y0;
+            V[1].X = x1;
+            V[1].Y = y1;
+
+            if (dw < 1)
+                dw = 1;
+
+            // direccion normnal
+            Vector2 v = V[1] - V[0];
+            v.Normalize();
+            Vector2 n = new Vector2(-v.Y, v.X);
+
+            V[2] = V[1] + n * dw;
+            V[3] = V[0] + n * dw;
+
+            VERTEX2D[] pt = new VERTEX2D[16];
+            // 1er triangulo
+            pt[0].x = V[0].X;
+            pt[0].y = V[0].Y;
+            pt[1].x = V[1].X;
+            pt[1].y = V[1].Y;
+            pt[2].x = V[2].X;
+            pt[2].y = V[2].Y;
+
+            // segundo triangulo
+            pt[3].x = V[0].X;
+            pt[3].y = V[0].Y;
+            pt[4].x = V[2].X;
+            pt[4].y = V[2].Y;
+            pt[5].x = V[3].X;
+            pt[5].y = V[3].Y;
+
+            for (int t = 0; t < 6; ++t)
+            {
+                pt[t].z = 0.5f;
+                pt[t].rhw = 1;
+                pt[t].color = color.ToArgb();
+                ++t;
+            }
+
+            Transform(pt, 6);
+
+            // dibujo como lista de triangulos
+            Device d3dDevice = GuiController.Instance.D3dDevice;
+            d3dDevice.VertexFormat = VertexFormats.Transformed | VertexFormats.Diffuse;
+            d3dDevice.DrawUserPrimitives(PrimitiveType.TriangleList, 2 , pt);
+        }
+            
 
         public void DrawPoly(Vector2[] V, int cant_ptos, int dw, Color color)
         {

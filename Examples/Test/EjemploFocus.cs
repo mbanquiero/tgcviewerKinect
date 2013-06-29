@@ -48,6 +48,7 @@ namespace Examples.Test
         DXGui gui = new DXGui();
         //FocusCamera camera = new FocusCamera();
         public bool blocked = false;
+        public gui_skeleton esqueleto2d = null;
 
 
         public override string getCategory()
@@ -98,17 +99,27 @@ namespace Examples.Test
             //Configurar todas las texturas que se pueden elegir para cambiar
             texturasFocus = new TexturasFocus();
             gui.InitDialog(true);
+            int W = GuiController.Instance.Panel3d.Width;
+            int H = GuiController.Instance.Panel3d.Height;
             int x0 = 70;
             int y0 = 10;
             int dy = 120;
             int dy2 = dy;
             int dx = 400;
-            gui.InsertMenuItem(ID_FILE_OPEN, "Abrir Proyecto","open.png", x0, y0, dx, dy);
+            gui.InsertMenuItem(ID_FILE_OPEN, "Abrir Proyecto", "open.png", x0, y0, dx, dy);
             gui.InsertMenuItem(ID_MODO_NAVEGACION, "Modo Navegacion", "navegar.png", x0, y0 += dy2, dx, dy);
             gui.InsertMenuItem(ID_CAMBIAR_MATERIALES, "Modificar Materiales", "editmat.png", x0, y0 += dy2, dx, dy);
             gui.InsertMenuItem(ID_CAMBIAR_TEXTURAS, "Modificar Texturas","edit_tex.png", x0, y0 += dy2, dx, dy);
             gui.InsertMenuItem(ID_CAMBIAR_EMPUJADORES, "Modificar Manijas", "manijas.png",x0, y0 += dy2, dx, dy);
-            gui.InsertMenuItem(ID_APP_EXIT, "Salir", "salir.png",x0, y0 += dy2, dx, dy);
+            gui.InsertMenuItem(ID_APP_EXIT, "Salir", "salir.png", x0, y0 += dy2, dx, dy);
+
+            int sdx = 200;
+            int sdy = 300;
+            esqueleto2d = gui.InsertKinectSkeletonControl(W - sdx, H - sdy, sdx- 4, sdy-4);
+            esqueleto2d.pir_min_x = tgcKinect.right_pir.x_min;
+            esqueleto2d.pir_min_y = tgcKinect.right_pir.y_min;
+            esqueleto2d.pir_max_x = tgcKinect.right_pir.x_max;
+            esqueleto2d.pir_max_y = tgcKinect.right_pir.y_max;
 
             // Camara para 3d support
             gui.camera = GuiController.Instance.FpsCamera;
@@ -118,16 +129,7 @@ namespace Examples.Test
         {
             Device d3dDevice = GuiController.Instance.D3dDevice;
 
-
-
-            /*if (blocked)
-            {
-                // Solo hay gui, dibujo un fondo de presentacion
-                gui.DrawImage(GuiController.Instance.ExamplesMediaDir + "Focus\\texturas\\fondo.png", 0, 0,
-                    GuiController.Instance.Panel3d.Width, GuiController.Instance.Panel3d.Height);
-                return;
-            }*/
-
+            string status_text = "Untracked";
             TgcKinectSkeletonData data = tgcKinect.update();
             if (data.Active)
             {
@@ -136,13 +138,19 @@ namespace Examples.Test
                 {
                     tgcKinect.DebugSkeleton.render(data.Current.KinectSkeleton);
                     gui.kinect.kinectData = data;
-
-                    Vector3 hipPos = TgcKinectUtils.toVector3(data.Current.KinectSkeleton.Joints[Microsoft.Kinect.JointType.HipCenter].Position);
+                    /*
                     Vector3 handPos = TgcKinectUtils.toVector3(data.Current.KinectSkeleton.Joints[Microsoft.Kinect.JointType.HandRight].Position);
+                    Vector3 hipPos = TgcKinectUtils.toVector3(data.Current.KinectSkeleton.Joints[Microsoft.Kinect.JointType.HipCenter].Position);
                     Vector3 diff = handPos - hipPos;
                     BigLogger.log("diff", diff.Z);
+                     */
+
+                    status_text = "Hand Tracked:" + tgcKinect.raw_pos_mano.ToString();
+                    if(tgcKinect.skeleton_sel!=-1)
+                        esqueleto2d.SkeletonUpdate(tgcKinect.auxSkeletonData[tgcKinect.skeleton_sel]);
                 } 
             }
+
 
             if (_meshes != null)
             {
@@ -218,28 +226,7 @@ namespace Examples.Test
 
                         case ID_APP_EXIT:
                             // Salir
-                            //gui.MessageBox("Desea Salir del Sistema?", "Focus Kinect Interaction");
-                            // Test de thread
-                            {
-                                float total_time = 10;
-                                blocked = true;
-                                ProgressBarDlg();
-                                gui_progress_bar progress_bar = (gui_progress_bar)gui.GetDlgItem(ID_PROGRESS1);
-                                long T0 = TgcViewer.Utils.HighResolutionTimer.Ticks;
-                                float F =  (float)TgcViewer.Utils.HighResolutionTimer.Frequency;
-                                while(true)
-                                {
-                                    long T1 = TgcViewer.Utils.HighResolutionTimer.Ticks;
-                                    float time = (float)(T1-T0)/F;
-                                    GuiController.Instance.MessageLoop();
-                                    if (time > total_time)
-                                        break;
-                                    else
-                                        progress_bar.SetPos((int)(time / total_time * 100));
-                                }
-                                blocked = false;
-                                gui.EndDialog();
-                            }
+                            gui.MessageBox("Desea Salir del Sistema?", "Focus Kinect Interaction");
                             break;
 
                         case ID_CAMBIAR_TEXTURAS:
@@ -375,9 +362,9 @@ namespace Examples.Test
                     break;
             }
 
-
             gui.Render();
-            BigLogger.renderLog();
+            //gui.TextOut(50, 50,status_text);
+            //BigLogger.renderLog();
 
 
 
