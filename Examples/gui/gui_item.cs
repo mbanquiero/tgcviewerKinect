@@ -793,6 +793,7 @@ namespace TgcViewer.Utils.Gui
         float min_x,min_z;
         float wdx, wdz;
         float ex, ey;
+        float ant_xm = float.MaxValue, ant_ym,ant_zm;
         public gui_navigate(DXGui gui, List<TgcMesh> p_meshes,int x, int y, int dx = 0, int dy = 0, int id = -1) :
             base(gui, "", x, y, dx, dy, id)
         {
@@ -839,38 +840,56 @@ namespace TgcViewer.Utils.Gui
             float W = (float)GuiController.Instance.Panel3d.Width;
             float H = (float)GuiController.Instance.Panel3d.Height;
             float aspect_ratio =  W / H;
-
-            int dm = 100;
+            float vel = 5f;     // milimetros x pixel
+            float vel_an = 0.001f;     // radioanes x pixel
+            int dm = 150;
             float xm = gui.kinect.right_hand.position.X;
             float ym = gui.kinect.right_hand.position.Y;
-            // si la pos. del mouse esta en el area de interaccion de navegacion
-            if(xm>=dm && xm<=W - dm && ym>=dm && ym<=H - dm)
+            float zm = gui.kinect.right_hand.position.Z;
+
+            // Verifico si esta en modo navegacion
+            // Para ello la mano izquierda tiene que estar abajo a la derecha
+            bool navegar = false;
+            float xmi = gui.kinect.left_hand.position.X;
+            float ymi = gui.kinect.left_hand.position.Y;
+            if (xmi>W/2 && ymi>H/2)
             {
-                // actualizo la posicion de la camara desde el input de la kinect
-                Vector3 viewDir = gui.camera.getLookAt() - gui.camera.getPosition();
-                float X = 2* xm / W * wdx - wdx/2;
-                float Z =  wdz/2 - 2* ym / H * wdz;
-                Vector3 newPos = new Vector3(X, GuiController.Instance.FpsCamera.getPosition().Y, Z);
-
-                // mano izquierda
-                float xmi = gui.kinect.left_hand.position.X;
-                float ymi = gui.kinect.left_hand.position.Y;
-                if (Math.Abs(xmi - xm) < 300 && Math.Abs(ymi - ym) < 300)
-                {
-                    // La mano izquierda esta cerca de la derecha, la uso para mover el look at
-                    X = 2 * xmi / W * wdx - wdx / 2;
-                    Z = wdz / 2 - 2 * ymi / H * wdz;
-                    Vector3 newLookAt = new Vector3(X, GuiController.Instance.FpsCamera.getLookAt().Y, Z);
-                    gui.camera.setCamera(newPos, newLookAt);
-                }
-                else
-                    gui.camera.setCamera(newPos, newPos + viewDir);
-
-
+                // modo navegacion
+                navegar = true;
+                //vel = 20f + (0.5f + ymi / H) * 200.0f;
             }
 
 
+            // si la pos. del mouse esta en el area de interaccion de navegacion
+            if(navegar && ant_xm!=float.MaxValue)
+            {
+                // actualizo la posicion de la camara desde el input de la kinect
+                Vector3 viewDir = gui.camera.getLookAt() - gui.camera.getPosition();
+
+                // float X = 2* xm / W * wdx - wdx/2;
+                //float Z =  wdz/2 - 2* ym / H * wdz;
+
+                float an = (xm - ant_xm) * vel_an;
+                viewDir.TransformNormal(Matrix.RotationY(an));
+                Vector3 newPos = GuiController.Instance.FpsCamera.getPosition() + 
+                        viewDir * (ym - ant_ym) * vel;
+                
+
+
+                /*
+                float X = GuiController.Instance.FpsCamera.getPosition().X + (xm - ant_xm) * vel;
+                float Z = GuiController.Instance.FpsCamera.getPosition().Z + (ym - ant_ym) * vel;
+                Vector3 newPos = new Vector3(X, GuiController.Instance.FpsCamera.getPosition().Y, Z);
+                 */
+
+                gui.camera.setCamera(newPos, newPos + viewDir);
+
+            }
+
             gui.camera.updateCamera();
+            ant_xm = xm;
+            ant_ym = ym;
+            ant_zm = zm;
 
             float fov = (float)Math.PI / 4.0f * aspect_ratio;
             Vector3 LA = gui.camera.getLookAt();
@@ -884,9 +903,6 @@ namespace TgcViewer.Utils.Gui
             // Dibujo el look from
             gui.DrawDisc(new Vector2(rc.X + (lf.X - min_x) * ex, rc.Y + (wdz - lf.Y + min_z) * ey), 10, Color.FromArgb(0, 0, 0));
 
-            // Dibujo un rectangulo que representa el area de kinect donde deja navegar
-            gui.DrawRect(dm, dm, (int)W - dm, (int)H - dm, 1, Color.FromArgb(100, 240, 192, 192), true);
-            gui.DrawRect(dm, dm, (int)W - dm, (int)H - dm, 2, Color.FromArgb(0, 0, 0));
 
             Vector2[] pt = new Vector2[100];
             int cant_p = 1;
@@ -899,7 +915,7 @@ namespace TgcViewer.Utils.Gui
                 A.TransformNormal(rot);
                 Vector2 a = new Vector2(A.X, A.Z);
                 a.Normalize();
-                a = a * 2000 + lf;
+                a = a * 3000 + lf;
                 pt[cant_p].X = rc.X + (a.X - min_x) * ex;
                 pt[cant_p].Y = rc.Y + (wdz - a.Y + min_z) * ey;
                 ++cant_p;

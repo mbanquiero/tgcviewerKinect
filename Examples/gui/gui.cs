@@ -230,7 +230,7 @@ namespace TgcViewer.Utils.Gui
             for (int i = 0; i < MAX_CURSOR; ++i)
                 cursores[i] = null;
             cant_bitmaps = 0;
-            cursor_izq = tipoCursor.sin_cursor;
+            cursor_izq = tipoCursor.targeting;
             cursor_der = tipoCursor.targeting;
             alpha = 1;
             timer_sel = 0;

@@ -36,6 +36,7 @@ namespace Examples.Test
         public const int ID_APP_EXIT = 105;
         public const int ID_CAMBIAR_MATERIALES = 106;
         public const int ID_PROGRESS1 = 107;
+        public const int ID_RESET_CAMARA = 108;
 
         private List<TgcMesh> _meshes;
         private FocusSet [] _conjuntos;
@@ -43,6 +44,9 @@ namespace Examples.Test
         TgcKinect tgcKinect;
         TexturasFocus texturasFocus;
         TgcBox lightMesh;
+
+        Vector3 ant_LA, ant_LF;
+
 
         // gui
         DXGui gui = new DXGui();
@@ -108,7 +112,7 @@ namespace Examples.Test
             int dx = 400;
             gui.InsertMenuItem(ID_FILE_OPEN, "Abrir Proyecto", "open.png", x0, y0, dx, dy);
             gui.InsertMenuItem(ID_MODO_NAVEGACION, "Modo Navegacion", "navegar.png", x0, y0 += dy2, dx, dy);
-            gui.InsertMenuItem(ID_CAMBIAR_MATERIALES, "Modificar Materiales", "editmat.png", x0, y0 += dy2, dx, dy);
+//            gui.InsertMenuItem(ID_CAMBIAR_MATERIALES, "Modificar Materiales", "editmat.png", x0, y0 += dy2, dx, dy);
             gui.InsertMenuItem(ID_CAMBIAR_TEXTURAS, "Modificar Texturas","edit_tex.png", x0, y0 += dy2, dx, dy);
             gui.InsertMenuItem(ID_CAMBIAR_EMPUJADORES, "Modificar Manijas", "manijas.png",x0, y0 += dy2, dx, dy);
             gui.InsertMenuItem(ID_APP_EXIT, "Salir", "salir.png", x0, y0 += dy2, dx, dy);
@@ -233,12 +237,13 @@ namespace Examples.Test
                             // Cambiar Texturas
                             texturasFocus.TextureGroupDlg(gui);
                             break;
-                        
+
+                        /*
+                         * deprecado
                         case ID_CAMBIAR_MATERIALES:
                             // Cambiar Materiales
                             MaterialesDlg();
                             break;
-
                         case 400:
                             // Cambiar material abiertos
                             MaterialesGabDlg(true);
@@ -259,6 +264,15 @@ namespace Examples.Test
                             // No implementado en verdad
                             texturasFocus.TextureDlg(gui, 1000);        // 1000 = maderas
                             break;
+                        case 500:
+                        case 501:
+                        case 502:
+                        case 503:
+                            // Cambia textura de fondo gabinetes abiertos
+                            // No implementado en verdad
+                            texturasFocus.TextureDlg(gui, 1000);        // 1000 = maderas
+                            break;
+                         */
 
                         case 406:
                         case ID_CAMBIAR_EMPUJADORES:
@@ -267,13 +281,8 @@ namespace Examples.Test
                             EmpujadorDlg();
                             break;
 
-                        case 500:
-                        case 501:
-                        case 502:
-                        case 503:
-                            // Cambia textura de fondo gabinetes abiertos
-                            // No implementado en verdad
-                            texturasFocus.TextureDlg(gui, 1000);        // 1000 = maderas
+                        case ID_RESET_CAMARA:
+                            GuiController.Instance.FpsCamera.setCamera(ant_LF, ant_LA);
                             break;
 
                         default:
@@ -366,8 +375,6 @@ namespace Examples.Test
             //gui.TextOut(50, 50,status_text);
             //BigLogger.renderLog();
 
-
-
         }
 
         public void OpenFileDlg()
@@ -415,6 +422,8 @@ namespace Examples.Test
 
         }
 
+        /*
+         * deprecado
         public void MaterialesDlg()
         {
             gui.InitDialog(false, false);
@@ -440,19 +449,17 @@ namespace Examples.Test
             x0 = 80;
 
             gui.InsertKinectCircleButton(400, "Abiertos", "abiertos.png", x0, y0, r);
-            gui.InsertKinectCircleButton(401, "Cerrados", "cerrados.png", x0+=r2, y0, r);
-            gui.InsertKinectCircleButton(402, "Puertas", "puertas.png", x0+=r2 , y0, r);
-            gui.InsertKinectCircleButton(403, "Cajones", "cajones.png", x0+=r2, y0, r);
+            gui.InsertKinectCircleButton(401, "Cerrados", "cerrados.png", x0 += r2, y0, r);
+            gui.InsertKinectCircleButton(402, "Puertas", "puertas.png", x0 += r2, y0, r);
+            gui.InsertKinectCircleButton(403, "Cajones", "cajones.png", x0 += r2, y0, r);
             y0 += r + 120;
             x0 = 80;
             gui.InsertKinectCircleButton(404, "Zocalo", "zocalo.png", x0, y0, r);
-            gui.InsertKinectCircleButton(405, "Patas", "patas.png", x0+=r2, y0, r);
-            gui.InsertKinectCircleButton(406, "Manijas", "manijas.png", x0+=r2, y0, r);
-
-         
-
+            gui.InsertKinectCircleButton(405, "Patas", "patas.png", x0 += r2, y0, r);
+            gui.InsertKinectCircleButton(406, "Manijas", "manijas.png", x0 += r2, y0, r);
 
         }
+         
 
         public void MaterialesGabDlg(bool abiertos=false)
         {
@@ -483,13 +490,14 @@ namespace Examples.Test
 
 
         }
+        */
 
 
         public void EmpujadorDlg()
         {
             gui.InitDialog(false, false);
-            gui.hoover_enabled = false;             // deshabilito el hoover para esta pantalla
-
+            //gui.hoover_enabled = false;             // deshabilito el hoover para esta pantalla
+            
             int W = GuiController.Instance.Panel3d.Width;
             int H = GuiController.Instance.Panel3d.Height;
 
@@ -504,11 +512,6 @@ namespace Examples.Test
             gui_item cancel_btn = gui.InsertKinectCircleButton(IDCANCEL, "Cancel", "cancel.png", W - gui.KINECT_BUTTON_SIZE_X - 40,
                     y0 + dy - gui.KINECT_BUTTON_SIZE_X - 50, gui.KINECT_BUTTON_SIZE_X);
             cancel_btn.scrolleable = false;      // fijo el boton de cancelar
-            //int sdx = 500;
-            //int sdy = 120;
-            //gui.InsertKinectScrollButton(0, "scroll_left.png", x0 + 40, y0 + dy - sdy - 50, sdx, sdy);
-            //gui.InsertKinectScrollButton(1, "scroll_right.png", x0 + 40 + sdx + 20, y0 + dy - sdy - 50, sdx, sdy);
-
             x0 += 50;
             y0 += 80;
 
@@ -533,13 +536,18 @@ namespace Examples.Test
 
         public void ModoNavegacion()
         {
+            ant_LA = GuiController.Instance.FpsCamera.getLookAt();
+            ant_LF = GuiController.Instance.FpsCamera.getPosition();
+
             gui.InitDialog(false, false);
             int dx = 250;
             int W = (int)(GuiController.Instance.Panel3d.Width / gui.ex);
             int H = (int)(GuiController.Instance.Panel3d.Height / gui.ey);
             gui.InsertNavigationControl(_meshes,W-dx-5,5,dx,dx);
-            gui_item cancel_btn = gui.InsertKinectCircleButton(IDCANCEL, "Cancel", "cancel.png", W - gui.KINECT_BUTTON_SIZE_X - 40,
-                    H- gui.KINECT_BUTTON_SIZE_X - 40, gui.KINECT_BUTTON_SIZE_X);
+            gui_item cancel_btn = gui.InsertKinectCircleButton(IDCANCEL, "Cancel", "cancel.png",
+                W / 2, H - gui.KINECT_BUTTON_SIZE_X - 40, gui.KINECT_BUTTON_SIZE_X);
+            gui.InsertKinectCircleButton(ID_RESET_CAMARA, "Reset", "cancel.png",
+                W - gui.KINECT_BUTTON_SIZE_X-40, H - gui.KINECT_BUTTON_SIZE_X - 40, gui.KINECT_BUTTON_SIZE_X);
 
         }
 
