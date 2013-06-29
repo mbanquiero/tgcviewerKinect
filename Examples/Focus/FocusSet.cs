@@ -87,7 +87,8 @@ namespace Examples.Focus
 			
 			if(Tipo == ROTACION_Z)
 			{
-				//if(pivotPoint.lengthSquared == 0)
+                Max = Math.Sign(Max)*Math.Min(Math.Abs(Max), 110);
+                //if(pivotPoint.lengthSquared == 0)
 					container.Pivot = Offset + absVector;
 
                     PlayAnim(NULL_PAR, new Vector3(0, Apertura * Max * (float)Math.PI / 180.0f, 0), NULL_PAR);
@@ -97,6 +98,7 @@ namespace Examples.Focus
 			{
 				//puerta basculante
 				//if(pivotPoint.lengthSquared == 0)
+                Max = Math.Sign(Max) * Math.Min(Math.Abs(Max), 110);
 				container.Pivot = Offset + absVector;
                 float ang_x = Max * Dir.X;
                 float ang_z = Max * Dir.Z;
