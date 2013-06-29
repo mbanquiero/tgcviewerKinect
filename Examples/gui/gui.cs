@@ -696,7 +696,8 @@ namespace TgcViewer.Utils.Gui
             if (item_sel != -1)
                 items[item_sel].Render(this);
 
-            d3dDevice.RenderState.ZBufferEnable = ant_zenable;
+            // Desactivo el z buffer para los sprites
+            d3dDevice.RenderState.ZBufferEnable = false;
 
             // 4 - dibujo el cusor con la misma interface de prites
             sprite.Begin(SpriteFlags.AlphaBlend);
@@ -732,6 +733,8 @@ namespace TgcViewer.Utils.Gui
             sprite.End();
 
 
+            // Restauro el zbuffer
+            d3dDevice.RenderState.ZBufferEnable = ant_zenable;
             // Restauro la transformacion del sprite
             sprite.Transform = matAnt;
 

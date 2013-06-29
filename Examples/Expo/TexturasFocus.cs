@@ -27,12 +27,25 @@ namespace Examples.Expo
             int t = 2000;
 
             //Maderas
-            group = new Group("Maderas", g++, "cerrados.png");
+            group = new Group("Maderas", g++, "Maderas\\09-guindo.jpg");
             group.add(new Texture(t++, "Maderas\\09-guindo.jpg"));
             group.add(new Texture(t++, "Maderas\\05-nogal.jpg"));
             group.add(new Texture(t++, "Maderas\\06-roble.jpg"));
             group.add(new Texture(t++, "Maderas\\12-wengue.jpg"));
             group.add(new Texture(t++, "Maderas\\Blanco.jpg"));
+            grupos.Add(group);
+
+            //Metales
+            group = new Group("Metales", g++, "metales\\AD 306 steel gray.jpg");
+            group.add(new Texture(t++, "Metales\\AD 306 steel gray.jpg"));
+            group.add(new Texture(t++, "Metales\\aluminio.jpg"));
+            group.add(new Texture(t++, "Metales\\cromado.jpg"));
+            group.add(new Texture(t++, "Metales\\metal1.jpg"));
+            group.add(new Texture(t++, "Metales\\an. bronze.jpg"));
+            grupos.Add(group);
+
+            //Masisa
+            group = new Group("Masisa", g++, "masisa\\amarillo.jpg");
             group.add(new Texture(t++, "masisa\\amarillo.jpg"));
             group.add(new Texture(t++, "masisa\\acacia.jpg"));
             group.add(new Texture(t++, "masisa\\almendra.jpg"));
@@ -45,22 +58,8 @@ namespace Examples.Expo
             group.add(new Texture(t++, "masisa\\rojo colonial.jpg"));
             grupos.Add(group);
 
-            /*
-            //Metales
-            group = new Group("Metales", g++, "metales\\AD 306 steel gray.jpg");
-            group.add(new Texture(t++, "Metales\\AD 306 steel gray.jpg"));
-            group.add(new Texture(t++, "Metales\\aluminio.jpg"));
-            group.add(new Texture(t++, "Metales\\cromado.jpg"));
-            group.add(new Texture(t++, "Metales\\metal1.jpg"));
-            group.add(new Texture(t++, "Metales\\an. bronze.jpg"));
-            grupos.Add(group);
-             
-            //Masisa
-            grupos.Add(group);
-             */
-
             //Piso
-            group = new Group("Piso", g++, "piso.png");
+            group = new Group("Piso", g++, "piso\\ceramicas\\agrupadas\\agrupadas64.jpg");
             group.add(new Texture(t++, "piso\\ceramicas\\agrupadas\\agrupadas64.jpg"));
             group.add(new Texture(t++, "piso\\ceramicas\\agrupadas\\agrupadas01.jpg"));
             group.add(new Texture(t++, "piso\\ceramicas\\agrupadas\\agrupadas14.jpg"));
@@ -71,7 +70,7 @@ namespace Examples.Expo
             grupos.Add(group);
 
             //Paredes
-            group = new Group("Paredes", g++, "pared.png");
+            group = new Group("Paredes", g++, "paredes\\ladrillos\\ladrillos (8).jpg");
             group.add(new Texture(t++, "paredes\\revoques\\liso_blanco.jpg"));
             group.add(new Texture(t++, "paredes\\revoques\\liso_rojo.jpg"));
             group.add(new Texture(t++, "paredes\\revoques\\revoques (4).jpg"));
@@ -79,7 +78,7 @@ namespace Examples.Expo
             grupos.Add(group);
 
             //Marmol
-            group = new Group("Marmol", g++, "mesada.png");
+            group = new Group("Marmol", g++, "marmoles\\silestone\\eros stellar.jpg");
             group.add(new Texture(t++, "marmoles\\silestone\\eros stellar.jpg"));
             group.add(new Texture(t++, "marmoles\\silestone\\carbono.jpg"));
             group.add(new Texture(t++, "marmoles\\silestone\\negro anubis.jpg"));
@@ -100,27 +99,28 @@ namespace Examples.Expo
             int W = GuiController.Instance.Panel3d.Width;
             int H = GuiController.Instance.Panel3d.Height;
 
-            int x0 = 20;
+            int x0 = -20;
             int y0 = 50;
-            int dy = 500;
-            int dx = W - 40;
-            int r = 250;
+            int dy = 600;
+            int dx = W + 40;
+            int tdx = 350;
+            int tdy = 250;
 
-            gui.InsertFrame("Seleccione la categoría", x0, y0, dx, dy, Color.FromArgb(192, 192, 192),frameBorder.redondeado);
-
-            //int sdx = 400;
-            //int sdy = 120;
-            //gui.InsertKinectScrollButton(0, "scroll_left.png", x0 + 40, y0 + dy - sdy - 50, sdx, sdy);
-            //gui.InsertKinectScrollButton(1, "scroll_right.png", x0 + 40 + sdx + 20, y0 + dy - sdy - 50, sdx, sdy);
+            gui.InsertFrame("Seleccione la categoría", x0, y0, dx, dy, Color.FromArgb(192, 192, 192),frameBorder.sin_borde);
+            int sdx = 400;
+            int sdy = 120;
+            gui.InsertKinectScrollButton(0, "scroll_left.png", x0 + 40, y0 + dy - sdy - 50, sdx, sdy);
+            gui.InsertKinectScrollButton(1, "scroll_right.png", x0 + 40 + sdx + 20, y0 + dy - sdy - 50, sdx, sdy);
             gui_item cancel_btn = gui.InsertKinectCircleButton(1, "Cancel", "cancel.png", W - gui.KINECT_BUTTON_SIZE_X - 40,
-                    y0 + 20, gui.KINECT_BUTTON_SIZE_X);
+                    y0 + dy - gui.KINECT_BUTTON_SIZE_X - 50, gui.KINECT_BUTTON_SIZE_X);
             cancel_btn.scrolleable = false;      // fijo el boton de cancelar
+
 
             //Crear un boton por cada grupo de textura
             for (int i = 0; i < grupos.Count; i++)
             {
                 Group g = grupos[i];
-                gui.InsertKinectCircleButton(g.guiId, g.name, g.iconPath, x0 + 50 + i * (r + 20), y0 + 160, r);
+                gui.InsertKinectTileButton(g.guiId, g.name, g.iconPath, x0 + 50 + i * (tdx + 20), y0 + 120, tdx, tdy);
             }
 
         }
@@ -144,7 +144,7 @@ namespace Examples.Expo
             int tdx = 250;
             int tdy = 200;
 
-            gui.InsertFrame("Seleccione la textura", x0, y0, dx, dy, Color.FromArgb(192, 192, 192),frameBorder.sin_borde);
+            gui.InsertFrame("Seleccione la textura", x0, y0, dx, dy, Color.FromArgb(192, 192, 192));
             int sdx = 500;
             int sdy = 120;
             gui.InsertKinectScrollButton(0, "scroll_left.png", x0 + 40, y0 + dy - sdy - 50, sdx, sdy);

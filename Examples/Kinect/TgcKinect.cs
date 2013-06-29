@@ -7,6 +7,7 @@ using TgcViewer;
 using System.Drawing;
 using Microsoft.DirectX.Direct3D;
 using TgcViewer.Utils;
+using Examples.Expo;
 
 namespace Examples.Kinect
 {
@@ -98,19 +99,27 @@ namespace Examples.Kinect
             set { cursorSize = value; }
         }
 
+        public bool skeletonTracked = false;
+        public Vector3 skeletonCenter;
+        public Vector3 sceneCenter;
+        public float skeletonOffsetY = 0;
+
+
+
         /// <summary>
         /// Constructor
         /// </summary>
         public TgcKinect()
         {
             debugSkeleton = new TgcKinectDebugSkeleton();
-            positionScale = 10;
+            positionScale = 100;
             positionTranslate = new Vector3(0, 9, -25);
             data = new TgcKinectSkeletonData();
             historyFramesCount = 50;
             bodyProportion = 6;
             hands2dSpeed = new Vector2(1, 2);
             cursorSize = new Vector2(64, 64);
+            skeletonCenter = new Vector3();
         }
 
         /// <summary>
@@ -183,6 +192,18 @@ namespace Examples.Kinect
         /// <param name="data">Datos procesados que se actualizan</param>
         private void buildSkeletonData(Skeleton rawSkeleton, TgcKinectSkeletonData data)
         {
+            if (!skeletonTracked)
+            {
+                if (rawSkeleton.Joints[JointType.HipCenter].TrackingState == JointTrackingState.Tracked)
+                {
+                    skeletonTracked = true;
+                    skeletonCenter = TgcKinectUtils.toVector3(rawSkeleton.Joints[JointType.HipCenter].Position);
+                }
+            }
+
+
+
+
             //Copiar esqueleto de frame actual a frame anterior, sin escalar las posiciones porque ya estaban escaladas de antes
             this.copySkeleton(data.Current.KinectSkeleton, data.Previous.KinectSkeleton, false);
 
@@ -197,7 +218,7 @@ namespace Examples.Kinect
             data.Previous.RightHandPos = data.Current.RightHandPos;
             data.Previous.LefttHandPos = data.Current.LefttHandPos;
 
-            
+
 
 
 
@@ -226,7 +247,7 @@ namespace Examples.Kinect
             data.HandsFrames.AddFirst(newFrame);
 
             //Ver si hay que eliminar el ultimo cuadro viejo del historial
-            if(data.HandsFrames.Count > this.historyFramesCount)
+            if (data.HandsFrames.Count > this.historyFramesCount)
             {
                 data.HandsFrames.RemoveLast();
             }
@@ -244,11 +265,58 @@ namespace Examples.Kinect
 
         }
 
+
+
+
+        public float halfBodyWidth = float.MinValue;
+        public float halfBodyHeight = float.MinValue;
+
+
         /// <summary>
         /// Actualizar posicion 2D de las manos
         /// </summary>
         private void updateHandsScreenPos(Skeleton rawSkeleton, TgcKinectSkeletonData data)
         {
+            /*
+            //Calcular boundingBox 2D para la mano derecha: entre la cabeza, el hombro derecho y la spine.
+            data.Current.RScreenRect = TgcKinectUtils.computeScreenRect(new SkeletonPoint[]{
+                rawSkeleton.Joints[JointType.ShoulderRight].Position,
+                rawSkeleton.Joints[JointType.Head].Position,
+                rawSkeleton.Joints[JointType.Spine].Position,
+            });
+
+            //Calcular boundingBox 2D para la mano izquierda: entre la cabeza, el hombro izq y la spine.
+            data.Current.LScreenRect = TgcKinectUtils.computeScreenRect(new SkeletonPoint[]{
+                rawSkeleton.Joints[JointType.ShoulderLeft].Position,
+                rawSkeleton.Joints[JointType.Head].Position,
+                rawSkeleton.Joints[JointType.Spine].Position,
+            });
+
+
+            //Agrandar ambos boundingBox hacia el lado donde esta la mano
+            data.Current.RScreenRect = new RectangleF(data.Current.RScreenRect.Location, new SizeF(data.Current.RScreenRect.Width + data.Current.RScreenRect.Width / 2, data.Current.RScreenRect.Height));
+            data.Current.LScreenRect = new RectangleF(new PointF(data.Current.LScreenRect.X - data.Current.LScreenRect.Width / 2, data.Current.LScreenRect.Y), data.Current.LScreenRect.Size);
+            
+            
+
+
+            //Clampear posicion 2D de manos segun el boundingBox 2D
+            Vector2 rHand2dPos = TgcKinectUtils.toVector2(rawSkeleton.Joints[JointType.HandRight].Position);
+            Vector2 lHand2dPos = TgcKinectUtils.toVector2(rawSkeleton.Joints[JointType.HandLeft].Position);
+            rHand2dPos = TgcKinectUtils.clampToRect(rHand2dPos, data.Current.RScreenRect);
+            lHand2dPos = TgcKinectUtils.clampToRect(lHand2dPos, data.Current.LScreenRect);
+
+            //Mapear puntos al tamaño de la pantalla para obtener posicion 2D de las manos
+            Viewport screenViewport = GuiController.Instance.D3dDevice.Viewport;
+            data.Current.RightHandPos = TgcKinectUtils.mapPointToScreen(rHand2dPos, data.Current.RScreenRect, screenViewport, cursorSize);
+            data.Current.LefttHandPos = TgcKinectUtils.mapPointToScreen(lHand2dPos, data.Current.LScreenRect, screenViewport, cursorSize);
+
+            //Distancia z relativa de cada mano al hombro
+            data.Current.RightZDist = rawSkeleton.Joints[JointType.HandRight].Position.Z - rawSkeleton.Joints[JointType.ShoulderRight].Position.Z;
+            data.Current.LeftZDist = rawSkeleton.Joints[JointType.HandLeft].Position.Z - rawSkeleton.Joints[JointType.ShoulderLeft].Position.Z;
+            */
+
+
             /*
             Vector2 hipRight = TgcKinectUtils.toVector2(rawSkeleton.Joints[JointType.HipRight].Position);
             Vector2 hipLeft = TgcKinectUtils.toVector2(rawSkeleton.Joints[JointType.HipLeft].Position);
@@ -294,47 +362,41 @@ namespace Examples.Kinect
 
 
 
-            //0 a -0.15
 
-            float width = GuiController.Instance.D3dDevice.Viewport.Width;
-            float height = GuiController.Instance.D3dDevice.Viewport.Height;
-            float minX = -0.2f;
-            float maxX = 0f;
-            float minY = 0.1f;
-            float maxY = 0.5f;
-            Vector2 rHandPos = TgcKinectUtils.toVector2(rawSkeleton.Joints[JointType.HandRight].Position);
-            Vector2 headPos = TgcKinectUtils.toVector2(rawSkeleton.Joints[JointType.Head].Position);
-            Vector2 diff = headPos - rHandPos;
 
-            Vector2 rHandPos2D = new Vector2(
-                (1 - ((diff.X - minX) / (maxX - minX))) * width,
-                ((diff.Y - minY) / (maxY - minY)) * height
-                );
-
-            if (rHandPos2D.X < 0)
+            if (/*halfBodyWidth == float.MinValue &&*/
+                rawSkeleton.Joints[JointType.ShoulderRight].TrackingState == JointTrackingState.Tracked &&
+                rawSkeleton.Joints[JointType.Spine].TrackingState == JointTrackingState.Tracked &&
+                rawSkeleton.Joints[JointType.Head].TrackingState == JointTrackingState.Tracked)
             {
-                rHandPos2D.X = 0;
-            }
-            if (rHandPos2D.X >= width)
-            {
-                rHandPos2D.X = width;
-            }
-            if (rHandPos2D.Y < 0)
-            {
-                rHandPos2D.Y = 0;
-            }
-            if (rHandPos2D.Y >= height)
-            {
-                rHandPos2D.Y = height;
+                halfBodyWidth = rawSkeleton.Joints[JointType.ShoulderRight].Position.X - rawSkeleton.Joints[JointType.Spine].Position.X;
+                halfBodyHeight = rawSkeleton.Joints[JointType.Head].Position.Y - rawSkeleton.Joints[JointType.Spine].Position.Y;
             }
 
-            data.Current.RightHandPos = rHandPos2D;
+            //Right
+            //X: -0.05 a -0.2
+            //Y: 0.1 a 0.5
+            data.Current.RightHandPos = TgcKinectUtils.computeHand2DPos(
+                rawSkeleton.Joints[JointType.HandRight].Position,
+                rawSkeleton.Joints[JointType.Head].Position,
+                -0.2f,
+                -0.05f,
+                0.1f,
+                0.5f,
+                true);
 
 
-            data.Current.LefttHandPos = diff;
-
-
-
+            //Left
+            //X: 0.05 a 0.2
+            //Y: 0.1 a 0.5
+            data.Current.LefttHandPos = TgcKinectUtils.computeHand2DPos(
+                rawSkeleton.Joints[JointType.HandLeft].Position,
+                rawSkeleton.Joints[JointType.Head].Position,
+                0.05f,
+                0.2f,
+                0.1f,
+                0.5f,
+                false);
 
         }
 
@@ -417,7 +479,7 @@ namespace Examples.Kinect
 
             //Escalar posicion
             destination.Position = scalePos ? getScaledTranslatedPoint(source.Position) : source.Position;
-            
+
             // This must copy before the joint orientations
             Array jointTypeValues = Enum.GetValues(typeof(JointType));
             foreach (JointType j in jointTypeValues)
@@ -441,7 +503,7 @@ namespace Examples.Kinect
                     destination.BoneOrientations[j] = temp;
                 }
             }
-             */ 
+             */
 
             /*
             //Ajuste de proporciones
@@ -529,10 +591,10 @@ namespace Examples.Kinect
                     };
 
                     this.sensor.SkeletonStream.Enable(smoothingParam);
-                     //this.sensor.ColorStream.Enable(ColorImageFormat.RgbResolution640x480Fps30);
-                     this.sensor.DepthStream.Enable(DepthImageFormat.Resolution320x240Fps30);
-                     this.sensor.SkeletonStream.EnableTrackingInNearRange = true; // Enable skeleton tracking in near mode
-                     //this.sensor.DepthStream.Range = DepthRange.Near;
+                    //this.sensor.ColorStream.Enable(ColorImageFormat.RgbResolution640x480Fps30);
+                    this.sensor.DepthStream.Enable(DepthImageFormat.Resolution320x240Fps30);
+                    this.sensor.SkeletonStream.EnableTrackingInNearRange = true; // Enable skeleton tracking in near mode
+                    //this.sensor.DepthStream.Range = DepthRange.Near;
 
                     try
                     {
@@ -557,10 +619,19 @@ namespace Examples.Kinect
         /// </summary>
         public SkeletonPoint getScaledTranslatedPoint(SkeletonPoint p)
         {
+            /*
             SkeletonPoint p2 = new SkeletonPoint();
             p2.X = p.X * positionScale * -1f + positionTranslate.X;
             p2.Y = p.Y * positionScale + positionTranslate.Y;
             p2.Z = p.Z * positionScale + positionTranslate.Z;
+            return p2;
+             */
+
+            SkeletonPoint p2 = new SkeletonPoint();
+            float offsetY = skeletonOffsetY * positionScale;
+            p2.X = (p.X - skeletonCenter.X) * positionScale + sceneCenter.X;
+            p2.Y = (p.Y - skeletonCenter.Y) * positionScale + sceneCenter.Y + offsetY;
+            p2.Z = (p.Z - skeletonCenter.Z) * positionScale + sceneCenter.Z;
             return p2;
         }
 
