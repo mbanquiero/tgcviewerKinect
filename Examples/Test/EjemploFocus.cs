@@ -44,6 +44,8 @@ namespace Examples.Test
         TgcKinect tgcKinect;
         TexturasFocus texturasFocus;
         TgcBox lightMesh;
+        TgcPickingRay ray = new TgcPickingRay();
+        bool modo_picking = true;                   // modo picking o modo navergar
 
         Vector3 ant_LA, ant_LF;
 
@@ -185,6 +187,36 @@ namespace Examples.Test
 
                     m.render();
                 }
+
+
+                if (modo_picking)
+                {
+                    //Actualizar Ray de colisión en base a posición de la mano
+                    ray.updateRay(gui.kinect.right_hand.position.X,gui.kinect.right_hand.position.Y);
+
+                    //Testear Ray contra el AABB de todos los meshes
+                    foreach (FocusSet f in _conjuntos)
+                    {
+                        TgcBoundingBox aabb = f.container.BoundingBox;
+
+                        //Ejecutar test, si devuelve true se carga el punto de colision collisionPoint
+                        Vector3 collisionPoint = new Vector3();
+                        bool selected = TgcCollisionUtils.intersectRayAABB(ray.Ray, aabb, out collisionPoint);
+                        if (selected)
+                        {
+                            f.animate();
+                            //break;
+                        }
+                    }
+                }
+
+                foreach (FocusSet f in _conjuntos)
+                {
+                    f.Render();
+                    //if(modo_picking)
+                      //  f.container.BoundingBox.render();
+                }
+
             }
             else
             {
@@ -211,6 +243,8 @@ namespace Examples.Test
                         case IDCANCEL:
                             // Resultados OK, y CANCEL del ultimo messagebox
                             gui.EndDialog();
+                            // si cancelo el modo navegacion, paso a modo picking
+                            modo_picking = true;
                             break;
 
                         case ID_FILE_OPEN:
@@ -536,6 +570,7 @@ namespace Examples.Test
 
         public void ModoNavegacion()
         {
+            modo_picking = false;
             ant_LA = GuiController.Instance.FpsCamera.getLookAt();
             ant_LF = GuiController.Instance.FpsCamera.getPosition();
 

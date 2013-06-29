@@ -674,21 +674,17 @@ namespace TgcViewer.Utils.Gui
 
     public class gui_mesh_button : gui_item
     {
-        public float size;
+        public Vector3 size;
         public gui_mesh_button(DXGui gui, String s, String fname, int id, int x, int y, int dx, int dy) :
             base(gui,s , x, y, dx, dy,id)
         {
-
-            //TgcSceneLoader.TgcSceneLoader loader = new TgcSceneLoader.TgcSceneLoader();
-            //TgcSceneLoader.TgcScene currentScene = loader.loadSceneFromFile(fname);
-            // mesh = currentScene.Meshes[0];
 
             YParser yparser = new YParser();
             yparser.FromFile(fname);
             mesh = yparser.Mesh;
 
             mesh.AutoTransformEnable = false;
-            size = mesh.BoundingBox.calculateSize().Length();
+            size = mesh.BoundingBox.calculateSize();
             seleccionable = true;
             item3d = true;
 
@@ -740,7 +736,7 @@ namespace TgcViewer.Utils.Gui
             Vector3 viewDir = new Vector3((float)Math.Sin(an), 0.3f, (float)Math.Cos(an));
             viewDir.Normalize();
             Vector3 LA = mesh.Position;
-            float dist = sel ? size * 1.5f : size * 2f;
+            float dist = size.Length() * (sel ? 1.5f : 2f);
             Vector3 LF = mesh.Position + viewDir * dist;
             Matrix ant_matView = d3dDevice.Transform.View * Matrix.Identity;
             d3dDevice.Transform.View = Matrix.LookAtLH(LF, LA, new Vector3(0, 1, 0));

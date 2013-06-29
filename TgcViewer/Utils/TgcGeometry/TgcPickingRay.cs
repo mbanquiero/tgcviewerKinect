@@ -30,11 +30,19 @@ namespace TgcViewer.Utils.TgcGeometry
         /// </summary>
         public void updateRay()
         {
+            //Crear Ray en base a coordenadas del mouse
+            updateRay(GuiController.Instance.D3dInput.Xpos, GuiController.Instance.D3dInput.Ypos);
+        }
+
+
+        /// <summary>
+        /// Actualiza el Ray de colisión en base a una posicion arbitraria
+        /// </summary>
+        public void updateRay(float sx,float sy)
+        {
             Device d3dDevice = GuiController.Instance.D3dDevice;
 
-            //Crear Ray en base a coordenadas del mouse
-            float sx = GuiController.Instance.D3dInput.Xpos;
-            float sy = GuiController.Instance.D3dInput.Ypos;
+            //Crear Ray 
             int w = d3dDevice.Viewport.Width;
             int h = d3dDevice.Viewport.Height;
             Matrix matProj = d3dDevice.Transform.Projection;
