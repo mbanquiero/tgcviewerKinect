@@ -21,8 +21,8 @@ texture texDiffuseMap;
 sampler2D diffuseMap = sampler_state
 {
 	Texture = (texDiffuseMap);
-	ADDRESSU = WRAP;
-	ADDRESSV = WRAP;
+	ADDRESSU = MIRROR;
+	ADDRESSV = MIRROR;
 	MINFILTER = LINEAR;
 	MAGFILTER = LINEAR;
 	MIPFILTER = LINEAR;
@@ -233,7 +233,7 @@ float4 ps_DiffuseMap(PS_DIFFUSE_MAP input) : COLOR0
 			: specularColor * pow(max( 0.0, n_dot_h), specularExp);
 	
 	//Color final: modular (Ambient + Diffuse) por el color de la textura, y luego sumar Specular.
-	float4 finalColor = float4((ambientColor + diffuseLight) * texelColor + specularLight, texelColor.a);
+	float4 finalColor = float4(saturate((ambientColor + diffuseLight)) * texelColor + specularLight, texelColor.a);
 	
 	
 	return finalColor;
