@@ -10,6 +10,7 @@ using TgcViewer.Utils;
 using TgcViewer.Utils.TgcGeometry;
 using TgcViewer.Utils.TgcSceneLoader;
 using System.Drawing;
+using System.IO;
 
 namespace TgcViewer.Utils.TgcSceneLoader
 {
@@ -44,15 +45,25 @@ namespace TgcViewer.Utils.TgcSceneLoader
                     //Cargar material
                     meshMaterials[i] = mtrl[i].Material3D;
 
-                    /*
                     //Si hay textura, intentar cargarla
                     if ((mtrl[i].TextureFilename != null) && (mtrl[i].TextureFilename !=
                         string.Empty))
                     {
+
+                        String fname_aux = mtrl[i].TextureFilename;
+                        // Verifico si esta el archivo con el path asi como viene
+                        if (!File.Exists(fname_aux))
+                        {
+                            // Pruebo con la carpeta de texturas
+                            fname_aux = GuiController.Instance.ExamplesMediaDir + "ModelosX\\" + mtrl[i].TextureFilename;
+                            if (!File.Exists(fname_aux))
+                                // Usa una textura gris para que al menos salga un color
+                                fname_aux = GuiController.Instance.ExamplesMediaDir + "focus\\texturas\\gris.png";
+                        }
+
                         //Cargar textura con TextureLoader
-                        meshTextures[i] = TextureLoader.FromFile(d3dDevice, GuiController.Instance.ExamplesMediaDir + "ModelosX" + "\\" +
-                            mtrl[i].TextureFilename);
-                    }*/
+                        meshTextures[i] = TextureLoader.FromFile(d3dDevice, fname_aux);
+                    }
                 }
             }
 

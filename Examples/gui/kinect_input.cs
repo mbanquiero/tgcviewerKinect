@@ -34,6 +34,7 @@ namespace TgcViewer.Utils.Gui
         public Gesture currentGesture = Gesture.Nothing;
         public TgcKinectSkeletonData kinectData;
         public bool hay_sensor = false;             // indica si hay una kinect connectada
+        public int MOUSE_SNAP = 10; 
 
 		public kinect_input()
         {
@@ -77,8 +78,16 @@ namespace TgcViewer.Utils.Gui
                 }
                 */
 
-                right_hand.position.X = kinectData.Current.RightHandPos.X;
-                right_hand.position.Y = kinectData.Current.RightHandPos.Y;
+                int dx = (int)Math.Abs(right_hand.position.X - kinectData.Current.RightHandPos.X);
+                int dy = (int)Math.Abs(right_hand.position.Y - kinectData.Current.RightHandPos.Y);
+                if (dx >= MOUSE_SNAP || dy >= MOUSE_SNAP )
+                {
+                    if (dx > dy)
+                        right_hand.position.X = kinectData.Current.RightHandPos.X;
+                    else
+                        right_hand.position.Y = kinectData.Current.RightHandPos.Y;
+                }
+
                 right_hand.position.Z = 1;
                 
 
