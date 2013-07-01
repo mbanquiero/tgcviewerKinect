@@ -25,6 +25,8 @@ namespace Examples.Test
         public JointType JointType;
         public float radio;
         public TgcDXMesh p_mesh;
+        public Vector3 WorldPosition;
+
     }
 
     public struct st_bone
@@ -355,7 +357,33 @@ namespace Examples.Test
             UpdateSkeleton();
 
             if (modo_navegacion == ModoNavegacion.Avataring)
+            {
                 renderSkeletonMesh();
+                // Verifico si la mano toca contra algun cojunto de focus
+                Vector3 hand_size = new Vector3(100, 100, 100);
+                Vector3 pos_mano_der = _joints[(int)JointType.HandRight].WorldPosition;
+                TgcBoundingBox righthand = new TgcBoundingBox(pos_mano_der - hand_size, pos_mano_der + hand_size);
+                righthand.render();
+                Vector3 pos_mano_izq = _joints[(int)JointType.HandLeft].WorldPosition;
+                TgcBoundingBox lefthand = new TgcBoundingBox(pos_mano_izq - hand_size, pos_mano_izq + hand_size);
+                lefthand.render();
+
+                foreach (FocusSet f in _conjuntos)
+                {
+                    TgcBoundingBox aabb = f.container.BoundingBox;
+                    //Ejecutar test, si devuelve true se carga el punto de colision collisionPoint
+                    bool selected = TgcCollisionUtils.testAABBAABB(aabb, righthand);
+                    if (!selected)
+                        selected = TgcCollisionUtils.testAABBAABB(aabb, lefthand);
+
+                    if (selected)
+                    {
+                        f.animate();
+                        //break;
+                    }
+                }
+
+            }
 
             if (data.Active)
             {
@@ -516,6 +544,7 @@ namespace Examples.Test
                                 lightMesh.Position = new Vector3((x0 + x1) / 2, y1-200, (z0 + z1) / 2);
                                 // El centro de la escena (sobre el nivel del piso + la altura del personaje / 2)
                                 center = new Vector3((x0 + x1) / 2, 1100, (z0 + z1) / 2);
+                                //center = new Vector3(x1-1500, 1100, z1-1000);
                                 hay_escena = true;
 
                             }
@@ -730,16 +759,10 @@ namespace Examples.Test
                 {
                     _joints[i].Position = new Vector3(skeleton.Joints[(JointType)i].Position.X, skeleton.Joints[(JointType)i].Position.Y, skeleton.Joints[(JointType)i].Position.Z);
                     _joints[i].JointType = (JointType)i;
+                    // LLevo el punto al espacio del esqueleto, luego lo escalo a milimetros y lo traslado al centro de la escena
+                     _joints[i].WorldPosition = (_joints[i].Position - hip0) * 1000 + center;
                 }
                 _cant_joints = skeleton.Joints.Count;
-
-                /*
-                // Caso particular, el torso, creo un joint virtual en el punto intermedio entre el centro de hombros y la espina.
-                _joints[_cant_joints].radio = 350;
-                _joints[_cant_joints].p_mesh = torso;
-                _joints[_cant_joints].Position = (_joints[(int)JointType.Spine].Position + _joints[(int)JointType.ShoulderCenter].Position) * 0.5f;
-                _cant_joints++;
-                 */
 
                 for (int i = 0; i < skeleton.BoneOrientations.Count; i++)
                 {
@@ -834,35 +857,15 @@ namespace Examples.Test
             Device device = GuiController.Instance.D3dDevice;
             Matrix ant_view = device.Transform.View * Matrix.Identity;
 
-            float K = 1.0f;
-
-            // Uso el area de memoria propia y no la de la kinect ya que si hay joints no trackeados,
-            // conviene usar el ultimo que tengo disponible
-            Vector3[] pos_joint = new Vector3[26];
-            for (int i = 0; i < _cant_joints; i++)
-            {
-                // LLevo el punto al espacio del esqueleto, luego lo escalo a milimetros y lo traslado al centro de la escena
-                pos_joint[i] = (_joints[i].Position - hip0) * 1000 * K + center;
-
-                /*
-                // Pero solo lo renderizo si tiene radio y mesh asociado. 
-                if (_joints[i].radio > 0 && _joints[i].p_mesh != null && false)
-                {
-                    float k = _joints[i].radio / _joints[i].p_mesh.size.Y * K;
-                    _joints[i].p_mesh.transform = Matrix.Translation(-_joints[i].p_mesh.center) * Matrix.Scaling(k, k, k) * Matrix.Translation(pos_joint[i]);
-                    _joints[i].p_mesh.render();
-                }*/
-            }
-
             for (int t = 0; t < _cant_bones; t++)
                 if (_bones[t].p_mesh != null)
                 {
 
                     int PStart = (int)_bones[t].StartJoint;
                     int PEnd = (int)_bones[t].EndJoint;
-                    Vector3 bone_center = (pos_joint[PStart] + pos_joint[PEnd]) * 0.5f;
+                    Vector3 bone_center = (_joints[PStart].WorldPosition + _joints[PEnd].WorldPosition) * 0.5f;
                     TgcDXMesh p_mesh = _bones[t].p_mesh;
-                    p_mesh.transform = calcularMatriz(p_mesh.center, bone_center, _bones[t].k * K, _bones[t].T);
+                    p_mesh.transform = calcularMatriz(p_mesh.center, bone_center, _bones[t].k , _bones[t].T);
                     p_mesh.render();
                 }
 
@@ -871,13 +874,13 @@ namespace Examples.Test
             {
                 // empiezo en el cuello y termino en en centro de la cabeza
                 Matrix T = _bones[(int)JointType.HipCenter].T;
-                Vector3 PCenter = pos_joint[(int)JointType.Head];
-                Vector3 HeadDir = PCenter - pos_joint[(int)JointType.ShoulderCenter];
+                Vector3 PCenter = _joints[(int)JointType.Head].WorldPosition;
+                Vector3 HeadDir = PCenter - _joints[(int)JointType.ShoulderCenter].WorldPosition;
                 HeadDir.Normalize();
-                Vector3 PStart = PCenter + HeadDir * 70f * K;
-                Vector3 PEnd = PCenter - HeadDir * 250f * K;
+                Vector3 PStart = PCenter + HeadDir * 70f;
+                Vector3 PEnd = PCenter - HeadDir * 250f;
                 Vector3 bone_center = (PStart + PEnd) * 0.5f;
-                cabeza.transform = calcularMatriz(cabeza.center, bone_center, _bones[(int)JointType.Head].k * K, T);
+                cabeza.transform = calcularMatriz(cabeza.center, bone_center, _bones[(int)JointType.Head].k, T);
                 cabeza.render();
             }
 
@@ -885,29 +888,27 @@ namespace Examples.Test
             {
                 // Empieza en el centro de la cadera hasta el centro de los hombros
                 Matrix T = _bones[(int)JointType.HipCenter].T;
-                Vector3 PStart = pos_joint[(int)JointType.HipCenter];
-                Vector3 PEnd = pos_joint[(int)JointType.ShoulderCenter];
+                Vector3 PStart = _joints[(int)JointType.HipCenter].WorldPosition;
+                Vector3 PEnd = _joints[(int)JointType.ShoulderCenter].WorldPosition;
                 Vector3 TorsoDir = PEnd - PStart;
                 TorsoDir.Normalize();
-                PEnd = PEnd - 20 * TorsoDir * K;
+                PEnd = PEnd - 20 * TorsoDir;
                 Vector3 bone_center = (PStart + PEnd) * 0.5f;
-                torso.transform = calcularMatriz(torso.center, bone_center, _bones[(int)JointType.HipCenter].k * K, T);
+                torso.transform = calcularMatriz(torso.center, bone_center, _bones[(int)JointType.HipCenter].k, T);
                 torso.render();
             }
 
             // culo
             {
                 Matrix T = _bones[(int)JointType.HipCenter].T;
-                Vector3 PStart = pos_joint[(int)JointType.HipCenter];
+                Vector3 PStart = _joints[(int)JointType.HipCenter].WorldPosition;
                 Vector3 CuloDir = new Vector3(T.M21, T.M22, T.M23);
-                Vector3 PEnd = PStart - CuloDir * 200f * K;
-                PStart = PStart + CuloDir * 100f * K;
+                Vector3 PEnd = PStart - CuloDir * 200f;
+                PStart = PStart + CuloDir * 100f;
                 Vector3 bone_center = (PStart + PEnd) * 0.5f;
-                culo.transform = calcularMatriz(culo.center, bone_center, _bones[(int)JointType.HipCenter].k * K, T);
+                culo.transform = calcularMatriz(culo.center, bone_center, _bones[(int)JointType.HipCenter].k, T);
                 culo.render();
             }
-
-            //renderDebugSkeletonMesh();
 
             device.Transform.View = ant_view * Matrix.Identity;
 
@@ -1012,17 +1013,14 @@ namespace Examples.Test
 
             // Uso el area de memoria propia y no la de la kinect ya que si hay joints no trackeados,
             // conviene usar el ultimo que tengo disponible
-            Vector3[] pos_joint = new Vector3[26];
             for (int i = 0; i < _cant_joints; i++)
             {
-                // LLevo el punto al espacio del esqueleto, luego lo escalo a milimetros y lo traslado al centro de la escena
-                pos_joint[i] = (_joints[i].Position - hip0) * 1000 * K + center;
-
                 // Pero solo lo renderizo si tiene radio y mesh asociado. 
                 if (_joints[i].radio > 0 && _joints[i].p_mesh != null && false)
                 {
                     float k = _joints[i].radio / _joints[i].p_mesh.size.Y * K;
-                    _joints[i].p_mesh.transform = Matrix.Translation(-_joints[i].p_mesh.center) * Matrix.Scaling(k, k, k) * Matrix.Translation(pos_joint[i]);
+                    _joints[i].p_mesh.transform = Matrix.Translation(-_joints[i].p_mesh.center) * Matrix.Scaling(k, k, k) 
+                            * Matrix.Translation(_joints[i].WorldPosition);
                     _joints[i].p_mesh.render();
                 }
             }
@@ -1036,7 +1034,8 @@ namespace Examples.Test
 
                     TgcDXMesh p_mesh = _bones[t].p_mesh;
                     p_mesh.transform = calcularMatriz(p_mesh.bb_p0, p_mesh.bb_p1,
-                            pos_joint[PStart], pos_joint[PEnd], _bones[t].size.X * K, _bones[t].size.Y * K, _bones[t].T);
+                            _joints[PStart].WorldPosition, _joints[PEnd].WorldPosition, 
+                                _bones[t].size.X * K, _bones[t].size.Y * K, _bones[t].T);
                     p_mesh.render();
                 }
 
@@ -1044,8 +1043,8 @@ namespace Examples.Test
             // Cabeza 
             {
                 // empiezo en el cuello y termino en en centro de la cabeza
-                Vector3 PCenter = pos_joint[(int)JointType.Head];
-                Vector3 HeadDir = PCenter - pos_joint[(int)JointType.ShoulderCenter];
+                Vector3 PCenter = _joints[(int)JointType.Head].WorldPosition;
+                Vector3 HeadDir = PCenter - _joints[(int)JointType.ShoulderCenter].WorldPosition;
                 HeadDir.Normalize();
                 Vector3 PStart = PCenter + HeadDir * 50f * K;
                 Vector3 PEnd = PCenter - HeadDir * 270f * K;
@@ -1062,8 +1061,8 @@ namespace Examples.Test
             // Cuerpo
             {
                 // Empieza en el centro de la cadera hasta el centro de los hombros
-                Vector3 PStart = pos_joint[(int)JointType.HipCenter];
-                Vector3 PEnd = pos_joint[(int)JointType.ShoulderCenter];
+                Vector3 PStart = _joints[(int)JointType.HipCenter].WorldPosition;
+                Vector3 PEnd = _joints[(int)JointType.ShoulderCenter].WorldPosition;
                 Vector3 TorsoDir = PEnd - PStart;
                 TorsoDir.Normalize();
                 PEnd = PEnd - 20 * TorsoDir * K;
@@ -1075,7 +1074,7 @@ namespace Examples.Test
             // culo
             {
                 Matrix T = _bones[(int)JointType.HipCenter].T;
-                Vector3 PStart = pos_joint[(int)JointType.HipCenter];
+                Vector3 PStart = _joints[(int)JointType.HipCenter].WorldPosition;
                 Vector3 CuloDir = new Vector3(T.M21, T.M22, T.M23);
                 Vector3 PEnd = PStart - CuloDir * 200f * K;
                 PStart = PStart + CuloDir * 100f * K;
@@ -1189,18 +1188,15 @@ namespace Examples.Test
 
             // Uso el area de memoria propia y no la de la kinect ya que si hay joints no trackeados,
             // conviene usar el ultimo que tengo disponible
-            Vector3[] pos_joint = new Vector3[26];
             for (int i = 0; i < _cant_joints; i++)
             {
-                // LLevo el punto al espacio del esqueleto, luego lo escalo a milimetros y lo traslado al centro de la escena
-                pos_joint[i] = (_joints[i].Position - hip0) * 1000 * K + center;
-
                 // solo lo dibujo si tiene mesh
                 TgcDXMesh p_mesh = _joints[i].p_mesh;
                 if (p_mesh != null)
                 {
                     float k = _joints[i].radio / p_mesh.size.Y * K;
-                    p_mesh.transform = Matrix.Translation(-p_mesh.center) * Matrix.Scaling(k, k, k) * Matrix.Translation(pos_joint[i]);
+                    p_mesh.transform = Matrix.Translation(-p_mesh.center) * Matrix.Scaling(k, k, k) 
+                        * Matrix.Translation(_joints[i].WorldPosition);
                     p_mesh.render();
                 }
             }
@@ -1215,7 +1211,7 @@ namespace Examples.Test
                 float escala_x = _bones[t].size.X / bola.size.X * K;
                 float escala_z = _bones[t].size.Y / bola.size.Z * K;
                 p_mesh.transform = calcularMatriz(p_mesh.bb_p0, p_mesh.bb_p1,
-                        pos_joint[PStart], pos_joint[PEnd], escala_x, escala_z, _bones[t].T);
+                        _joints[PStart].WorldPosition, _joints[PEnd].WorldPosition, escala_x, escala_z, _bones[t].T);
                 p_mesh.render();
             }
 
@@ -1223,8 +1219,8 @@ namespace Examples.Test
             // cara
             {
                 // empiezo en el cuello y termino en en centro de la cabeza
-                Vector3 PCenter = pos_joint[(int)JointType.Head];
-                Vector3 HeadDir = PCenter - pos_joint[(int)JointType.ShoulderCenter];
+                Vector3 PCenter = _joints[(int)JointType.Head].WorldPosition;
+                Vector3 HeadDir = PCenter - _joints[(int)JointType.ShoulderCenter].WorldPosition;
                 HeadDir.Normalize();
                 Vector3 PStart = PCenter + HeadDir * 70f * K;
                 Vector3 PEnd = PCenter - HeadDir * 130f * K;
@@ -1233,8 +1229,8 @@ namespace Examples.Test
                 cara.render();
 
                 // Cuello
-                PStart = pos_joint[(int)JointType.Head] - HeadDir * 50f * K;
-                PEnd = pos_joint[(int)JointType.ShoulderCenter] - HeadDir * 150f * K;
+                PStart = _joints[(int)JointType.Head].WorldPosition - HeadDir * 50f * K;
+                PEnd = _joints[(int)JointType.ShoulderCenter].WorldPosition - HeadDir * 150f * K;
                 elipsoid.transform = calcularMatriz(elipsoid.bb_p0, elipsoid.bb_p1, PStart, PEnd,
                         40 * K,  40 * K, _bones[(int)JointType.Head].T);
                 elipsoid.render();
@@ -1244,8 +1240,8 @@ namespace Examples.Test
             // Cuerpo
             {
                 // Empieza en el centro de la cadera hasta el centro de los hombros
-                Vector3 PStart = pos_joint[(int)JointType.HipCenter];
-                Vector3 PEnd = pos_joint[(int)JointType.ShoulderCenter];
+                Vector3 PStart = _joints[(int)JointType.HipCenter].WorldPosition;
+                Vector3 PEnd = _joints[(int)JointType.ShoulderCenter].WorldPosition;
                 Vector3 TorsoDir = PEnd - PStart;
                 TorsoDir.Normalize();
                 PStart = PStart +  50 * TorsoDir * K;
@@ -1258,7 +1254,7 @@ namespace Examples.Test
             // culo
             {
                 Matrix T = _bones[(int)JointType.HipCenter].T;
-                Vector3 PStart = pos_joint[(int)JointType.HipCenter];
+                Vector3 PStart = _joints[(int)JointType.HipCenter].WorldPosition;
                 Vector3 CuloDir = new Vector3(T.M21, T.M22, T.M23);
                 Vector3 PEnd = PStart - CuloDir * 200f * K;
                 PStart = PStart + CuloDir * 50f * K;
