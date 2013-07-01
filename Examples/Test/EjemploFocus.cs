@@ -100,6 +100,8 @@ namespace Examples.Test
         bool hay_escena = false;
         int tipo_avataring = 0;
 
+        public bool msg_box_app_exit = false;
+
         // gui
         DXGui gui = new DXGui();
         //FocusCamera camera = new FocusCamera();
@@ -342,6 +344,16 @@ namespace Examples.Test
                             gui.EndDialog();
                             // si cancelo el modo navegacion, paso a modo gui
                             modo_navegacion  = ModoNavegacion.Gui;
+                            if (msg_box_app_exit)
+                            {
+                                // Es la resupuesta a un messagebox de salir del sistema
+                                if (msg.id == IDOK)
+                                {
+                                    // Salgo del sistema
+                                    System.Windows.Forms.Application.Exit();
+                                }
+                            }
+                            msg_box_app_exit = false;
                             break;
 
                         case ID_FILE_OPEN:
@@ -371,6 +383,7 @@ namespace Examples.Test
                         case ID_APP_EXIT:
                             // Salir
                             gui.MessageBox("Desea Salir del Sistema?", "Focus Kinect Interaction");
+                            msg_box_app_exit = true;
                             break;
 
                         case ID_CAMBIAR_TEXTURAS:
@@ -597,35 +610,35 @@ namespace Examples.Test
             ant_LA = GuiController.Instance.FpsCamera.getLookAt();
             ant_LF = GuiController.Instance.FpsCamera.getPosition();
             gui.InitDialog(false, false);
+            int dx = 250;
             int W = (int)(GuiController.Instance.Panel3d.Width / gui.ex);
             int H = (int)(GuiController.Instance.Panel3d.Height / gui.ey);
+            gui.InsertNavigationControl(_meshes, W - dx - 5, 5, dx, dx);
             gui_item cancel_btn = gui.InsertKinectCircleButton(IDCANCEL, "Cancel", "cancel.png",
-                W / 2, H - gui.KINECT_BUTTON_SIZE_X - 40, gui.KINECT_BUTTON_SIZE_X);
+                50, 50, gui.KINECT_BUTTON_SIZE_X);
+            gui.InsertKinectCircleButton(ID_RESET_CAMARA, "Reset", "cancel.png",
+                W - gui.KINECT_BUTTON_SIZE_X - 40, 50, gui.KINECT_BUTTON_SIZE_X);
         }
 
 
         public void ModoPicking()
         {
             modo_navegacion = ModoNavegacion.Picking;
-            ant_LA = GuiController.Instance.FpsCamera.getLookAt();
-            ant_LF = GuiController.Instance.FpsCamera.getPosition();
             gui.InitDialog(false, false);
             int W = (int)(GuiController.Instance.Panel3d.Width / gui.ex);
             int H = (int)(GuiController.Instance.Panel3d.Height / gui.ey);
             gui_item cancel_btn = gui.InsertKinectCircleButton(IDCANCEL, "Cancel", "cancel.png",
-                W / 2, H - gui.KINECT_BUTTON_SIZE_X - 40, gui.KINECT_BUTTON_SIZE_X);
+                W - gui.KINECT_BUTTON_SIZE_X - 40 , 50, gui.KINECT_BUTTON_SIZE_X);
         }
 
         public void ModoAvataring()
         {
             modo_navegacion = ModoNavegacion.Avataring;
-            ant_LA = GuiController.Instance.FpsCamera.getLookAt();
-            ant_LF = GuiController.Instance.FpsCamera.getPosition();
             gui.InitDialog(false, false);
             int W = (int)(GuiController.Instance.Panel3d.Width / gui.ex);
             int H = (int)(GuiController.Instance.Panel3d.Height / gui.ey);
             gui_item cancel_btn = gui.InsertKinectCircleButton(IDCANCEL, "Cancel", "cancel.png",
-                W / 2, H - gui.KINECT_BUTTON_SIZE_X - 40, gui.KINECT_BUTTON_SIZE_X);
+                W - gui.KINECT_BUTTON_SIZE_X - 40, 50, gui.KINECT_BUTTON_SIZE_X);
         }
 
 
