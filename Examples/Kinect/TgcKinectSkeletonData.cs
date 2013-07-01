@@ -2,6 +2,7 @@
 using Microsoft.Kinect;
 using TgcViewer.Utils.TgcGeometry;
 using Microsoft.DirectX;
+using System.Drawing;
 
 namespace Examples.Kinect
 {
@@ -290,6 +291,26 @@ namespace Examples.Kinect
                 set { lefttHandPos = value; }
             }
 
+            float rightZDist;
+            /// <summary>
+            /// Distancia relativa en Z de la mano derecha
+            /// </summary>
+            public float RightZDist
+            {
+                get { return rightZDist; }
+                set { rightZDist = value; }
+            }
+
+            float leftZDist;
+            /// <summary>
+            /// Distancia relativa en Z de la mano derecha
+            /// </summary>
+            public float LeftZDist
+            {
+                get { return leftZDist; }
+                set { leftZDist = value; }
+            }
+
             Vector3 centerPos;
             /// <summary>
             /// Posicion del centro del esqueleto
@@ -300,6 +321,27 @@ namespace Examples.Kinect
                 set { centerPos = value; }
             }
 
+
+            RectangleF rScreenRect;
+            /// <summary>
+            /// Boundingbox right
+            /// </summary>
+            public RectangleF RScreenRect
+            {
+                get { return rScreenRect; }
+                set { rScreenRect = value; }
+            }
+
+            RectangleF lScreenRect;
+            /// <summary>
+            /// Boundingbox left
+            /// </summary>
+            public RectangleF LScreenRect
+            {
+                get { return lScreenRect; }
+                set { lScreenRect = value; }
+            }
+
             public Frame()
             {
                 this.kinectSkeleton = new Skeleton();
@@ -308,6 +350,10 @@ namespace Examples.Kinect
                 this.rightHandPos = new Vector2(0, 0);
                 this.lefttHandPos = new Vector2(0, 0);
                 this.centerPos = new Vector3();
+                this.rightZDist = 0;
+                this.leftZDist = 0;
+                this.rScreenRect = new RectangleF();
+                this.lScreenRect = new RectangleF();
             }
 
         }

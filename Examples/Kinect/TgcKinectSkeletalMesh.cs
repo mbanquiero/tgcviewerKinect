@@ -47,6 +47,16 @@ namespace Examples.Kinect
             get { return kinectBonesMapping; }
         }
 
+        float boneScale;
+        /// <summary>
+        /// Escala para huesos
+        /// </summary>
+        public float BoneScale
+        {
+            get { return boneScale; }
+            set { boneScale = value; }
+        }
+
 
         /// <summary>
         /// Constructor
@@ -125,11 +135,12 @@ namespace Examples.Kinect
             for (int i = 0; i < kinectBonesMapping.Count; i++)
             {
                 Tuple<JointType, int> mapping = kinectBonesMapping[i];
-                Vector3 bonePos = TgcKinectUtils.toVector3(kinectSkeleton.Joints[mapping.Item1].Position);
-
-                kinectBonePos[mapping.Item2] = bonePos;
+                Vector3 kBonePos = TgcKinectUtils.toVector3(kinectSkeleton.Joints[mapping.Item1].Position);
+                kinectBonePos[mapping.Item2] = kBonePos;
             }
         }
+
+        
 
 
         /// <summary>
@@ -140,25 +151,32 @@ namespace Examples.Kinect
             //Actualizar huesos del esqueleto segun lo que viene de kinect
             for (int i = 0; i < kinectBonePos.Length; i++)
             {
-                TgcSkeletalBone bone = bones[i];
 
-                Matrix localM = Matrix.Translation(kinectBonePos[i]);
+                TgcSkeletalBone bone = bones[i];
+                Vector3 kinectPos = kinectBonePos[i];
+                Vector3 diff = kinectPos - bone.StartPosition;
+
+                Matrix localM = Matrix.Translation(diff);
 
                 bone.MatLocal = localM;
                 bone.MatFinal = localM;
 
-                /*
-                //Multiplicar por la matriz del padre, si tiene
-                if (bone.ParentBone != null)
-                {
-                    bone.MatFinal = localM * bone.ParentBone.MatFinal;
-                }
-                else
-                {
-                    bone.MatFinal = localM;
-                }
-                 */ 
             }
+        }
+
+        /// <summary>
+        /// Actualizar los vertices de la malla segun las posiciones del los huesos del esqueleto
+        /// </summary>
+        protected void updateMeshVertices()
+        {
+            /*
+            //Precalcular la multiplicación para llevar a un vertice a Bone-Space y luego transformarlo segun el hueso
+            //Estas matrices se envian luego al Vertex Shader para hacer skinning en GPU
+            for (int i = 0; i < bones.Length; i++)
+            {
+                TgcSkeletalBone bone = bones[i];
+                boneSpaceFinalTransforms[i] = bone.MatFinal;
+            }*/
         }
 
 

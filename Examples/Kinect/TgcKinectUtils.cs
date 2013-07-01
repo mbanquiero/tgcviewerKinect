@@ -85,7 +85,7 @@ namespace Examples.Kinect
                     maxY = points[i].Y;
                 }
             }
-
+            
             return new RectangleF(minX, minY, maxX - minX, maxY - minY);
         }
 
@@ -135,7 +135,7 @@ namespace Examples.Kinect
             return q;
         }
 
-        public static Vector2 computeHand2DPos(SkeletonPoint handPosition, SkeletonPoint headPosition, KPIR pir,bool rightHand)
+        public static Vector2 computeHand2DPos(SkeletonPoint handPosition, SkeletonPoint headPosition, KPIR pir, bool rightHand)
         {
             float minX = pir.x_min;
             float maxX = pir.x_max;
@@ -181,6 +181,16 @@ namespace Examples.Kinect
                 handPos2D.Y = height;
             }
             return handPos2D;
+        }
+
+
+        /// <summary>
+        /// Proyectar punto 3D a coordenadas de pantalla
+        /// </summary>
+        public static Vector2 projectPoint(Vector3 p)
+        {
+            Vector3 proj = Vector3.Project(p, GuiController.Instance.D3dDevice.Viewport, GuiController.Instance.D3dDevice.Transform.Projection, GuiController.Instance.D3dDevice.Transform.View, Matrix.Identity);
+            return new Vector2(proj.X, proj.Y);
         }
 
     }

@@ -12,7 +12,7 @@ namespace Examples.Kinect
     public class TgcKinectDebugSkeleton
     {
 
-        public const float JOINT_SIZE = 0.5f;
+        public const float JOINT_SIZE = 50f;
 
         TgcBox[] jointBoxes;
         TgcLine[] jointLines;

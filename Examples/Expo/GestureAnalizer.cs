@@ -5,6 +5,7 @@ using System.Text;
 using Examples.Kinect;
 using Microsoft.DirectX;
 using TgcViewer.Utils.TgcGeometry;
+using TgcViewer;
 
 namespace Examples.Expo
 {
@@ -13,13 +14,17 @@ namespace Examples.Expo
     /// </summary>
     public class GestureAnalizer
     {
+        //Segundos que hay que esperar entre gesto y gesto para seguir analizando
+        const float TIME_BEETWEEN_GESTURES = 1f;
+
         TgcBoundingBox sceneBounds;
         Vector3 sceneCenter;
         Vector3 sceneExtents;
+        float lastGestureElapsedTime;
 
         public GestureAnalizer()
         {
-            
+            lastGestureElapsedTime = 0;
         }
 
         public void setSceneBounds(TgcBoundingBox sceneBounds)
@@ -37,14 +42,23 @@ namespace Examples.Expo
         /// <returns>True si se reconocio un gesto</returns>
         public bool analize(TgcKinectSkeletonData data, out Gesture gesture)
         {
+            lastGestureElapsedTime += GuiController.Instance.ElapsedTime;
+            if (lastGestureElapsedTime < TIME_BEETWEEN_GESTURES)
+            {
+                gesture = new Gesture();
+                return false;
+            }  
+
             //Ver mano derecha
             if(doAnalize(data.HandsAnalysisData[TgcKinectSkeletonData.RIGHT_HAND], out gesture))
             {
+                lastGestureElapsedTime = 0;
                 return true;
             }
             //Ver mano izquierda
             if (doAnalize(data.HandsAnalysisData[TgcKinectSkeletonData.LEFT_HAND], out gesture))
             {
+                lastGestureElapsedTime = 0;
                 return true;
             }
 
@@ -57,12 +71,28 @@ namespace Examples.Expo
         private bool doAnalize(TgcKinectSkeletonData.AnalysisData data, out Gesture gesture)
         {
             //Abrir cajon en Z
+            if (data.Z.DiffAvg > 4f && data.X.Variance < 60f && data.Y.Variance < 60f)
+            {
+                gesture = new Gesture(new Vector3(data.X.Avg, data.Y.Avg, data.Z.Max), GestureType.OpenZ);
+                return true;
+            }
+
+            //Cerrar cajon en Z
+            if (data.Z.DiffAvg < -4f && data.X.Variance < 60f && data.Y.Variance < 60f)
+            {
+                gesture = new Gesture(new Vector3(data.X.Avg, data.Y.Avg, data.Z.Min), GestureType.CloseZ);
+                return true;
+            }
+
+
+            /*
+            //Abrir cajon en Z
             if (data.Z.DiffAvg < -0.037f && data.X.Variance < 0.5f && data.Y.Variance < 1f)
             {
                 gesture = new Gesture(new Vector3(data.X.Avg, data.Y.Avg, 0), GestureType.OpenZ);
                 return true;
             }
-
+            
             //Cerrar cajon en Z
             if (data.Z.DiffAvg > 0.037f && data.X.Variance < 0.5f && data.Y.Variance < 1f)
             {
@@ -106,7 +136,7 @@ namespace Examples.Expo
                 gesture = new Gesture(new Vector3(data.X.Avg, data.Y.Avg, 0), GestureType.GoRight);
                 return true;
             }
-
+            */
 
             gesture = new Gesture();
             return false;
