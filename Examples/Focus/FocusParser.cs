@@ -80,6 +80,7 @@ namespace Examples.Focus
 		private TgcTexture [] _textures;
 
         public List<TgcMesh> Escene = new List<TgcMesh>();
+        public List<TgcMesh> Manijas = new List<TgcMesh>();
         public FocusSet[] _focusSets;
 
         public static string TEXTURE_FOLDER = "c:\\lepton\\leptonpack\\texturas\\";
@@ -623,10 +624,14 @@ namespace Examples.Focus
 			    mesh.DiffuseMaps[j] = _textures[nroTextura];
 			}
 
-            if(face.NroConjunto == -1)
+            if (face.NroConjunto == -1)
                 Escene.Add(mesh);
             else
+            {
                 _focusSets[face.NroConjunto].container.Childs.Add(mesh);
+                if(_meshesId[face.NroMesh].ToLower().Contains("manij"))
+                    Manijas.Add(mesh);
+            }
             
 		}
 

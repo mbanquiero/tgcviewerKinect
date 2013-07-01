@@ -33,6 +33,7 @@ namespace TgcViewer.Utils.TgcSceneLoader
         public Mesh D3dMesh
         {
             get { return d3dMesh; }
+            set { d3dMesh = value; }
         }
 
         protected string name;

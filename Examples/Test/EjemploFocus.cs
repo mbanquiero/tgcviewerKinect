@@ -71,6 +71,7 @@ namespace Examples.Test
 
 
         private List<TgcMesh> _meshes;
+        private List<TgcMesh> _manijas;
         private FocusSet [] _conjuntos;
         TgcBoundingBox bounds;
         TgcKinect tgcKinect;
@@ -406,6 +407,45 @@ namespace Examples.Test
                             if (msg.id >= 4000)
                             {
                                 //Cambiar de Empujador
+                                gui_mesh_button btn = (gui_mesh_button)gui.GetDlgItem(msg.id);
+                                
+                                TgcMesh tgcmesh = btn.mesh;
+                                Mesh dxmesh = btn.mesh.D3dMesh;
+                                dxmesh = dxmesh.Clone(MeshFlags.Use32Bit | MeshFlags.Managed, dxmesh.Declaration, dxmesh.Device);
+
+                                int index = msg.id - 4000;
+                                int[] alturaManijas = { 20, 20, 10, 12 };
+                                int altura = alturaManijas[index];
+
+
+                                //cambio todos los mesh de manija
+                                foreach (TgcMesh m in _manijas)
+                                {
+                                    //recalculo la matriz
+                                    Vector3 pmin = Vector3.TransformCoordinate(tgcmesh.BoundingBox.PMin, m.Transform);
+                                    Vector3 pmax = Vector3.TransformCoordinate(tgcmesh.BoundingBox.PMax, m.Transform);
+                                    pmin = Vector3.Minimize(pmax, pmin);
+                                    pmax = Vector3.Maximize(pmax, pmin);
+                                    float scale = altura / (pmax - pmin).Y;
+
+                                    m.Transform = Matrix.Scaling(scale, scale, scale) *
+                                        m.Transform;
+
+                                    pmin = Vector3.TransformCoordinate(tgcmesh.BoundingBox.PMin, m.Transform);
+                                    pmax = Vector3.TransformCoordinate(tgcmesh.BoundingBox.PMax, m.Transform);
+                                    pmin = Vector3.Minimize(pmax, pmin);
+                                    pmax = Vector3.Maximize(pmax, pmin);
+
+                                    Vector3 center = (pmin + pmax) * 0.5f;
+                                    
+                                    
+                                    m.D3dMesh = dxmesh;
+                                    m.Materials = tgcmesh.Materials;
+                                    m.DiffuseMaps = tgcmesh.DiffuseMaps;
+                                    m.Transform = m.Transform *
+                                        Matrix.Translation(m.BoundingBox.calculateBoxCenter() - center);
+                                }
+
                                 // Termino el dialogo                                                                
                                 gui.EndDialog();
                             }
@@ -428,6 +468,7 @@ namespace Examples.Test
                                 loader.FromFile(fileScene);
                                 _meshes = loader.Escene;
                                 _conjuntos = loader._focusSets;
+                                _manijas = loader.Manijas;
                                 gui.EndDialog();            // progress bar dialog
 
                                 // Habilito los items de menu 
