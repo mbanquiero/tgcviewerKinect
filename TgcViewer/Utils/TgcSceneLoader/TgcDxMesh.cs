@@ -118,7 +118,7 @@ namespace TgcViewer.Utils.TgcSceneLoader
 
         }
 
-        public void close()
+        public void Dispose()
         {
             //Liberar recursos de la malla
             mesh.Dispose();

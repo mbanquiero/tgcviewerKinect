@@ -1290,11 +1290,11 @@ namespace TgcViewer.Utils.TgcSkeletalAnimation
             vertexDeclaration.Dispose();
             vertexDeclaration = null;
 
-            elipsoid.close();
-            bola.close();
-            culo.close();
-            torso.close();
-            cabeza.close();
+            elipsoid.Dispose();
+            bola.Dispose();
+            culo.Dispose();
+            torso.Dispose();
+            cabeza.Dispose();
         }
 
 
