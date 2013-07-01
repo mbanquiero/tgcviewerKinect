@@ -350,7 +350,7 @@ namespace Examples.Test
                                 if (msg.id == IDOK)
                                 {
                                     // Salgo del sistema
-                                    System.Windows.Forms.Application.Exit();
+                                    GuiController.Instance.shutDown();
                                 }
                             }
                             msg_box_app_exit = false;
@@ -1174,9 +1174,11 @@ namespace Examples.Test
         /// </summary>
         public override void close()
         {
+            if(_meshes != null)
             foreach (TgcMesh m in _meshes)
             {
-                m.dispose();
+                if(m != null)
+                    m.dispose();
             }
             gui.Dispose();
 

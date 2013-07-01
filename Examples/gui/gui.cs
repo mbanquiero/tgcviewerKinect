@@ -623,6 +623,8 @@ namespace TgcViewer.Utils.Gui
         public void Render()
         {
             Device d3dDevice = GuiController.Instance.D3dDevice;
+            if (sprite.Disposed)
+                return;
 
 
             // elimino cualquier textura que me cague el modulate del vertex color
@@ -1370,6 +1372,9 @@ namespace TgcViewer.Utils.Gui
 
         public void DrawImage(string fname, int x0, int y0, int x1, int y1)
         {
+            if (sprite.Disposed)
+                return;
+
             // Verifico si la imagen ya esta cargada
             bool flag = false;
             int i = 0;

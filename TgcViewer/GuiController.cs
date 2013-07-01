@@ -19,6 +19,7 @@ using TgcViewer.Utils.Fog;
 using TgcViewer.Utils._2D;
 using TgcViewer.Utils.Shaders;
 using System.Runtime.InteropServices;
+using System.Diagnostics;
 
 namespace TgcViewer
 {
@@ -350,7 +351,7 @@ namespace TgcViewer
         /// <summary>
         /// Finaliza la ejecución de la aplicacion
         /// </summary>
-        internal void shutDown()
+        public void shutDown()
         {
             if (currentExample != null)
             {
@@ -358,6 +359,12 @@ namespace TgcViewer
             }
             tgcD3dDevice.shutDown();
             texturesPool.clearAll();
+
+            MainForm.ApplicationRunning = false;
+
+            //Matar proceso principal a la fuerza
+            Process currentProcess = Process.GetCurrentProcess();
+            currentProcess.Kill();
         }
 
         /// <summary>
