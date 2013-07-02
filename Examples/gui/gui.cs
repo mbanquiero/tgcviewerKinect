@@ -451,6 +451,7 @@ namespace TgcViewer.Utils.Gui
 
             // Caso particular, items autoseleccionables, quiero que se genere el evento cuando pasa la mano por el control
             // De momento soporta el auto scroll
+            bool flag_auto_sel = false;         // Lo pongo en true si genere un evento para un autosel, para que no siga procesando mas 
             if (sel != -1 && items[sel].auto_seleccionable)
             {
                 switch (items[sel].item_id)
@@ -473,7 +474,7 @@ namespace TgcViewer.Utils.Gui
                 }
 
                 // anulo el resgo de los eventos para este item
-                sel = -1;
+                flag_auto_sel = true;
             }
 
             if (ant_sel != sel)
@@ -484,18 +485,21 @@ namespace TgcViewer.Utils.Gui
                 if (sel != -1)
                     items[sel].state = itemState.hover;
 
-                // inicio el timer de seleccion
-                delay_sel0 = delay_sel = 0.5f;
+                if (!flag_auto_sel)
+                {
+                    // inicio el timer de seleccion
+                    delay_sel0 = delay_sel = 0.5f;
 
-                // inicio el timer de quieto
-                timer_sel = 0;
+                    // inicio el timer de quieto
+                    timer_sel = 0;
+                }
             }
 
             //Ver si se quedo quieto suficiente tiempo como para presionar boton
             if (timer_sel > TIMER_QUIETO_PRESSING && hoover_enabled)
                 kinect.currentGesture = Gesture.Pressing;
 
-            if (!hidden)
+            if (!hidden && !flag_auto_sel)
             {
                 switch (kinect.currentGesture)
                 {
@@ -554,7 +558,9 @@ namespace TgcViewer.Utils.Gui
                     delay_initDialog = 0;
             }
 
-            if (sel != -1)
+            // Si hay un item seleccionado inicio el timer para el press (hoover model)
+            // Salvo que sea un autoselccionable, en ese caso no hay timer, ya que se presiona constantemente
+            if (sel != -1 && !items[sel].auto_seleccionable)
                 timer_sel += elapsed_time;
             else
                 timer_sel = 0;

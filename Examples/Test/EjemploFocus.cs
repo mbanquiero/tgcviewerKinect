@@ -773,7 +773,7 @@ namespace Examples.Test
             int dy = 600;
             int dx = W + 40;
 
-            gui.InsertFrame("Interactuar con la Cocina", x0, y0, dx, dy, Color.FromArgb(60, 120, 60),frameBorder.sin_borde);
+            gui.InsertFrame("Interactuar con la Cocina", x0, y0, dx, dy, Color.FromArgb(115, 40, 150),frameBorder.sin_borde);
             x0 += 40;
             y0 += 140;
             int r = 200;
@@ -803,7 +803,7 @@ namespace Examples.Test
             gui.InsertKinectCircleButton(ID_TOOGLE_PAN, "Pan", "pan.png",
                 50, pos_y += gui.KINECT_BUTTON_SIZE_X + 50, gui.KINECT_BUTTON_SIZE_X);
 
-            gui.InsertKinectCircleButton(ID_RESET_CAMARA, "Reset", "cancel.png",
+            gui.InsertKinectCircleButton(ID_RESET_CAMARA, "Reset", "reset_camera.png",
                 50, pos_y += gui.KINECT_BUTTON_SIZE_X + 50, gui.KINECT_BUTTON_SIZE_X);
         }
 

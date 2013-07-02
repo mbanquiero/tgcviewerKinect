@@ -638,6 +638,19 @@ namespace TgcViewer.Utils.Gui
             seleccionable = false;
             auto_seleccionable = true;
         }
+
+        public override void RenderFrame()
+        {
+            // Borro el fondo 
+            int x0 = (int)(rc.Left + ox);
+            int x1 = (int)(rc.Right + ox);
+            int y0 = (int)(rc.Top + oy);
+            int y1 = (int)(rc.Bottom + oy);
+            gui.RoundRect(x0, y0, x1, y1, 4, 2, Color.FromArgb(gui.alpha, 11, 67, 132), true);
+            // Y ahora dibuja comun y corriente
+            base.RenderFrame();
+        }
+
     }
 
     public class gui_kinect_circle_button : gui_kinect_tile_button

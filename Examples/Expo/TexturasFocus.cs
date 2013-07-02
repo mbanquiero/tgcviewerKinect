@@ -27,7 +27,7 @@ namespace Examples.Expo
             int t = 2000;
 
             //Maderas
-            group = new Group("Maderas", g++, "cerrados.png");
+            group = new Group("Maderas", g++, "maderas.png");
             group.add(new Texture(t++, "Maderas\\09-guindo.jpg"));
             group.add(new Texture(t++, "Maderas\\05-nogal.jpg"));
             group.add(new Texture(t++, "Maderas\\06-roble.jpg"));
@@ -44,20 +44,6 @@ namespace Examples.Expo
             group.add(new Texture(t++, "masisa\\gris.jpg"));
             group.add(new Texture(t++, "masisa\\rojo colonial.jpg"));
             grupos.Add(group);
-
-            /*
-            //Metales
-            group = new Group("Metales", g++, "metales\\AD 306 steel gray.jpg");
-            group.add(new Texture(t++, "Metales\\AD 306 steel gray.jpg"));
-            group.add(new Texture(t++, "Metales\\aluminio.jpg"));
-            group.add(new Texture(t++, "Metales\\cromado.jpg"));
-            group.add(new Texture(t++, "Metales\\metal1.jpg"));
-            group.add(new Texture(t++, "Metales\\an. bronze.jpg"));
-            grupos.Add(group);
-             
-            //Masisa
-            grupos.Add(group);
-             */
 
             //Piso
             group = new Group("Piso", g++, "piso.png");
