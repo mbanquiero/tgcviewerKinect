@@ -38,6 +38,7 @@ namespace TgcViewer.Utils.Gui
         public bool disabled;
         public itemState state;
 		public Microsoft.DirectX.Direct3D.Font font;
+        public bool siempre_visible;
 
         // auxiliares
         public Point center;
@@ -66,6 +67,7 @@ namespace TgcViewer.Utils.Gui
             item3d = false;
             disabled = false;
             image_width = image_height = 0;
+            siempre_visible = false;
         }
 
         public gui_item(DXGui gui, String s, int x, int y, int dx = 0, int dy = 0,int id=-1)
@@ -790,11 +792,13 @@ namespace TgcViewer.Utils.Gui
         float wdx, wdz;
         float ex, ey;
         float ant_xm = float.MaxValue, ant_ym,ant_zm;
+        public bool modo_pan;
         public gui_navigate(DXGui gui, List<TgcMesh> p_meshes,int x, int y, int dx = 0, int dy = 0, int id = -1) :
             base(gui, "", x, y, dx, dy, id)
         {
             seleccionable = false;
             scrolleable = false;
+            modo_pan = false;
             // Calculo el bounding box de la escena
             float x0 = 10000;
             float z0 = 10000;
@@ -860,25 +864,24 @@ namespace TgcViewer.Utils.Gui
             if(navegar && ant_xm!=float.MaxValue)
             {
                 // actualizo la posicion de la camara desde el input de la kinect
-                Vector3 viewDir = gui.camera.getLookAt() - gui.camera.getPosition();
-
-                // float X = 2* xm / W * wdx - wdx/2;
-                //float Z =  wdz/2 - 2* ym / H * wdz;
-
-                float an = (xm - ant_xm) * vel_an;
-                viewDir.TransformNormal(Matrix.RotationY(an));
-                Vector3 newPos = GuiController.Instance.FpsCamera.getPosition() + 
-                        viewDir * (ym - ant_ym) * vel;
-                
-
-
-                /*
-                float X = GuiController.Instance.FpsCamera.getPosition().X + (xm - ant_xm) * vel;
-                float Z = GuiController.Instance.FpsCamera.getPosition().Z + (ym - ant_ym) * vel;
-                Vector3 newPos = new Vector3(X, GuiController.Instance.FpsCamera.getPosition().Y, Z);
-                 */
-
-                gui.camera.setCamera(newPos, newPos + viewDir);
+                if (modo_pan)
+                {
+                    // modo pan ORTOGONAL
+                    Vector3 dp = new Vector3(xm - ant_xm, 0,ym - ant_ym) * vel;
+                    Vector3 LFcam = GuiController.Instance.FpsCamera.getPosition();
+                    Vector3 LAcam = GuiController.Instance.FpsCamera.getLookAt();
+                    gui.camera.setCamera(LFcam + dp, LAcam + dp);
+                }
+                else
+                {
+                    // modo rotar camara y move hacia adelate / atras
+                    Vector3 viewDir = gui.camera.getLookAt() - gui.camera.getPosition();
+                    float an = (xm - ant_xm) * vel_an;
+                    viewDir.TransformNormal(Matrix.RotationY(an));
+                    Vector3 newPos = GuiController.Instance.FpsCamera.getPosition() +
+                            viewDir * (ant_ym-ym) * vel;
+                    gui.camera.setCamera(newPos, newPos + viewDir);
+                }
 
             }
 

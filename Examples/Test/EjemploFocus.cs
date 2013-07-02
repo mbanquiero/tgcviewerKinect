@@ -35,6 +35,8 @@ namespace Examples.Test
         public JointType EndJoint;
         public Vector2 size;
         public Matrix T;
+        public Vector3 dir;
+        public float angulo;
         public TgcDXMesh p_mesh;
         public float k;
         public Vector3 desf;
@@ -73,6 +75,12 @@ namespace Examples.Test
         public const int ID_NAVEGACION_AVATARING = 202;
         public const int ID_NAVEGACION_ESQUELETO = 203;
 
+        public const int ID_WALK_LEFT = 400;
+        public const int ID_WALK_RIGHT = 401;
+        public const int ID_WALK_FOWARD = 402;
+        public const int ID_WALK_BACK = 403;
+
+        public const int ID_TOOGLE_PAN = 404;
 
         private List<TgcMesh> _meshes;
         private List<TgcMesh> _manijas;
@@ -83,7 +91,8 @@ namespace Examples.Test
         TgcBox lightMesh;
         TgcPickingRay ray = new TgcPickingRay();
         ModoNavegacion modo_navegacion = ModoNavegacion.Gui;
-
+        bool camara_pan = false;
+        gui_navigate nav_btn;
         Vector3 ant_LA, ant_LF;
 
         // Esqueleto 3d
@@ -91,10 +100,7 @@ namespace Examples.Test
         private TgcDXMesh bola;
         private TgcDXMesh culo;
         private TgcDXMesh torso;
-        private TgcDXMesh culo_dummy;
-        private TgcDXMesh torso_dummy;
         private TgcDXMesh cabeza;
-        private TgcDXMesh cara;
         private TgcDXMesh pierna;
         private TgcDXMesh pantorrilla;
         private TgcDXMesh mano_der;
@@ -103,8 +109,13 @@ namespace Examples.Test
         private TgcDXMesh pie_izq;
         private TgcDXMesh brazo;
         private TgcDXMesh antebrazo;
+        private TgcDXMesh cabeza_dummy;
+        private TgcDXMesh culo_dummy;
+        private TgcDXMesh torso_dummy;
+
         Vector3 hip0 = new Vector3(float.MaxValue, 0, 0);       // posicion inicial del esqueleto
         Vector3 center = new Vector3();                         // centro de la escena
+        Vector3 center_original = new Vector3();                // centro de la escena (original)
         bool hay_escena = false;
         int tipo_avataring = 1;
 
@@ -185,12 +196,13 @@ namespace Examples.Test
             gui.InsertMenuItem(ID_APP_EXIT, "Salir", "salir.png", x0, y0 += dy2, dx, dy);
 
             int sdx = 200;
-            int sdy = 300;
+            int sdy = 250;
             esqueleto2d = gui.InsertKinectSkeletonControl(W - sdx, H - sdy, sdx- 4, sdy-4);
             esqueleto2d.pir_min_x = tgcKinect.right_pir.x_min;
             esqueleto2d.pir_min_y = tgcKinect.right_pir.y_min;
             esqueleto2d.pir_max_x = tgcKinect.right_pir.x_max;
             esqueleto2d.pir_max_y = tgcKinect.right_pir.y_max;
+            esqueleto2d.siempre_visible = true;
 
             // Camara para 3d support
             gui.camera = GuiController.Instance.FpsCamera;
@@ -226,8 +238,8 @@ namespace Examples.Test
 
 
             // dummy
-            cara = new TgcDXMesh();
-            cara.loadMesh(GuiController.Instance.ExamplesMediaDir + "ModelosX\\cara.x");
+            cabeza_dummy = new TgcDXMesh();
+            cabeza_dummy.loadMesh(GuiController.Instance.ExamplesMediaDir + "ModelosX\\cabeza.x");
             culo_dummy = new TgcDXMesh();
             culo_dummy.loadMesh(GuiController.Instance.ExamplesMediaDir + "ModelosX\\culo.x");
             torso_dummy = new TgcDXMesh();
@@ -459,6 +471,54 @@ namespace Examples.Test
                             ModoAvataring(2);
                             break;
 
+                        case ID_TOOGLE_PAN:
+                            {
+                                camara_pan = !camara_pan;
+                                gui_kinect_circle_button btn = (gui_kinect_circle_button)gui.GetDlgItem(ID_TOOGLE_PAN);
+                                btn.text = camara_pan ? "PAN ON" : "PAN OFF";
+                                nav_btn.modo_pan = camara_pan;
+                            }
+                            break;
+
+                        // mover avatar
+                        case ID_WALK_LEFT:
+                            {
+                                center.X -= 10;
+                                Vector3 dp = new Vector3(-10, 0, 0);
+                                Vector3 LF = GuiController.Instance.FpsCamera.getPosition();
+                                Vector3 LA = GuiController.Instance.FpsCamera.getLookAt();
+                                GuiController.Instance.FpsCamera.setCamera(LF+dp, LA+dp);
+                            }
+                            break;
+                        case ID_WALK_RIGHT:
+                            {
+                                center.X += 10;
+                                Vector3 dp = new Vector3(10, 0, 0);
+                                Vector3 LF = GuiController.Instance.FpsCamera.getPosition();
+                                Vector3 LA = GuiController.Instance.FpsCamera.getLookAt();
+                                GuiController.Instance.FpsCamera.setCamera(LF + dp, LA + dp);
+                            }
+                            break;
+                        case ID_WALK_FOWARD:
+                            {
+                                center.Z -= 10;
+                                Vector3 dp = new Vector3(0, 0, -10);
+                                Vector3 LF = GuiController.Instance.FpsCamera.getPosition();
+                                Vector3 LA = GuiController.Instance.FpsCamera.getLookAt();
+                                GuiController.Instance.FpsCamera.setCamera(LF + dp, LA + dp);
+                            }
+    
+                            break;
+                        case ID_WALK_BACK:
+                            {
+                                center.Z += 10;
+                                Vector3 dp = new Vector3(0, 0, 10);
+                                Vector3 LF = GuiController.Instance.FpsCamera.getPosition();
+                                Vector3 LA = GuiController.Instance.FpsCamera.getLookAt();
+                                GuiController.Instance.FpsCamera.setCamera(LF + dp, LA + dp);
+                            }
+                            break;
+
                         case ID_APP_EXIT:
                             // Salir
                             gui.MessageBox("Desea Salir del Sistema?", "Focus Kinect Interaction");
@@ -514,14 +574,13 @@ namespace Examples.Test
                                     pmin = Vector3.Minimize(pmax, pmin);
                                     pmax = Vector3.Maximize(pmax, pmin);
 
-                                    Vector3 center = (pmin + pmax) * 0.5f;
-                                    
+                                    Vector3 center_m = (pmin + pmax) * 0.5f;
                                     
                                     m.D3dMesh = dxmesh;
                                     m.Materials = tgcmesh.Materials;
                                     m.DiffuseMaps = tgcmesh.DiffuseMaps;
                                     m.Transform = m.Transform *
-                                        Matrix.Translation(m.BoundingBox.calculateBoxCenter() - center);
+                                        Matrix.Translation(m.BoundingBox.calculateBoxCenter() - center_m);
                                 }
 
                                 // Termino el dialogo                                                                
@@ -588,6 +647,8 @@ namespace Examples.Test
                                 //center = new Vector3((x0 + x1) / 2, 1100, (z0 + z1) / 2);
                                 center = new Vector3(x1-1300, 1100, z1 - 1300);
                                 //center = new Vector3(x1-1500, 1100, z1-1000);
+                                center_original = center * 1.0f;
+
                                 hay_escena = true;
 
                             }
@@ -718,9 +779,8 @@ namespace Examples.Test
             int r = 200;
 
             gui.InsertKinectCircleButton(ID_NAVEGACION_CAMARA, "Recorrer","camara.png", x0 , y0, r);
-            //gui.InsertKinectCircleButton(ID_NAVEGACION_PICKING, "Picking","picking.png", x0 += (r+40), y0, r);
             gui.InsertKinectCircleButton(ID_NAVEGACION_AVATARING, "Avatar", "avatar.png", x0 += (r + 40), y0, r);
-            gui.InsertKinectCircleButton(ID_NAVEGACION_ESQUELETO, "Esqueleto", "esqueleto.png", x0 += (r + 40), y0, r);
+            gui.InsertKinectCircleButton(ID_NAVEGACION_ESQUELETO, "Dummy", "dummy.png", x0 += (r + 40), y0, r);
             gui.InsertKinectCircleButton(IDCANCEL, "Volver", "salir.png", x0 += (r + 40), y0, r);
 
         }
@@ -735,11 +795,16 @@ namespace Examples.Test
             int dx = 250;
             int W = (int)(GuiController.Instance.Panel3d.Width / gui.ex);
             int H = (int)(GuiController.Instance.Panel3d.Height / gui.ey);
-            gui.InsertNavigationControl(_meshes, W - dx - 5, 5, dx, dx);
+            nav_btn = gui.InsertNavigationControl(_meshes, W - dx - 5, 5, dx, dx);
+            int pos_y = 50;
             gui_item cancel_btn = gui.InsertKinectCircleButton(IDCANCEL, "Cancel", "cancel.png",
-                50, 50, gui.KINECT_BUTTON_SIZE_X);
+                50, pos_y, gui.KINECT_BUTTON_SIZE_X);
+
+            gui.InsertKinectCircleButton(ID_TOOGLE_PAN, "Pan", "pan.png",
+                50, pos_y += gui.KINECT_BUTTON_SIZE_X + 50, gui.KINECT_BUTTON_SIZE_X);
+
             gui.InsertKinectCircleButton(ID_RESET_CAMARA, "Reset", "cancel.png",
-                W - gui.KINECT_BUTTON_SIZE_X - 40, H - 50 - gui.KINECT_BUTTON_SIZE_X, gui.KINECT_BUTTON_SIZE_X);
+                50, pos_y += gui.KINECT_BUTTON_SIZE_X + 50, gui.KINECT_BUTTON_SIZE_X);
         }
 
 
@@ -757,10 +822,23 @@ namespace Examples.Test
         {
             modo_navegacion = ModoNavegacion.Avataring;
             tipo_avataring = tipo;
+            // x las dudas reseteo el centro de la escena
+            center = center_original * 1.0f;
             InitSkeletonData();
             gui.InitDialog(false, false);
             int W = (int)(GuiController.Instance.Panel3d.Width / gui.ex);
             int H = (int)(GuiController.Instance.Panel3d.Height / gui.ey);
+
+            int pos_y = 50;
+            gui_item item = (gui_item)gui.InsertKinectCircleButton(ID_WALK_LEFT, "", "izquierda.png", 40, pos_y,  gui.KINECT_BUTTON_SIZE_X);
+            item.auto_seleccionable = true;
+            item = (gui_item)gui.InsertKinectCircleButton(ID_WALK_RIGHT, "", "derecha.png", 40, pos_y += gui.KINECT_BUTTON_SIZE_X + 30, gui.KINECT_BUTTON_SIZE_X);
+            item.auto_seleccionable = true;
+            item = (gui_item)gui.InsertKinectCircleButton(ID_WALK_FOWARD, "", "abajo.png", 40, pos_y += gui.KINECT_BUTTON_SIZE_X + 30, gui.KINECT_BUTTON_SIZE_X);
+            item.auto_seleccionable = true;
+            item = (gui_item)gui.InsertKinectCircleButton(ID_WALK_BACK, "", "arriba.png", 40, pos_y += gui.KINECT_BUTTON_SIZE_X + 30, gui.KINECT_BUTTON_SIZE_X);
+            item.auto_seleccionable = true;
+
             gui_item cancel_btn = gui.InsertKinectCircleButton(IDCANCEL, "Cancel", "cancel.png",
                 W - gui.KINECT_BUTTON_SIZE_X - 40, 50, gui.KINECT_BUTTON_SIZE_X);
         }
@@ -814,6 +892,9 @@ namespace Examples.Test
                 {
                     _bones[i].StartJoint = skeleton.BoneOrientations[(JointType)i].StartJoint;
                     _bones[i].EndJoint = skeleton.BoneOrientations[(JointType)i].EndJoint;
+                    Microsoft.Kinect.Vector4 Q = skeleton.BoneOrientations[(JointType)i].AbsoluteRotation.Quaternion;
+                    _bones[i].dir = new Vector3(Q.X, Q.Y, -Q.Z);
+                    _bones[i].angulo =  Q.W;
                     Matrix4 T = skeleton.BoneOrientations[(JointType)i].AbsoluteRotation.Matrix;
                     _bones[i].T = new Matrix();
                     _bones[i].T.M11 = T.M11;
@@ -1232,6 +1313,60 @@ namespace Examples.Test
 
             float K = 1.0f;
 
+                    /*
+            for (int t = 0; t < _cant_bones; t++)
+                if (_bones[t].p_mesh != null)
+                {
+
+                    int PStart = (int)_bones[t].StartJoint;
+                    int PEnd = (int)_bones[t].EndJoint;
+                    TgcArrow p_arrow = new TgcArrow();
+
+                    p_arrow.PStart = _joints[PStart].WorldPosition;
+                    p_arrow.PEnd = _joints[PEnd].WorldPosition;
+                    p_arrow.HeadSize = new Vector2(10, 30);
+                    p_arrow.BodyColor = Color.Red;
+                    p_arrow.HeadColor = Color.Green;
+                    p_arrow.Thickness = 4f;
+                    p_arrow.updateValues();
+                    p_arrow.render();
+                    
+                    float bone_size = (_joints[PEnd].WorldPosition - _joints[PStart].WorldPosition).Length();
+                    Vector3 N = new Vector3(_bones[t].T.M21 , _bones[t].T.M22 , _bones[t].T.M23 );
+                    p_arrow.PStart = _joints[PStart].WorldPosition;
+                    p_arrow.PEnd = _joints[PStart].WorldPosition + N*bone_size;
+                    p_arrow.HeadSize = new Vector2(10, 30);
+                    p_arrow.BodyColor = Color.Blue;
+                    p_arrow.HeadColor = Color.White;
+                    p_arrow.Thickness = 4f;
+                    p_arrow.updateValues();
+                    p_arrow.render();
+
+
+                    Vector3 Tg = new Vector3(_bones[t].T.M11, _bones[t].T.M12, _bones[t].T.M13);
+                    p_arrow.PStart = _joints[PStart].WorldPosition;
+                    p_arrow.PEnd = _joints[PStart].WorldPosition + Tg * 300;
+                    p_arrow.HeadSize = new Vector2(10, 30);
+                    p_arrow.BodyColor = Color.Red;
+                    p_arrow.HeadColor = Color.Red;
+                    p_arrow.Thickness = 4f;
+                    p_arrow.updateValues();
+                    p_arrow.render();
+
+                    Vector3 BTg = new Vector3(_bones[t].T.M31, _bones[t].T.M32, _bones[t].T.M33);
+                    p_arrow.PStart = _joints[PStart].WorldPosition;
+                    p_arrow.PEnd = _joints[PStart].WorldPosition + BTg * 300;
+                    p_arrow.HeadSize = new Vector2(10, 30);
+                    p_arrow.BodyColor = Color.Green;
+                    p_arrow.HeadColor = Color.Green;
+                    p_arrow.Thickness = 4f;
+                    p_arrow.updateValues();
+                    p_arrow.render();
+
+
+                }
+            */
+
             // Uso el area de memoria propia y no la de la kinect ya que si hay joints no trackeados,
             // conviene usar el ultimo que tengo disponible
             for (int i = 0; i < _cant_joints; i++)
@@ -1262,7 +1397,7 @@ namespace Examples.Test
             }
 
             // Casos particulares
-            // cara
+            // cabeza
             {
                 // empiezo en el cuello y termino en en centro de la cabeza
                 Vector3 PCenter = _joints[(int)JointType.Head].WorldPosition;
@@ -1270,9 +1405,9 @@ namespace Examples.Test
                 HeadDir.Normalize();
                 Vector3 PStart = PCenter + HeadDir * 70f * K;
                 Vector3 PEnd = PCenter - HeadDir * 130f * K;
-                cara.transform = calcularMatriz(cara.bb_p0, cara.bb_p1, PStart, PEnd,
+                cabeza_dummy.transform = calcularMatriz(cabeza_dummy.bb_p0, cabeza_dummy.bb_p1, PStart, PEnd,
                         160 * K, 140 * K, _bones[(int)JointType.Head].T);
-                cara.render();
+                cabeza_dummy.render();
 
                 // Cuello
                 PStart = _joints[(int)JointType.Head].WorldPosition - HeadDir * 50f * K;
@@ -1432,7 +1567,6 @@ namespace Examples.Test
         culo.Dispose();
         torso.Dispose();
         cabeza.Dispose();
-        cara.Dispose();
         pierna.Dispose();
         pantorrilla.Dispose();
         mano_der.Dispose();
@@ -1441,6 +1575,8 @@ namespace Examples.Test
         pie_izq.Dispose();
         brazo.Dispose();
         antebrazo.Dispose();
+
+        cabeza_dummy.Dispose();
         culo_dummy.Dispose();
         torso_dummy.Dispose();
 

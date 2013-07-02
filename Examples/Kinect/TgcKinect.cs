@@ -27,7 +27,8 @@ namespace Examples.Kinect
         public KinectStatus lastStatus;
         public Skeleton[] auxSkeletonData;
         public bool sin_sensor;
-        public Vector3 raw_pos_mano;
+        public Vector3 raw_pos_mano = new Vector3(0, 0, 0);
+        public Vector3 raw_pos_cadera = new Vector3(0,0,0);
         public int skeleton_sel;
         public KPIR right_pir = new KPIR();          // right physicall interaction region
         public KPIR left_pir = new KPIR();           // left physicall interaction region
@@ -189,15 +190,31 @@ namespace Examples.Kinect
 
                     skeletonFrame.CopySkeletonDataTo(auxSkeletonData);
 
-                    // Select the first tracked skeleton we see to avateer
                     Skeleton rawSkeleton = null;
+                    // Puede haber varios esqueletos, si es asi, tomo el que mas se parece al esqueleto anterior
+                    Vector3 pos_ant = raw_pos_cadera;
+                    float min_dist = float.MaxValue;
+
                     for (int i = 0; i < auxSkeletonData.Length; i++)
                     {
                         if (auxSkeletonData[i].TrackingState == SkeletonTrackingState.Tracked)
                         {
-                            rawSkeleton = auxSkeletonData[i];
-                            skeleton_sel = i;
-                            break;
+                            // Hay un esqueleto traqueado
+                            SkeletonPoint pos_cadera = auxSkeletonData[i].Joints[JointType.HipCenter].Position;
+                            Vector3 pos = new Vector3(pos_cadera.X,pos_cadera.Y,pos_cadera.Z);
+                            float cur_dist = skeleton_sel != -1?
+                                // Si ya habia otro tomo la distancia dicho esqueleto anterior
+                                cur_dist = (pos - raw_pos_cadera).Length() : 
+                                // si no habia ningun otro esqueleto trackeado, considero la dist. a la camara
+                                cur_dist = pos_cadera.Z;
+
+                            if (cur_dist < min_dist)
+                            {
+                                // Encontre un candidato a trackear
+                                min_dist = cur_dist;
+                                rawSkeleton = auxSkeletonData[skeleton_sel = i];
+                                raw_pos_cadera = pos;
+                            }
                         }
                     }
                     if (rawSkeleton == null)

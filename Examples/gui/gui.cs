@@ -463,6 +463,13 @@ namespace TgcViewer.Utils.Gui
                         if (sox > min_sox)
                             sox -= vel_scroll * elapsed_time;
                         break;
+
+                    default:
+                        // Genero un eveto pp dicho
+                        // genero el mensaje
+                        msg.message = MessageType.WM_COMMAND;
+                        msg.id = items[sel].item_id;
+                        break;
                 }
 
                 // anulo el resgo de los eventos para este item
@@ -704,6 +711,11 @@ namespace TgcViewer.Utils.Gui
 
             // Desactivo el z buffer para los sprites
             d3dDevice.RenderState.ZBufferEnable = false;
+
+            // Items con el flag siempre visible (que no pertenecen a este dialogo)
+            for (int i = 0; i < item_desde; ++i)
+                if(items[i].siempre_visible)
+                    items[i].Render(this);
 
             // 4 - dibujo el cusor con la misma interface de prites
             sprite.Begin(SpriteFlags.AlphaBlend);

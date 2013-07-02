@@ -138,8 +138,8 @@ namespace Examples.Expo
             int H = GuiController.Instance.Panel3d.Height;
 
             int x0 = -20;
-            int y0 = 50;
-            int dy = 600;
+            int y0 = 0;
+            int dy = 520;
             int dx = W + 40;
             int tdx = 250;
             int tdy = 200;
