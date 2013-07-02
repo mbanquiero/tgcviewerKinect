@@ -224,7 +224,8 @@ float4 ps_DiffuseMap(PS_DIFFUSE_MAP input) : COLOR0
 	
 	//Componente Diffuse: N dot L
 	float3 n_dot_l = dot(Nn, Ln);
-	float3 diffuseLight = diffuseColor * max(0.0, n_dot_l); //Controlamos que no de negativo
+	//float3 diffuseLight = diffuseColor * max(0.0, n_dot_l); //Controlamos que no de negativo
+	float3 diffuseLight = diffuseColor * abs(n_dot_l); //Controlamos que no de negativo
 
 	//Componente Specular: (N dot H)^exp
 	float3 n_dot_h = dot(Nn, Hn);

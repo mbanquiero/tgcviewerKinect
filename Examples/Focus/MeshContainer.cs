@@ -88,6 +88,7 @@ namespace Examples.Focus
 
                 child.Transform = childTransform * transform;
                 child.render();
+                //child.BoundingBox.render();
                 child.Transform = childTransform;
             }
 

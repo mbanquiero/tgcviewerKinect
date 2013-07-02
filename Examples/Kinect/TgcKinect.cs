@@ -400,7 +400,7 @@ namespace Examples.Kinect
 
 
             if (rawSkeleton.Joints[JointType.HandRight].TrackingState == JointTrackingState.Tracked &&
-                rawSkeleton.Joints[JointType.Head].TrackingState == JointTrackingState.Tracked)
+                rawSkeleton.Joints[JointType.Head].TrackingState != JointTrackingState.NotTracked)
             {
                 //Right
                 // Actualizo esta posicion tal como viene de la kinect, para debuggear
@@ -415,7 +415,7 @@ namespace Examples.Kinect
             }
 
             if (rawSkeleton.Joints[JointType.HandLeft].TrackingState == JointTrackingState.Tracked &&
-                rawSkeleton.Joints[JointType.Head].TrackingState == JointTrackingState.Tracked)
+                rawSkeleton.Joints[JointType.Head].TrackingState != JointTrackingState.NotTracked)
             {
                 //Left
                 //X: 0.05 a 0.2

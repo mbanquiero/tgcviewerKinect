@@ -314,7 +314,7 @@ namespace Examples.Test
                 }
 
 
-                if (modo_navegacion == ModoNavegacion.Picking)
+                if (modo_navegacion == ModoNavegacion.Camera && gui.kinect.left_hand.position.Y < 200)
                 {
                     //Actualizar Ray de colisión en base a posición de la mano
                     ray.updateRay(gui.kinect.right_hand.position.X,gui.kinect.right_hand.position.Y);
@@ -334,6 +334,7 @@ namespace Examples.Test
                         }
                     }
                 }
+
 
                 foreach (FocusSet f in _conjuntos)
                 {
@@ -584,7 +585,8 @@ namespace Examples.Test
                                 // pongo una luz en el medio de la cocina, y a la altura del techo
                                 lightMesh.Position = new Vector3((x0 + x1) / 2, y1-200, (z0 + z1) / 2);
                                 // El centro de la escena (sobre el nivel del piso + la altura del personaje / 2)
-                                center = new Vector3((x0 + x1) / 2, 1100, (z0 + z1) / 2);
+                                //center = new Vector3((x0 + x1) / 2, 1100, (z0 + z1) / 2);
+                                center = new Vector3(x1-1300, 1100, z1 - 1300);
                                 //center = new Vector3(x1-1500, 1100, z1-1000);
                                 hay_escena = true;
 
@@ -716,7 +718,7 @@ namespace Examples.Test
             int r = 200;
 
             gui.InsertKinectCircleButton(ID_NAVEGACION_CAMARA, "Recorrer","camara.png", x0 , y0, r);
-            gui.InsertKinectCircleButton(ID_NAVEGACION_PICKING, "Picking","picking.png", x0 += (r+40), y0, r);
+            //gui.InsertKinectCircleButton(ID_NAVEGACION_PICKING, "Picking","picking.png", x0 += (r+40), y0, r);
             gui.InsertKinectCircleButton(ID_NAVEGACION_AVATARING, "Avatar", "avatar.png", x0 += (r + 40), y0, r);
             gui.InsertKinectCircleButton(ID_NAVEGACION_ESQUELETO, "Esqueleto", "esqueleto.png", x0 += (r + 40), y0, r);
             gui.InsertKinectCircleButton(IDCANCEL, "Volver", "salir.png", x0 += (r + 40), y0, r);
@@ -737,7 +739,7 @@ namespace Examples.Test
             gui_item cancel_btn = gui.InsertKinectCircleButton(IDCANCEL, "Cancel", "cancel.png",
                 50, 50, gui.KINECT_BUTTON_SIZE_X);
             gui.InsertKinectCircleButton(ID_RESET_CAMARA, "Reset", "cancel.png",
-                W - gui.KINECT_BUTTON_SIZE_X - 40, 50, gui.KINECT_BUTTON_SIZE_X);
+                W - gui.KINECT_BUTTON_SIZE_X - 40, H - 50 - gui.KINECT_BUTTON_SIZE_X, gui.KINECT_BUTTON_SIZE_X);
         }
 
 
@@ -801,7 +803,10 @@ namespace Examples.Test
                     _joints[i].Position = new Vector3(skeleton.Joints[(JointType)i].Position.X, skeleton.Joints[(JointType)i].Position.Y, skeleton.Joints[(JointType)i].Position.Z);
                     _joints[i].JointType = (JointType)i;
                     // LLevo el punto al espacio del esqueleto, luego lo escalo a milimetros y lo traslado al centro de la escena
-                     _joints[i].WorldPosition = (_joints[i].Position - hip0) * 1000 + center;
+
+                    Vector3 modelPosition = _joints[i].Position - hip0;
+                    modelPosition.Z = -modelPosition.Z;
+                    _joints[i].WorldPosition = modelPosition * 1000 + center;
                 }
                 _cant_joints = skeleton.Joints.Count;
 
@@ -813,17 +818,17 @@ namespace Examples.Test
                     _bones[i].T = new Matrix();
                     _bones[i].T.M11 = T.M11;
                     _bones[i].T.M12 = T.M12;
-                    _bones[i].T.M13 = T.M13;
+                    _bones[i].T.M13 = -T.M13;
                     _bones[i].T.M14 = T.M14;
 
                     _bones[i].T.M21 = T.M21;
                     _bones[i].T.M22 = T.M22;
-                    _bones[i].T.M23 = T.M23;
+                    _bones[i].T.M23 = -T.M23;
                     _bones[i].T.M24 = T.M34;
 
                     _bones[i].T.M31 = T.M31;
                     _bones[i].T.M32 = T.M32;
-                    _bones[i].T.M33 = T.M33;
+                    _bones[i].T.M33 = -T.M33;
                     _bones[i].T.M34 = T.M34;
 
                     _bones[i].T.M41 = T.M41;

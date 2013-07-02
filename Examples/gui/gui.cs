@@ -1439,7 +1439,7 @@ namespace TgcViewer.Utils.Gui
                     textura = TextureLoader.FromFile(d3dDevice, fname_aux, -2, -2, 1, Usage.None,
                         Format.A8B8G8R8, Pool.Managed, Filter.None, Filter.None, 0);
                     // Mask transparente
-                    SetAlphaChannel(textura, 255, 0, 255);
+                    //SetAlphaChannel(textura, 255, 0, 255);
                 }
                 else
                     textura = TextureLoader.FromFile(d3dDevice, fname_aux, -2, -2, 1, Usage.None,
