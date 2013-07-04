@@ -656,8 +656,7 @@ namespace Examples.Test
                                 lightMesh.Position = new Vector3((x0 + x1) / 2, y1-200, (z0 + z1) / 2);
                                 // El centro de la escena (sobre el nivel del piso + la altura del personaje / 2)
                                 //center = new Vector3((x0 + x1) / 2, 1100, (z0 + z1) / 2);
-                                center = new Vector3(x1-1300, 750, z1 - 1300);
-                                //center = new Vector3(x1-1500, 1100, z1-1000);
+                                center = new Vector3(x1-1300, altura_cadera, z1 - 1300);
                                 center_original = center * 1.0f;
 
                                 hay_escena = true;
@@ -1326,59 +1325,6 @@ namespace Examples.Test
 
             float K = 1.0f;
 
-                    /*
-            for (int t = 0; t < _cant_bones; t++)
-                if (_bones[t].p_mesh != null)
-                {
-
-                    int PStart = (int)_bones[t].StartJoint;
-                    int PEnd = (int)_bones[t].EndJoint;
-                    TgcArrow p_arrow = new TgcArrow();
-
-                    p_arrow.PStart = _joints[PStart].WorldPosition;
-                    p_arrow.PEnd = _joints[PEnd].WorldPosition;
-                    p_arrow.HeadSize = new Vector2(10, 30);
-                    p_arrow.BodyColor = Color.Red;
-                    p_arrow.HeadColor = Color.Green;
-                    p_arrow.Thickness = 4f;
-                    p_arrow.updateValues();
-                    p_arrow.render();
-                    
-                    float bone_size = (_joints[PEnd].WorldPosition - _joints[PStart].WorldPosition).Length();
-                    Vector3 N = new Vector3(_bones[t].T.M21 , _bones[t].T.M22 , _bones[t].T.M23 );
-                    p_arrow.PStart = _joints[PStart].WorldPosition;
-                    p_arrow.PEnd = _joints[PStart].WorldPosition + N*bone_size;
-                    p_arrow.HeadSize = new Vector2(10, 30);
-                    p_arrow.BodyColor = Color.Blue;
-                    p_arrow.HeadColor = Color.White;
-                    p_arrow.Thickness = 4f;
-                    p_arrow.updateValues();
-                    p_arrow.render();
-
-
-                    Vector3 Tg = new Vector3(_bones[t].T.M11, _bones[t].T.M12, _bones[t].T.M13);
-                    p_arrow.PStart = _joints[PStart].WorldPosition;
-                    p_arrow.PEnd = _joints[PStart].WorldPosition + Tg * 300;
-                    p_arrow.HeadSize = new Vector2(10, 30);
-                    p_arrow.BodyColor = Color.Red;
-                    p_arrow.HeadColor = Color.Red;
-                    p_arrow.Thickness = 4f;
-                    p_arrow.updateValues();
-                    p_arrow.render();
-
-                    Vector3 BTg = new Vector3(_bones[t].T.M31, _bones[t].T.M32, _bones[t].T.M33);
-                    p_arrow.PStart = _joints[PStart].WorldPosition;
-                    p_arrow.PEnd = _joints[PStart].WorldPosition + BTg * 300;
-                    p_arrow.HeadSize = new Vector2(10, 30);
-                    p_arrow.BodyColor = Color.Green;
-                    p_arrow.HeadColor = Color.Green;
-                    p_arrow.Thickness = 4f;
-                    p_arrow.updateValues();
-                    p_arrow.render();
-
-
-                }
-            */
 
             bool ant_blend = device.RenderState.AlphaBlendEnable;
             device.RenderState.AlphaBlendEnable = true;
@@ -1490,10 +1436,71 @@ namespace Examples.Test
                 // Tomo la cadera proyectada al piso
                 Vector3 HipProj = new Vector3(_joints[(int)JointType.HipCenter].WorldPosition.X, 40, _joints[(int)JointType.HipCenter].WorldPosition.Z);
                 float k = 600f / disco.size.X;
-                disco.transform = Matrix.Translation(-disco.center) * Matrix.RotationY(global_time) * Matrix.Scaling(k, 0, k) 
+                disco.transform = Matrix.Translation(-disco.center) * Matrix.RotationY(global_time) * Matrix.Scaling(k, 0, k)
                     * Matrix.Translation(HipProj);
                 disco.render();
             }
+
+
+            /*
+            debugJoint(JointType.KneeLeft, JointType.HipLeft, JointType.FootLeft, "rodi");
+            debugJoint(JointType.KneeRight, JointType.HipRight, JointType.FootRight, "rodd");
+
+            debugJoint(JointType.ElbowLeft, JointType.ShoulderLeft, JointType.WristLeft, "codi");
+            debugJoint(JointType.ElbowRight, JointType.ShoulderRight, JointType.WristRight, "codd");
+
+            for (int t = 0; t < _cant_bones; t++)
+                if (_bones[t].p_mesh != null)
+                {
+
+                    int PStart = (int)_bones[t].StartJoint;
+                    int PEnd = (int)_bones[t].EndJoint;
+                    TgcArrow p_arrow = new TgcArrow();
+                    p_arrow.PStart = _joints[PStart].WorldPosition;
+                    p_arrow.PEnd = _joints[PEnd].WorldPosition;
+                    p_arrow.HeadSize = new Vector2(10, 30);
+                    p_arrow.BodyColor = Color.Red;
+                    p_arrow.HeadColor = Color.Green;
+                    p_arrow.Thickness = 4f;
+                    p_arrow.updateValues();
+                    p_arrow.render();
+                    
+                    float bone_size = (_joints[PEnd].WorldPosition - _joints[PStart].WorldPosition).Length();
+                    Vector3 N = new Vector3(_bones[t].T.M21 , _bones[t].T.M22 , _bones[t].T.M23 );
+                    p_arrow.PStart = _joints[PStart].WorldPosition;
+                    p_arrow.PEnd = _joints[PStart].WorldPosition + N*bone_size;
+                    p_arrow.HeadSize = new Vector2(10, 30);
+                    p_arrow.BodyColor = Color.Blue;
+                    p_arrow.HeadColor = Color.White;
+                    p_arrow.Thickness = 4f;
+                    p_arrow.updateValues();
+                    p_arrow.render();
+
+
+                    Vector3 Tg = new Vector3(_bones[t].T.M11, _bones[t].T.M12, _bones[t].T.M13);
+                    p_arrow.PStart = _joints[PStart].WorldPosition;
+                    p_arrow.PEnd = _joints[PStart].WorldPosition + Tg * 50;
+                    p_arrow.HeadSize = new Vector2(5, 5);
+                    p_arrow.BodyColor = Color.Red;
+                    p_arrow.HeadColor = Color.Red;
+                    p_arrow.Thickness = 4f;
+                    p_arrow.updateValues();
+                    p_arrow.render();
+
+                    Vector3 BTg = new Vector3(_bones[t].T.M31, _bones[t].T.M32, _bones[t].T.M33);
+                    p_arrow.PStart = _joints[PStart].WorldPosition;
+                    p_arrow.PEnd = _joints[PStart].WorldPosition + BTg * 50;
+                    p_arrow.HeadSize = new Vector2(5,5);
+                    p_arrow.BodyColor = Color.Green;
+                    p_arrow.HeadColor = Color.Green;
+                    p_arrow.Thickness = 4f;
+                    p_arrow.updateValues();
+                    p_arrow.render();
+
+
+                }
+             */
+
 
             // Restauro 
             device.Transform.View = ant_view * Matrix.Identity;
@@ -1501,7 +1508,24 @@ namespace Examples.Test
 
         }
 
+        public void debugJoint(JointType i, JointType padre,JointType hijo,string nombre)
+        {
+            Device device = GuiController.Instance.D3dDevice;
 
+            Vector3 pA = _joints[(int)padre].Position;
+            Vector3 pB = _joints[(int)i].Position;
+            Vector3 pC = _joints[(int)hijo].Position;
+
+            Vector3 JU = pA - pB;
+            Vector3 JV = pC - pB;
+            JU.Normalize();
+            JV.Normalize();
+            int an = (int)((float)Math.Acos((double)Vector3.Dot(JU, JV)) * 180.0f / 3.1415f);
+
+            Vector3 pt = _joints[(int)i].WorldPosition;
+            pt.Project(device.Viewport, device.Transform.Projection, device.Transform.View, Matrix.Identity);
+            gui.TextOut((int)pt.X, (int)pt.Y, nombre + an.ToString());
+        }
 
         public Matrix calcularMatriz(Vector3 mesh_center, Vector3 bone_center,float k,Matrix Rot)
         {
@@ -1598,6 +1622,10 @@ namespace Examples.Test
                 p = line.IndexOf("ALTURA_CADERA=");
                 if (p != -1)
                     altura_cadera = float.Parse(line.Substring(p + 14));
+
+                p = line.IndexOf("TIME_PRESS=");
+                if (p != -1)
+                    gui.TIMER_QUIETO_PRESSING = float.Parse(line.Substring(p + 11));
 
             }
 

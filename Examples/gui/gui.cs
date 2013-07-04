@@ -104,10 +104,11 @@ namespace TgcViewer.Utils.Gui
         // Pila de items seleccionados
         public const int MAX_ITEMS_SEL = 300;
 
-        public const float TIMER_QUIETO_PRESSING = 3;
-        public const float MIN_TIMER_PRESS = 0.3f;
         public const float MENU_OFFSET = 400;
         public const float MENU_OFFSET_SALIDA = 800;
+
+        public float TIMER_QUIETO_PRESSING = 3;
+        public float MIN_TIMER_PRESS = 0.3f;
 
         public int KINECT_BUTTON_SIZE_X = 220;
         public int KINECT_BUTTON_SIZE_Y = 220;
