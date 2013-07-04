@@ -181,9 +181,15 @@ namespace TgcViewer.Utils.Gui
         // Posicion del mouse
         public float mouse_x;
         public float mouse_y;
+        // Posicion anterior
+        public float mouse_x_ant;
+        public float mouse_y_ant;
+        public float delay_move;
+        public float delay_move0 = 0.5f;
+
 
         // Input de la kinect
-        public kinect_input kinect = new kinect_input();
+        public kinect_input kinect;
 
         // Camara TGC
         public TgcFpsCamera camera;
@@ -215,6 +221,8 @@ namespace TgcViewer.Utils.Gui
             KINECT_BUTTON_SIZE_X = (int)((float)KINECT_BUTTON_SIZE_X * W / 1920.0f);
             KINECT_BUTTON_SIZE_Y = (int)((float)KINECT_BUTTON_SIZE_Y * H / 1080.0f);
             closing = false;
+
+            kinect = new kinect_input(this);
         }
 
         public void Reset()
@@ -227,6 +235,8 @@ namespace TgcViewer.Utils.Gui
             ox = oy = 0;
             sox = soy = 0;
             mouse_x = mouse_y = -1;
+            mouse_x_ant = mouse_y_ant = -1;
+            delay_move = 0;
             for (int i = 0; i < MAX_CURSOR; ++i)
                 cursores[i] = null;
             cant_bitmaps = 0;
@@ -526,11 +536,18 @@ namespace TgcViewer.Utils.Gui
                 }
             }
 
-
-            // Actualizo la pos del mouse
+            // mouse move ?
+            if (Math.Abs(mouse_x-sx) > 0.5f || Math.Abs(mouse_y-sy) > 0.5f)
+            {
+                // Guardo la pos. anterior del mouse
+                mouse_x_ant = mouse_x;
+                mouse_y_ant = mouse_y;
+                // Inicializo el timer de mov. suave del mouse
+                delay_move = delay_move0;
+            }
+            // Actualizo la pos actual
             mouse_x = sx;
             mouse_y = sy;
-
             return msg;
         }
 
@@ -585,6 +602,13 @@ namespace TgcViewer.Utils.Gui
                     delay_sel = 0;
             }
 
+            if (delay_move > 0)
+            {
+                delay_move -= elapsed_time;
+                if (delay_move< 0)
+                    delay_move= 0;
+            }
+ 
             // computo la matriz de transformacion final RTQ 
             if (trapezoidal_style)
             {
@@ -728,13 +752,16 @@ namespace TgcViewer.Utils.Gui
             sprite.Transform = Matrix.Transformation2D(new Vector2(0, 0), 0, new Vector2(1, 1), new Vector2(0, 0), 0, new Vector2(0, 0));
 
             // mano derecha
+            float t = delay_move / delay_move0;
+            Vector3 hand_pos = new Vector3(mouse_x, mouse_y, 0) * (1 - t) + new Vector3(mouse_x_ant, mouse_y_ant, 0) * t;
             if (kinect.right_hand.visible && cursores[(int)cursor_der] != null)
             {
                 sprite.Transform = Matrix.Transformation2D(new Vector2(0, 0), 0, new Vector2(1, 1), Vector2.Empty, 0, new Vector2(0, 0));
-                sprite.Draw(cursores[(int)cursor_der], Rectangle.Empty, new Vector3(32, 32, 0), kinect.right_hand.position, Color.FromArgb(255, 255, 255, 255));
+                sprite.Draw(cursores[(int)cursor_der], Rectangle.Empty, new Vector3(32, 32, 0), hand_pos, Color.FromArgb(255, 255, 255, 255));
 
             }
-            // mano izquierda
+
+            // mano izquierda (sin snap, asi que dibujo directo desde la kinect
             if (kinect.left_hand.visible && cursores[(int)cursor_izq] != null)
             {
                 // dibujo espejado
@@ -749,7 +776,7 @@ namespace TgcViewer.Utils.Gui
                 float k = timer_sel / TIMER_QUIETO_PRESSING;
                 bool ant_trap_style = trapezoidal_style;
                 trapezoidal_style = false;
-                Vector2 pos = new Vector2(kinect.right_hand.position.X, kinect.right_hand.position.Y);
+                Vector2 pos = new Vector2(hand_pos.X, hand_pos.Y);
                 DrawCircle(pos, 48, 8, Color.FromArgb(255, 255, 255));
                 DrawArc(pos, 48, 0f, 2 * M_PI * k, 6, Color.FromArgb(0, 200, 255));
                 trapezoidal_style = ant_trap_style;
@@ -1572,6 +1599,37 @@ namespace TgcViewer.Utils.Gui
             return transform;
         }
 
+
+        // Devuelve true si el punto x,y esta sobre una region "hot", es decir que 
+        // corresponde a un item seleccionable.
+        // se usa para determinar si aplicar o no snap al movimiento de la mano
+        // No interesa que boton es, solo si esta o no en su region
+        public bool IsHotRegion(int x,int y)
+        {
+            bool rta = false;
+            int t = item_0;
+            while (t < cant_items && !rta)
+            {
+                if (!items[t].disabled && (items[t].seleccionable || items[t].auto_seleccionable))
+                {
+                    Point pt = new Point(0, 0);
+                    if (items[t].scrolleable)
+                    {
+                        pt.X = (int)(x - sox * ex);
+                        pt.Y = (int)(y - soy * ey);
+                    }
+                    else
+                    {
+                        pt.X = (int)x;
+                        pt.Y = (int)y;
+                    }
+                    if (items[t].pt_inside(this, pt))
+                        rta = true;
+                }
+                ++t;
+            }
+            return rta;
+        }
     }
-    
+
 }

@@ -994,6 +994,7 @@ namespace TgcViewer.Utils.Gui
         float escala = 1f;
         public float pir_min_x, pir_min_y, pir_max_x, pir_max_y;
         public Vector2 head_pos = new Vector2();
+        int margen = 10;
 
         public gui_skeleton(DXGui gui, int x, int y, int dx = 0, int dy = 0) :
             base(gui, "", x, y, dx, dy, -1)
@@ -1046,8 +1047,8 @@ namespace TgcViewer.Utils.Gui
 
 
             // Calculo la escala
-            float ex = rc.Width / (max_x - min_x);
-            float ey = rc.Height / (max_y - min_y);
+            float ex = (rc.Width - 2 * margen) / (max_x - min_x);
+            float ey = (rc.Height - 2 * margen) / (max_y - min_y);
             escala = Math.Min(ex, ey);
             
         }
@@ -1071,31 +1072,35 @@ namespace TgcViewer.Utils.Gui
             gui.trapezoidal_style = false;
 
             gui.DrawRect(rc.Left, rc.Top, rc.Right, rc.Bottom, 1, Color.FromArgb(0, 0, 0), true);
+            
+            Rectangle rc2 = new Rectangle(rc.Left+margen, rc.Top+margen, rc.Width-2*+margen, rc.Height-2*+margen);
 
             // Dibujo los huesos
             for (int t = 0; t < cant_huesos; ++t)
             {
                 int i = hueso_desde[t];
                 int j = hueso_hasta[t];
-                float x0 = (joints[i].X - min_x) * escala + rc.X;
-                float y0 = rc.Y + rc.Height - (joints[i].Y - min_y) * escala;
-                float x1 = (joints[j].X - min_x) * escala + rc.X;
-                float y1 = rc.Y + rc.Height - (joints[j].Y - min_y) * escala;
+                float x0 = (joints[i].X - min_x) * escala + rc2.X;
+                float y0 = rc2.Y + rc2.Height - (joints[i].Y - min_y) * escala;
+                float x1 = (joints[j].X - min_x) * escala + rc2.X;
+                float y1 = rc2.Y + rc2.Height - (joints[j].Y - min_y) * escala;
                 gui.DrawLine(x0, y0,x1,y1, 3, Color.Blue);
             }
 
             // Dibujo las articulaciones
             for (int i = 0; i < cant_joints; ++i)
             {
-                float x = (joints[i].X - min_x) * escala + rc.X;
-                float y = rc.Y + rc.Height - (joints[i].Y - min_y) * escala;
+                float x = (joints[i].X - min_x) * escala + rc2.X;
+                float y = rc2.Y + rc2.Height - (joints[i].Y - min_y) * escala;
                 int r = importante[i] ? 4 : 2;
                 gui.DrawRect((int)x - r, (int)y - r, (int)x + r, (int)y + r, 1, Color.WhiteSmoke, true);
             }
 
             // Area de interaccion fisica de la kinect
-            gui.DrawRect((int)((-pir_min_x + head_pos.X - min_x) * escala + rc.X), (int)(rc.Y + rc.Height - (-pir_min_y + head_pos.Y  - min_y) * escala),
-                (int)((-pir_max_x + head_pos.X - min_x) * escala + rc.X), (int)(rc.Y + rc.Height - (-pir_max_y + head_pos.Y - min_y) * escala),
+            gui.DrawRect((int)((-pir_min_x + head_pos.X - min_x) * escala + rc2.X), 
+                (int)(rc2.Y + rc2.Height - (-pir_min_y + head_pos.Y  - min_y) * escala),
+                (int)((-pir_max_x + head_pos.X - min_x) * escala + rc2.X), 
+                (int)(rc2.Y + rc2.Height - (-pir_max_y + head_pos.Y - min_y) * escala),
                     1, Color.FromArgb(100,240, 255,120), true);
 
             gui.ox = ant_ox;

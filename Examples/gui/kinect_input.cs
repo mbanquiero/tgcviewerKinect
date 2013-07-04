@@ -34,10 +34,13 @@ namespace TgcViewer.Utils.Gui
         public Gesture currentGesture = Gesture.Nothing;
         public TgcKinectSkeletonData kinectData;
         public bool hay_sensor = false;             // indica si hay una kinect connectada
-        public int MOUSE_SNAP = 10; 
+        public int MOUSE_SNAP = 40;
+        public DXGui gui;
 
-		public kinect_input()
+        public kinect_input(DXGui p_gui)
         {
+            gui = p_gui;
+
             left_hand.position = new Vector3(0,0,0);
             left_hand.gripping = false;
             left_hand.visible = true;
@@ -63,33 +66,26 @@ namespace TgcViewer.Utils.Gui
         {
             if (hay_sensor && kinectData != null)
             {
-                /*
-                //Zona de seguridad
-                Vector3 hipPos = TgcKinectUtils.toVector3(kinectData.Current.KinectSkeleton.Joints[Microsoft.Kinect.JointType.HipCenter].Position);
-                Vector3 handPos = TgcKinectUtils.toVector3(kinectData.Current.KinectSkeleton.Joints[Microsoft.Kinect.JointType.HandRight].Position);
-                Vector3 diff = handPos - hipPos;
-                if (diff.Z >= -4f)
+                // Verifico si el mouse esta sobre un boton seleccionable
+                if (gui.IsHotRegion((int)kinectData.Current.RightHandPos.X, (int)kinectData.Current.RightHandPos.X))
                 {
-                    // Si hay un sensor conectado
-                    //Aplicar datos de kinect
+                    int dx = (int)Math.Abs(right_hand.position.X - kinectData.Current.RightHandPos.X);
+                    int dy = (int)Math.Abs(right_hand.position.Y - kinectData.Current.RightHandPos.Y);
+                    if (dx >= MOUSE_SNAP || dy >= MOUSE_SNAP)
+                    {
+                        if (dx > dy)
+                            right_hand.position.X = kinectData.Current.RightHandPos.X;
+                        else
+                            right_hand.position.Y = kinectData.Current.RightHandPos.Y;
+                    }
+                }
+                else
+                {
+                    // Movimiento continuo
                     right_hand.position.X = kinectData.Current.RightHandPos.X;
                     right_hand.position.Y = kinectData.Current.RightHandPos.Y;
-                    right_hand.position.Z = 1;
                 }
-                */
-
-                int dx = (int)Math.Abs(right_hand.position.X - kinectData.Current.RightHandPos.X);
-                int dy = (int)Math.Abs(right_hand.position.Y - kinectData.Current.RightHandPos.Y);
-                if (dx >= MOUSE_SNAP || dy >= MOUSE_SNAP )
-                {
-                    if (dx > dy)
-                        right_hand.position.X = kinectData.Current.RightHandPos.X;
-                    else
-                        right_hand.position.Y = kinectData.Current.RightHandPos.Y;
-                }
-
                 right_hand.position.Z = 1;
-                
 
                 left_hand.position.X = kinectData.Current.LefttHandPos.X;
                 left_hand.position.Y = kinectData.Current.LefttHandPos.Y;
@@ -137,18 +133,6 @@ namespace TgcViewer.Utils.Gui
             {
                 //Ver en que mano chequear gesto
                 Microsoft.Kinect.JointType handIdx = right_hand_sel ? Microsoft.Kinect.JointType.HandRight : Microsoft.Kinect.JointType.HandLeft;
-
-                /*
-                //Ver si se quedo quieto
-                Vector3 hipPos = TgcKinectUtils.toVector3(kinectData.Current.KinectSkeleton.Joints[Microsoft.Kinect.JointType.HipCenter].Position);
-                Vector3 handPos = TgcKinectUtils.toVector3(kinectData.Current.KinectSkeleton.Joints[handIdx].Position);
-                Vector3 diff = handPos - hipPos;
-                if (diff.Z < -4.5f)
-                {
-                    currentGesture = Gesture.Pressing;
-                }
-                 */
-
             }
             else
             {

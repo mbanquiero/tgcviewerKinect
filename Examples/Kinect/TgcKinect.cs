@@ -28,10 +28,10 @@ namespace Examples.Kinect
         public Skeleton[] auxSkeletonData;
         public bool sin_sensor;
         public Vector3 raw_pos_mano = new Vector3(0, 0, 0);
-        public Vector3 raw_pos_cadera = new Vector3(0,0,0);
         public int skeleton_sel;
         public KPIR right_pir = new KPIR();          // right physicall interaction region
         public KPIR left_pir = new KPIR();           // left physicall interaction region
+        public int id_player = -1;                   // id del esqueleto que esta trackeando
 
         TgcKinectSkeletonData data;
         /// <summary>
@@ -160,6 +160,59 @@ namespace Examples.Kinect
         }
 
 
+
+        private int ElegirEsquelto()
+        {
+            // Primero me aseguro que la aplicacion sea la que elija el esqueleto
+            int nro_esqueleto = -1;
+            if (this.sensor != null && this.sensor.SkeletonStream != null)
+            {
+                if (!this.sensor.SkeletonStream.AppChoosesSkeletons)
+                    this.sensor.SkeletonStream.AppChoosesSkeletons = true; 
+
+                // si ya hay un id player (se supone que hay alguien ya trackeado)
+                // Busco a ver si sigue estando
+                if (id_player != -1)
+                {
+                    bool found = false;
+                    for (int i = 0; i < auxSkeletonData.Length && !found; i++)
+                    {
+                        if (auxSkeletonData[i].TrackingState != SkeletonTrackingState.NotTracked &&
+                            auxSkeletonData[i].TrackingId == id_player)
+                        {
+                            found = true;
+                            nro_esqueleto = i;
+                        }
+                    }
+
+                    if (!found)
+                        id_player = -1;
+                }
+
+                if(id_player == -1)
+                {
+                    // El id no esta mas disponible (Sera que se fue de pantalla? )
+                    // Busco el mas cercan a la camara
+                    float mindist = 999999f;
+                    for (int i = 0; i < auxSkeletonData.Length; i++)
+                    {
+                        if (auxSkeletonData[i].TrackingState != SkeletonTrackingState.NotTracked &&
+                            auxSkeletonData[i].Position.Z < mindist)
+                        {
+                            id_player = auxSkeletonData[i].TrackingId;
+                            mindist = auxSkeletonData[i].Position.Z;
+                            nro_esqueleto = i;
+                        }
+                    }
+                }
+
+                if(id_player!=-1)
+                    this.sensor.SkeletonStream.ChooseSkeletons(id_player);
+
+            }
+            return nro_esqueleto;
+        }
+      
         /// <summary>
         /// Obtener datos de esqueleto. Si no encuentra datos validos devuelve null.
         /// </summary>
@@ -190,40 +243,13 @@ namespace Examples.Kinect
 
                     skeletonFrame.CopySkeletonDataTo(auxSkeletonData);
 
-                    Skeleton rawSkeleton = null;
                     // Puede haber varios esqueletos, si es asi, tomo el que mas se parece al esqueleto anterior
-                    Vector3 pos_ant = raw_pos_cadera;
-                    float min_dist = float.MaxValue;
-
-                    for (int i = 0; i < auxSkeletonData.Length; i++)
-                    {
-                        if (auxSkeletonData[i].TrackingState == SkeletonTrackingState.Tracked)
-                        {
-                            // Hay un esqueleto traqueado
-                            SkeletonPoint pos_cadera = auxSkeletonData[i].Joints[JointType.HipCenter].Position;
-                            Vector3 pos = new Vector3(pos_cadera.X,pos_cadera.Y,pos_cadera.Z);
-                            float cur_dist = skeleton_sel != -1?
-                                // Si ya habia otro tomo la distancia dicho esqueleto anterior
-                                cur_dist = (pos - raw_pos_cadera).Length() : 
-                                // si no habia ningun otro esqueleto trackeado, considero la dist. a la camara
-                                cur_dist = pos_cadera.Z;
-
-                            if (cur_dist < min_dist)
-                            {
-                                // Encontre un candidato a trackear
-                                min_dist = cur_dist;
-                                rawSkeleton = auxSkeletonData[skeleton_sel = i];
-                                raw_pos_cadera = pos;
-                            }
-                        }
-                    }
-                    if (rawSkeleton == null)
-                    {
-                        return this.data;
-                    }
-
-                    //Capturar datos del esqueleto
-                    this.buildSkeletonData(rawSkeleton, this.data);
+                    if ((skeleton_sel = ElegirEsquelto()) != -1)
+                        // Encontre un candidato a trackear
+                        //Capturar datos del esqueleto
+                        this.buildSkeletonData(auxSkeletonData[skeleton_sel], this.data);
+                    //else
+                      //  return this.data;
                 }
             }
 
@@ -263,10 +289,6 @@ namespace Examples.Kinect
             //Copiar pos2D de las dos manos al frame anterior
             data.Previous.RightHandPos = data.Current.RightHandPos;
             data.Previous.LefttHandPos = data.Current.LefttHandPos;
-
-
-
-
 
             //Copiar esqueleto recien trackeado al frame actual, adaptando proporciones
             this.copySkeleton(rawSkeleton, data.Current.KinectSkeleton, true);
@@ -323,91 +345,8 @@ namespace Examples.Kinect
         /// </summary>
         private void updateHandsScreenPos(Skeleton rawSkeleton, TgcKinectSkeletonData data)
         {
-            /*
-            //Calcular boundingBox 2D para la mano derecha: entre la cabeza, el hombro derecho y la spine.
-            data.Current.RScreenRect = TgcKinectUtils.computeScreenRect(new SkeletonPoint[]{
-                rawSkeleton.Joints[JointType.ShoulderRight].Position,
-                rawSkeleton.Joints[JointType.Head].Position,
-                rawSkeleton.Joints[JointType.Spine].Position,
-            });
 
-            //Calcular boundingBox 2D para la mano izquierda: entre la cabeza, el hombro izq y la spine.
-            data.Current.LScreenRect = TgcKinectUtils.computeScreenRect(new SkeletonPoint[]{
-                rawSkeleton.Joints[JointType.ShoulderLeft].Position,
-                rawSkeleton.Joints[JointType.Head].Position,
-                rawSkeleton.Joints[JointType.Spine].Position,
-            });
-
-
-            //Agrandar ambos boundingBox hacia el lado donde esta la mano
-            data.Current.RScreenRect = new RectangleF(data.Current.RScreenRect.Location, new SizeF(data.Current.RScreenRect.Width + data.Current.RScreenRect.Width / 2, data.Current.RScreenRect.Height));
-            data.Current.LScreenRect = new RectangleF(new PointF(data.Current.LScreenRect.X - data.Current.LScreenRect.Width / 2, data.Current.LScreenRect.Y), data.Current.LScreenRect.Size);
-            
-            
-
-
-            //Clampear posicion 2D de manos segun el boundingBox 2D
-            Vector2 rHand2dPos = TgcKinectUtils.toVector2(rawSkeleton.Joints[JointType.HandRight].Position);
-            Vector2 lHand2dPos = TgcKinectUtils.toVector2(rawSkeleton.Joints[JointType.HandLeft].Position);
-            rHand2dPos = TgcKinectUtils.clampToRect(rHand2dPos, data.Current.RScreenRect);
-            lHand2dPos = TgcKinectUtils.clampToRect(lHand2dPos, data.Current.LScreenRect);
-
-            //Mapear puntos al tamaño de la pantalla para obtener posicion 2D de las manos
-            Viewport screenViewport = GuiController.Instance.D3dDevice.Viewport;
-            data.Current.RightHandPos = TgcKinectUtils.mapPointToScreen(rHand2dPos, data.Current.RScreenRect, screenViewport, cursorSize);
-            data.Current.LefttHandPos = TgcKinectUtils.mapPointToScreen(lHand2dPos, data.Current.LScreenRect, screenViewport, cursorSize);
-
-            //Distancia z relativa de cada mano al hombro
-            data.Current.RightZDist = rawSkeleton.Joints[JointType.HandRight].Position.Z - rawSkeleton.Joints[JointType.ShoulderRight].Position.Z;
-            data.Current.LeftZDist = rawSkeleton.Joints[JointType.HandLeft].Position.Z - rawSkeleton.Joints[JointType.ShoulderLeft].Position.Z;
-            */
-
-
-            /*
-            Vector2 hipRight = TgcKinectUtils.toVector2(rawSkeleton.Joints[JointType.HipRight].Position);
-            Vector2 hipLeft = TgcKinectUtils.toVector2(rawSkeleton.Joints[JointType.HipLeft].Position);
-            Vector2 spine = TgcKinectUtils.toVector2(rawSkeleton.Joints[JointType.Spine].Position);
-            Vector2 head = TgcKinectUtils.toVector2(rawSkeleton.Joints[JointType.Head].Position);
-
-            RectangleF bounds = new RectangleF();
-            bounds.X = hipLeft.X;
-            bounds.Width = hipRight.X - hipLeft.X;
-
-            float aspectRatio = TgcD3dDevice.aspectRatio;
-            bounds.Y = spine.Y + (head.Y - spine.Y) / 4;
-            bounds.Height = (bounds.Width / aspectRatio) * 2.5f;
-
-
-
-            RectangleF rScreenRect = new RectangleF();
-            rScreenRect.X = bounds.X + bounds.Width * 0.25f;
-            rScreenRect.Width = bounds.Width;
-            rScreenRect.Y = bounds.Y;
-            rScreenRect.Height = bounds.Height;
-
-            RectangleF lScreenRect = new RectangleF();
-            lScreenRect.X = bounds.X + bounds.Width * 0.25f;
-            lScreenRect.Width = bounds.Width;
-            lScreenRect.Y = bounds.Y;
-            lScreenRect.Height = bounds.Height;
-
-
-            //Multiplicar posicion 2D de las manos por factor de velocidad
-            Vector2 rHand2dPos = TgcKinectUtils.toVector2(rawSkeleton.Joints[JointType.HandRight].Position);
-            Vector2 lHand2dPos = TgcKinectUtils.toVector2(rawSkeleton.Joints[JointType.HandLeft].Position);
-
-            //Clampear posicion 2D de manos segun el boundingBox 2D
-            rHand2dPos = TgcKinectUtils.clampToRect(rHand2dPos, rScreenRect);
-            lHand2dPos = TgcKinectUtils.clampToRect(lHand2dPos, lScreenRect);
-
-            //Mapear puntos al tamaño de la pantalla para obtener posicion 2D de las manos
-            Viewport screenViewport = GuiController.Instance.D3dDevice.Viewport;
-            data.Current.RightHandPos = TgcKinectUtils.mapPointToScreen(rHand2dPos, rScreenRect, screenViewport, cursorSize);
-            data.Current.LefttHandPos = TgcKinectUtils.mapPointToScreen(lHand2dPos, lScreenRect, screenViewport, cursorSize);
-            */
-
-            if (/*halfBodyWidth == float.MinValue &&*/
-                rawSkeleton.Joints[JointType.ShoulderRight].TrackingState == JointTrackingState.Tracked &&
+            if (rawSkeleton.Joints[JointType.ShoulderRight].TrackingState == JointTrackingState.Tracked &&
                 rawSkeleton.Joints[JointType.Spine].TrackingState == JointTrackingState.Tracked &&
                 rawSkeleton.Joints[JointType.Head].TrackingState == JointTrackingState.Tracked)
             {
@@ -534,41 +473,6 @@ namespace Examples.Kinect
                 destination.Joints[j] = temp;
             }
 
-            /* No se está usando
-            if (null != source.BoneOrientations)
-            {
-                foreach (JointType j in jointTypeValues)
-                {
-                    BoneOrientation temp = destination.BoneOrientations[j];
-                    temp.HierarchicalRotation.Matrix = source.BoneOrientations[j].HierarchicalRotation.Matrix;
-                    temp.HierarchicalRotation.Quaternion = source.BoneOrientations[j].HierarchicalRotation.Quaternion;
-                    temp.AbsoluteRotation.Matrix = source.BoneOrientations[j].AbsoluteRotation.Matrix;
-                    temp.AbsoluteRotation.Quaternion = source.BoneOrientations[j].AbsoluteRotation.Quaternion;
-                    destination.BoneOrientations[j] = temp;
-                }
-            }
-             */
-
-            /*
-            //Ajuste de proporciones
-            if (scalePos)
-            {
-                //Obtener la proporcion del esqueleto, medida como la distancia entre la cabeza y la cintura
-                Vector3 headPos = TgcKinectUtils.toVector3(destination.Joints[JointType.Head].Position);
-                Vector3 centerPos = TgcKinectUtils.toVector3(destination.Joints[JointType.HipCenter].Position);
-                float currentProportion = Vector3.Length(headPos - centerPos);
-                float formFactor = bodyProportion / currentProportion;
-
-                //Ajustar todas las posiciones de los huesos al formFactor
-                destination.Position = TgcKinectUtils.mul(destination.Position, formFactor);
-                foreach (JointType j in jointTypeValues)
-                {
-                    Joint temp = destination.Joints[j];
-                    temp.Position = TgcKinectUtils.mul(destination.Joints[j].Position, formFactor);
-                    destination.Joints[j] = temp;
-                }
-            }
-            */
         }
 
 
@@ -663,14 +567,6 @@ namespace Examples.Kinect
         /// </summary>
         public SkeletonPoint getScaledTranslatedPoint(SkeletonPoint p)
         {
-            /*
-            SkeletonPoint p2 = new SkeletonPoint();
-            p2.X = p.X * positionScale * -1f + positionTranslate.X;
-            p2.Y = p.Y * positionScale + positionTranslate.Y;
-            p2.Z = p.Z * positionScale + positionTranslate.Z;
-            return p2;
-             */
-
             SkeletonPoint p2 = new SkeletonPoint();
             float offsetY = skeletonOffsetY * positionScale;
             p2.X = (p.X - skeletonCenter.X) * positionScale + sceneCenter.X;

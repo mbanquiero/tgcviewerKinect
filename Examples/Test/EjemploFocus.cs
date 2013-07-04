@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
 using System.Windows.Forms;
 using TgcViewer.Example;
@@ -112,12 +113,16 @@ namespace Examples.Test
         private TgcDXMesh cabeza_dummy;
         private TgcDXMesh culo_dummy;
         private TgcDXMesh torso_dummy;
+        private TgcDXMesh hueso;
+        private TgcDXMesh disco;
 
         Vector3 hip0 = new Vector3(float.MaxValue, 0, 0);       // posicion inicial del esqueleto
+        float altura_cadera = 750f;
         Vector3 center = new Vector3();                         // centro de la escena
         Vector3 center_original = new Vector3();                // centro de la escena (original)
         bool hay_escena = false;
         int tipo_avataring = 1;
+        public float global_time = 0.0f;
 
         public bool msg_box_app_exit = false;
 
@@ -178,6 +183,7 @@ namespace Examples.Test
 
             // levanto el GUI
             gui.Create();
+            loadConfig();
 
             //Configurar todas las texturas que se pueden elegir para cambiar
             texturasFocus = new TexturasFocus();
@@ -210,8 +216,12 @@ namespace Examples.Test
             // Mallas .X para el esqueleto 3d
             elipsoid = new TgcDXMesh();
             elipsoid.loadMesh(GuiController.Instance.ExamplesMediaDir + "ModelosX\\pieza.x");
+            hueso = new TgcDXMesh();
+            hueso.loadMesh(GuiController.Instance.ExamplesMediaDir + "ModelosX\\hueso.x");
             bola = new TgcDXMesh();
             bola.loadMesh(GuiController.Instance.ExamplesMediaDir + "ModelosX\\ball.x");
+            disco = new TgcDXMesh();
+            disco.loadMesh(GuiController.Instance.ExamplesMediaDir + "ModelosX\\disco.x");
             culo = new TgcDXMesh();
             culo.loadMesh(GuiController.Instance.ExamplesMediaDir + "ModelosX\\wculo.x");
             torso = new TgcDXMesh();
@@ -291,6 +301,7 @@ namespace Examples.Test
         public override void render(float elapsedTime)
         {
             Device d3dDevice = GuiController.Instance.D3dDevice;
+            global_time += elapsedTime;
 
             string status_text = "Untracked";
             TgcKinectSkeletonData data = tgcKinect.update();
@@ -377,10 +388,10 @@ namespace Examples.Test
                 Vector3 hand_size = new Vector3(100, 100, 100);
                 Vector3 pos_mano_der = _joints[(int)JointType.HandRight].WorldPosition;
                 TgcBoundingBox righthand = new TgcBoundingBox(pos_mano_der - hand_size, pos_mano_der + hand_size);
-                righthand.render();
+                //righthand.render();
                 Vector3 pos_mano_izq = _joints[(int)JointType.HandLeft].WorldPosition;
                 TgcBoundingBox lefthand = new TgcBoundingBox(pos_mano_izq - hand_size, pos_mano_izq + hand_size);
-                lefthand.render();
+                //lefthand.render();
 
                 foreach (FocusSet f in _conjuntos)
                 {
@@ -645,7 +656,7 @@ namespace Examples.Test
                                 lightMesh.Position = new Vector3((x0 + x1) / 2, y1-200, (z0 + z1) / 2);
                                 // El centro de la escena (sobre el nivel del piso + la altura del personaje / 2)
                                 //center = new Vector3((x0 + x1) / 2, 1100, (z0 + z1) / 2);
-                                center = new Vector3(x1-1300, 1100, z1 - 1300);
+                                center = new Vector3(x1-1300, 750, z1 - 1300);
                                 //center = new Vector3(x1-1500, 1100, z1-1000);
                                 center_original = center * 1.0f;
 
@@ -861,65 +872,89 @@ namespace Examples.Test
             progress_bar.SetPos(1);
         }
 
-        // Copia los datos de la kinect al esqueleto privado del ejemplo
-        public void UpdateSkeleton()
+        // Determina si el esqueleto es valido. Tiene que cumplir con ciertas limitaciones fisicas de un esqueleto
+        public bool IsSkeletonValid()
         {
-            // Solo copia y pisa los datos si estan todos los huesos trackeados
-            if (tgcKinect.skeleton_sel == -1 || !hay_escena)
-                return;
+            // De momento tienen que estar todos las articulaciones traqueadas o inferidas
+            if (tgcKinect.skeleton_sel == -1)
+                return false;
+
             Skeleton skeleton = tgcKinect.auxSkeletonData[tgcKinect.skeleton_sel];
             bool all_tracked = true;
+            int cant_inferidos = 0;
+
             for (int i = 0; i < skeleton.Joints.Count && all_tracked; i++)
                 if (skeleton.Joints[(JointType)i].TrackingState == JointTrackingState.NotTracked)
                     all_tracked = false;
+                else
+                    if (skeleton.Joints[(JointType)i].TrackingState == JointTrackingState.Inferred)
+                        ++cant_inferidos;
 
-            if (all_tracked)
+
+            if(!all_tracked || cant_inferidos>=6)
+                return false;
+
+            return true;
+        }
+
+
+        // Copia los datos de la kinect al esqueleto privado del ejemplo
+        public void UpdateSkeleton()
+        {
+            if (!IsSkeletonValid() ||!hay_escena)
+                return;
+            Skeleton skeleton = tgcKinect.auxSkeletonData[tgcKinect.skeleton_sel];
+            // actualizo los datos privados
+            for (int i = 0; i < skeleton.Joints.Count; i++)
             {
-                // actualizo los datos privados
-                for (int i = 0; i < skeleton.Joints.Count; i++)
-                {
-                    _joints[i].Position = new Vector3(skeleton.Joints[(JointType)i].Position.X, skeleton.Joints[(JointType)i].Position.Y, skeleton.Joints[(JointType)i].Position.Z);
-                    _joints[i].JointType = (JointType)i;
-                    // LLevo el punto al espacio del esqueleto, luego lo escalo a milimetros y lo traslado al centro de la escena
 
-                    Vector3 modelPosition = _joints[i].Position - hip0;
-                    modelPosition.Z = -modelPosition.Z;
-                    _joints[i].WorldPosition = modelPosition * 1000 + center;
-                }
-                _cant_joints = skeleton.Joints.Count;
+                Vector3 pos = new Vector3(skeleton.Joints[(JointType)i].Position.X, skeleton.Joints[(JointType)i].Position.Y, skeleton.Joints[(JointType)i].Position.Z);
+                if(skeleton.Joints[(JointType)i].TrackingState==JointTrackingState.Tracked)
+                    _joints[i].Position = pos;
+                else
+                    // La posicion esta inferida....
+                    _joints[i].Position = _joints[i].Position*0.75f + pos*0.25f;
 
-                for (int i = 0; i < skeleton.BoneOrientations.Count; i++)
-                {
-                    _bones[i].StartJoint = skeleton.BoneOrientations[(JointType)i].StartJoint;
-                    _bones[i].EndJoint = skeleton.BoneOrientations[(JointType)i].EndJoint;
-                    Microsoft.Kinect.Vector4 Q = skeleton.BoneOrientations[(JointType)i].AbsoluteRotation.Quaternion;
-                    _bones[i].dir = new Vector3(Q.X, Q.Y, -Q.Z);
-                    _bones[i].angulo =  Q.W;
-                    Matrix4 T = skeleton.BoneOrientations[(JointType)i].AbsoluteRotation.Matrix;
-                    _bones[i].T = new Matrix();
-                    _bones[i].T.M11 = T.M11;
-                    _bones[i].T.M12 = T.M12;
-                    _bones[i].T.M13 = -T.M13;
-                    _bones[i].T.M14 = T.M14;
+                _joints[i].JointType = (JointType)i;
+                // LLevo el punto al espacio del esqueleto, luego lo escalo a milimetros y lo traslado al centro de la escena
 
-                    _bones[i].T.M21 = T.M21;
-                    _bones[i].T.M22 = T.M22;
-                    _bones[i].T.M23 = -T.M23;
-                    _bones[i].T.M24 = T.M34;
-
-                    _bones[i].T.M31 = T.M31;
-                    _bones[i].T.M32 = T.M32;
-                    _bones[i].T.M33 = -T.M33;
-                    _bones[i].T.M34 = T.M34;
-
-                    _bones[i].T.M41 = T.M41;
-                    _bones[i].T.M42 = T.M42;
-                    _bones[i].T.M43 = T.M43;
-                    _bones[i].T.M44 = T.M44;
-
-                }
-                _cant_bones = skeleton.BoneOrientations.Count;
+                Vector3 modelPosition = _joints[i].Position - hip0;
+                modelPosition.Z = -modelPosition.Z;
+                _joints[i].WorldPosition = modelPosition * 1000 + center;
             }
+            _cant_joints = skeleton.Joints.Count;
+
+            for (int i = 0; i < skeleton.BoneOrientations.Count; i++)
+            {
+                _bones[i].StartJoint = skeleton.BoneOrientations[(JointType)i].StartJoint;
+                _bones[i].EndJoint = skeleton.BoneOrientations[(JointType)i].EndJoint;
+                Microsoft.Kinect.Vector4 Q = skeleton.BoneOrientations[(JointType)i].AbsoluteRotation.Quaternion;
+                _bones[i].dir = new Vector3(Q.X, Q.Y, -Q.Z);
+                _bones[i].angulo =  Q.W;
+                Matrix4 T = skeleton.BoneOrientations[(JointType)i].AbsoluteRotation.Matrix;
+                _bones[i].T = new Matrix();
+                _bones[i].T.M11 = T.M11;
+                _bones[i].T.M12 = T.M12;
+                _bones[i].T.M13 = -T.M13;
+                _bones[i].T.M14 = T.M14;
+
+                _bones[i].T.M21 = T.M21;
+                _bones[i].T.M22 = T.M22;
+                _bones[i].T.M23 = -T.M23;
+                _bones[i].T.M24 = T.M34;
+
+                _bones[i].T.M31 = T.M31;
+                _bones[i].T.M32 = T.M32;
+                _bones[i].T.M33 = -T.M33;
+                _bones[i].T.M34 = T.M34;
+
+                _bones[i].T.M41 = T.M41;
+                _bones[i].T.M42 = T.M42;
+                _bones[i].T.M43 = T.M43;
+                _bones[i].T.M44 = T.M44;
+
+            }
+            _cant_bones = skeleton.BoneOrientations.Count;
         }
 
         //
@@ -958,28 +993,43 @@ namespace Examples.Test
         }
 
 
-        public void renderSkeletonMesh0()
+        // Inicializa ciertos valores por primera y unica vez, si lo puede hacer devuelve true
+        public bool IsSkeletonReady()
         {
+            bool skeleton_ready = hip0.X == float.MaxValue ? false : true;
+            // No hay escena
             if (!hay_escena)
-                return;
+                return skeleton_ready;
+            // No hay esqueleto trackeado
+            if (tgcKinect.skeleton_sel == -1)
+                return skeleton_ready;
 
             // Inicializacion en caliente
-            if (hip0.X == float.MaxValue)
+            Skeleton skeleton = tgcKinect.auxSkeletonData[tgcKinect.skeleton_sel];
+            bool hip_tracked = false;
+            if (!skeleton_ready)
             {
-                if (tgcKinect.skeleton_sel == -1)
-                    return;
-
-                Skeleton skeleton = tgcKinect.auxSkeletonData[tgcKinect.skeleton_sel];
                 if (skeleton.Joints[JointType.HipCenter].TrackingState == JointTrackingState.Tracked)
                 {
                     // Es la primera vez que trackea el hueso, que se toma como referencia para todo el esqueleto
                     hip0.X = skeleton.Joints[JointType.HipCenter].Position.X;
                     hip0.Y = skeleton.Joints[JointType.HipCenter].Position.Y;
                     hip0.Z = skeleton.Joints[JointType.HipCenter].Position.Z;
+                    hip_tracked = true;
+                    skeleton_ready = true;
+
                 }
                 else
-                    return;         // todavia no tiene marco de referencia para dibujar
+                    return false;         // todavia no tiene marco de referencia para dibujar
             }
+
+            return skeleton_ready;
+        }
+
+        public void renderSkeletonMesh0()
+        {
+            if (!IsSkeletonReady())
+                return;
 
             Device device = GuiController.Instance.D3dDevice;
             Matrix ant_view = device.Transform.View * Matrix.Identity;
@@ -1050,8 +1100,8 @@ namespace Examples.Test
         {
             Vector2 cero = new Vector2(0, 0);
             // Inicializa la primera vez los valores hardcodeados del esqueleto 
-            _joints[(int)JointType.AnkleLeft].radio = _joints[(int)JointType.AnkleRight].radio  = 50f;      // tobillo 
-            _joints[(int)JointType.FootLeft].radio = _joints[(int)JointType.FootRight].radio = 150f;        // Pie
+            _joints[(int)JointType.AnkleLeft].radio = _joints[(int)JointType.AnkleRight].radio  = 40f;      // tobillo 
+            _joints[(int)JointType.FootLeft].radio = _joints[(int)JointType.FootRight].radio = 100;        // Pie
             _joints[(int)JointType.KneeLeft].radio = _joints[(int)JointType.KneeRight].radio = 90f;         // Rodilla
             _joints[(int)JointType.HipLeft].radio = _joints[(int)JointType.HipRight].radio = 0f;           // Cadera
             _joints[(int)JointType.HipCenter].radio = 200;                                                  // Centro del cuerpo
@@ -1064,7 +1114,8 @@ namespace Examples.Test
             _joints[(int)JointType.Head].radio = 0;                                                       // cabeza
 
 
-            _joints[(int)JointType.FootLeft].p_mesh = _joints[(int)JointType.FootRight].p_mesh = bola;        // Pie
+            _joints[(int)JointType.FootLeft].p_mesh = bola;
+            _joints[(int)JointType.FootRight].p_mesh = bola;        // Pie
             _joints[(int)JointType.AnkleLeft].p_mesh = _joints[(int)JointType.AnkleRight].p_mesh = bola;      // tobillo 
             _joints[(int)JointType.KneeLeft].p_mesh = _joints[(int)JointType.KneeRight].p_mesh = bola;         // Rodilla
             _joints[(int)JointType.HipLeft].p_mesh = _joints[(int)JointType.HipRight].p_mesh = null;           // Cadera
@@ -1111,26 +1162,8 @@ namespace Examples.Test
 
         public void renderSkeletonMesh1()
         {
-            if (!hay_escena)
+            if (!IsSkeletonReady())
                 return;
-
-            // Inicializacion en caliente
-            if (hip0.X == float.MaxValue)
-            {
-                if (tgcKinect.skeleton_sel == -1)
-                    return;
-
-                Skeleton skeleton = tgcKinect.auxSkeletonData[tgcKinect.skeleton_sel];
-                if (skeleton.Joints[JointType.HipCenter].TrackingState == JointTrackingState.Tracked)
-                {
-                    // Es la primera vez que trackea el hueso, que se toma como referencia para todo el esqueleto
-                    hip0.X = skeleton.Joints[JointType.HipCenter].Position.X;
-                    hip0.Y = skeleton.Joints[JointType.HipCenter].Position.Y;
-                    hip0.Z = skeleton.Joints[JointType.HipCenter].Position.Z;
-                }
-                else
-                    return;         // todavia no tiene marco de referencia para dibujar
-            }
 
             //Renderizar Joint
             Device device = GuiController.Instance.D3dDevice;
@@ -1143,7 +1176,7 @@ namespace Examples.Test
             for (int i = 0; i < _cant_joints; i++)
             {
                 // Pero solo lo renderizo si tiene radio y mesh asociado. 
-                if (_joints[i].radio > 0 && _joints[i].p_mesh != null && false)
+                if (_joints[i].radio > 0 && _joints[i].p_mesh != null)
                 {
                     float k = _joints[i].radio / _joints[i].p_mesh.size.Y * K;
                     _joints[i].p_mesh.transform = Matrix.Translation(-_joints[i].p_mesh.center) * Matrix.Scaling(k, k, k) 
@@ -1284,28 +1317,8 @@ namespace Examples.Test
 
         public void renderSkeletonMesh2()
         {
-            if (!hay_escena)
+            if (!IsSkeletonReady())
                 return;
-
-            // Inicializacion en caliente
-            if (hip0.X == float.MaxValue)
-            {
-                if (tgcKinect.skeleton_sel == -1)
-                    return;
-
-                Skeleton skeleton = tgcKinect.auxSkeletonData[tgcKinect.skeleton_sel];
-                if (skeleton.Joints[JointType.HipCenter].TrackingState == JointTrackingState.Tracked)
-                {
-                    // Es la primera vez que trackea el hueso, que se toma como referencia para todo el esqueleto
-                    hip0.X = skeleton.Joints[JointType.HipCenter].Position.X;
-                    hip0.Y = skeleton.Joints[JointType.HipCenter].Position.Y;
-                    hip0.Z = skeleton.Joints[JointType.HipCenter].Position.Z;
-                }
-                else
-                    return;         // todavia no tiene marco de referencia para dibujar
-            }
-
-
 
             //Renderizar Joint
             Device device = GuiController.Instance.D3dDevice;
@@ -1367,83 +1380,124 @@ namespace Examples.Test
                 }
             */
 
-            // Uso el area de memoria propia y no la de la kinect ya que si hay joints no trackeados,
-            // conviene usar el ultimo que tengo disponible
-            for (int i = 0; i < _cant_joints; i++)
-            {
-                // solo lo dibujo si tiene mesh
-                TgcDXMesh p_mesh = _joints[i].p_mesh;
-                if (p_mesh != null)
-                {
-                    float k = _joints[i].radio / p_mesh.size.Y * K;
-                    p_mesh.transform = Matrix.Translation(-p_mesh.center) * Matrix.Scaling(k, k, k) 
-                        * Matrix.Translation(_joints[i].WorldPosition);
-                    p_mesh.render();
-                }
-            }
+            bool ant_blend = device.RenderState.AlphaBlendEnable;
+            device.RenderState.AlphaBlendEnable = true;
+            Effect currentShader = GuiController.Instance.Shaders.TgcMeshPhongShader;
 
+            // Huesos internos
             for (int t = 0; t < _cant_bones; t++)
-            if(_bones[t].p_mesh!=null)
             {
 
                 int PStart = (int)_bones[t].StartJoint;
                 int PEnd = (int)_bones[t].EndJoint;
-                TgcDXMesh p_mesh = _bones[t].p_mesh;
-                float escala_x = _bones[t].size.X / bola.size.X * K;
-                float escala_z = _bones[t].size.Y / bola.size.Z * K;
+                TgcDXMesh p_mesh = hueso;
+                float escala_x = 40.0f / bola.size.X * K;
+                float escala_z = 40.0f / bola.size.Z * K;
                 p_mesh.transform = calcularMatriz(p_mesh.bb_p0, p_mesh.bb_p1,
                         _joints[PStart].WorldPosition, _joints[PEnd].WorldPosition, escala_x, escala_z, _bones[t].T);
                 p_mesh.render();
             }
 
-            // Casos particulares
-            // cabeza
-            {
-                // empiezo en el cuello y termino en en centro de la cabeza
-                Vector3 PCenter = _joints[(int)JointType.Head].WorldPosition;
-                Vector3 HeadDir = PCenter - _joints[(int)JointType.ShoulderCenter].WorldPosition;
-                HeadDir.Normalize();
-                Vector3 PStart = PCenter + HeadDir * 70f * K;
-                Vector3 PEnd = PCenter - HeadDir * 130f * K;
-                cabeza_dummy.transform = calcularMatriz(cabeza_dummy.bb_p0, cabeza_dummy.bb_p1, PStart, PEnd,
-                        160 * K, 140 * K, _bones[(int)JointType.Head].T);
-                cabeza_dummy.render();
+            currentShader.SetValue("global_alpha", 0.5f);
 
-                // Cuello
-                PStart = _joints[(int)JointType.Head].WorldPosition - HeadDir * 50f * K;
-                PEnd = _joints[(int)JointType.ShoulderCenter].WorldPosition - HeadDir * 150f * K;
-                elipsoid.transform = calcularMatriz(elipsoid.bb_p0, elipsoid.bb_p1, PStart, PEnd,
-                        40 * K,  40 * K, _bones[(int)JointType.Head].T);
-                elipsoid.render();
+            for (int I = 0; I < 2; ++I)
+            {
+                device.RenderState.CullMode = I == 0 ? Cull.Clockwise : Cull.CounterClockwise;
+
+                // Uso el area de memoria propia y no la de la kinect ya que si hay joints no trackeados,
+                // conviene usar el ultimo que tengo disponible
+                for (int i = 0; i < _cant_joints; i++)
+                {
+                    // solo lo dibujo si tiene mesh
+                    TgcDXMesh p_mesh = _joints[i].p_mesh;
+                    if (p_mesh != null)
+                    {
+                        float k = _joints[i].radio / p_mesh.size.Y * K;
+                        p_mesh.transform = Matrix.Translation(-p_mesh.center) * Matrix.Scaling(k, k, k)
+                            * Matrix.Translation(_joints[i].WorldPosition);
+                        p_mesh.render();
+                    }
+                }
+
+                for (int t = 0; t < _cant_bones; t++)
+                    if (_bones[t].p_mesh != null)
+                    {
+
+                        int PStart = (int)_bones[t].StartJoint;
+                        int PEnd = (int)_bones[t].EndJoint;
+                        TgcDXMesh p_mesh = _bones[t].p_mesh;
+                        float escala_x = _bones[t].size.X / bola.size.X * K;
+                        float escala_z = _bones[t].size.Y / bola.size.Z * K;
+                        p_mesh.transform = calcularMatriz(p_mesh.bb_p0, p_mesh.bb_p1,
+                                _joints[PStart].WorldPosition, _joints[PEnd].WorldPosition, escala_x, escala_z, _bones[t].T);
+                        p_mesh.render();
+                    }
+
+                // Casos particulares
+                // cabeza
+                {
+                    // empiezo en el cuello y termino en en centro de la cabeza
+                    Vector3 PCenter = _joints[(int)JointType.Head].WorldPosition;
+                    Vector3 HeadDir = PCenter - _joints[(int)JointType.ShoulderCenter].WorldPosition;
+                    HeadDir.Normalize();
+                    Vector3 PStart = PCenter + HeadDir * 70f * K;
+                    Vector3 PEnd = PCenter - HeadDir * 130f * K;
+                    cabeza_dummy.transform = calcularMatriz(cabeza_dummy.bb_p0, cabeza_dummy.bb_p1, PStart, PEnd,
+                            160 * K, 140 * K, _bones[(int)JointType.Head].T);
+                    cabeza_dummy.render();
+
+                    // Cuello
+                    PStart = _joints[(int)JointType.Head].WorldPosition - HeadDir * 30f * K;
+                    PEnd = _joints[(int)JointType.ShoulderCenter].WorldPosition - HeadDir * 60f * K;
+                    elipsoid.transform = calcularMatriz(elipsoid.bb_p0, elipsoid.bb_p1, PStart, PEnd,
+                            50 * K, 50 * K, _bones[(int)JointType.Head].T);
+                    elipsoid.render();
+
+                }
+
+                // Cuerpo
+                {
+                    // Empieza en el centro de la cadera hasta el centro de los hombros
+                    Vector3 PStart = _joints[(int)JointType.HipCenter].WorldPosition;
+                    Vector3 PEnd = _joints[(int)JointType.ShoulderCenter].WorldPosition;
+                    Vector3 TorsoDir = PEnd - PStart;
+                    TorsoDir.Normalize();
+                    PStart = PStart + 50 * TorsoDir * K;
+                    PEnd = PEnd - 0 * TorsoDir * K;
+                    torso_dummy.transform = calcularMatriz(torso_dummy.bb_p0, torso_dummy.bb_p1, PStart, PEnd,
+                            380 * K, 230 * K, _bones[(int)JointType.HipCenter].T);
+                    torso_dummy.render();
+                }
+
+                // culo
+                {
+                    Matrix T = _bones[(int)JointType.HipCenter].T;
+                    Vector3 PStart = _joints[(int)JointType.HipCenter].WorldPosition;
+                    Vector3 CuloDir = new Vector3(T.M21, T.M22, T.M23);
+                    Vector3 PEnd = PStart - CuloDir * 200f * K;
+                    PStart = PStart + CuloDir * 50f * K;
+                    culo_dummy.transform = calcularMatriz(culo_dummy.bb_p0, culo_dummy.bb_p1, PStart, PEnd, 350 * K, 230 * K, T);
+                    culo_dummy.render();
+                }
 
             }
+            // Dibujo un disco en el piso
+            device.RenderState.CullMode = Cull.None;
+            currentShader.SetValue("global_alpha", 1f);
 
-            // Cuerpo
+            // Dibujo un disco sobre el piso en el lugar del dummy
             {
-                // Empieza en el centro de la cadera hasta el centro de los hombros
-                Vector3 PStart = _joints[(int)JointType.HipCenter].WorldPosition;
-                Vector3 PEnd = _joints[(int)JointType.ShoulderCenter].WorldPosition;
-                Vector3 TorsoDir = PEnd - PStart;
-                TorsoDir.Normalize();
-                PStart = PStart +  50 * TorsoDir * K;
-                PEnd = PEnd -  0 * TorsoDir * K;
-                torso_dummy.transform = calcularMatriz(torso_dummy.bb_p0, torso_dummy.bb_p1, PStart, PEnd,
-                        380 * K, 230 * K, _bones[(int)JointType.HipCenter].T);
-                torso_dummy.render();
+                // Tomo la cadera proyectada al piso
+                Vector3 HipProj = new Vector3(_joints[(int)JointType.HipCenter].WorldPosition.X, 40, _joints[(int)JointType.HipCenter].WorldPosition.Z);
+                float k = 600f / disco.size.X;
+                disco.transform = Matrix.Translation(-disco.center) * Matrix.RotationY(global_time) * Matrix.Scaling(k, 0, k) 
+                    * Matrix.Translation(HipProj);
+                disco.render();
             }
 
-            // culo
-            {
-                Matrix T = _bones[(int)JointType.HipCenter].T;
-                Vector3 PStart = _joints[(int)JointType.HipCenter].WorldPosition;
-                Vector3 CuloDir = new Vector3(T.M21, T.M22, T.M23);
-                Vector3 PEnd = PStart - CuloDir * 200f * K;
-                PStart = PStart + CuloDir * 50f * K;
-                culo_dummy.transform = calcularMatriz(culo_dummy.bb_p0, culo_dummy.bb_p1, PStart, PEnd, 350 * K, 230 * K, T);
-                culo_dummy.render();
-            }
-
+            // Restauro 
             device.Transform.View = ant_view * Matrix.Identity;
+            device.RenderState.AlphaBlendEnable = ant_blend;
 
         }
 
@@ -1531,6 +1585,25 @@ namespace Examples.Test
         }
         */
 
+        public void loadConfig()
+        {
+            string line = null;
+            System.IO.TextReader readFile = new StreamReader("config.dat");
+            while ((line = readFile.ReadLine())!=null)
+            {
+                int p = line.IndexOf("MOUSE_SNAP=");
+                if (p != -1)
+                    gui.kinect.MOUSE_SNAP = int.Parse(line.Substring(p + 11));
+
+                p = line.IndexOf("ALTURA_CADERA=");
+                if (p != -1)
+                    altura_cadera = float.Parse(line.Substring(p + 14));
+
+            }
+
+            readFile.Close();
+        }
+
         /// <summary>
         /// Limpiar toda la escena
         /// </summary>
@@ -1562,23 +1635,25 @@ namespace Examples.Test
             }
             gui.Dispose();
 
-        elipsoid.Dispose();
-        bola.Dispose();
-        culo.Dispose();
-        torso.Dispose();
-        cabeza.Dispose();
-        pierna.Dispose();
-        pantorrilla.Dispose();
-        mano_der.Dispose();
-        mano_izq.Dispose();
-        pie_der.Dispose();
-        pie_izq.Dispose();
-        brazo.Dispose();
-        antebrazo.Dispose();
+            elipsoid.Dispose();
+            hueso.Dispose();
+            bola.Dispose();
+            disco.Dispose();
+            culo.Dispose();
+            torso.Dispose();
+            cabeza.Dispose();
+            pierna.Dispose();
+            pantorrilla.Dispose();
+            mano_der.Dispose();
+            mano_izq.Dispose();
+            pie_der.Dispose();
+            pie_izq.Dispose();
+            brazo.Dispose();
+            antebrazo.Dispose();
 
-        cabeza_dummy.Dispose();
-        culo_dummy.Dispose();
-        torso_dummy.Dispose();
+            cabeza_dummy.Dispose();
+            culo_dummy.Dispose();
+            torso_dummy.Dispose();
 
         }
         
