@@ -1442,13 +1442,13 @@ namespace Examples.Test
             }
 
 
+
             /*
             debugJoint(JointType.KneeLeft, JointType.HipLeft, JointType.FootLeft, "rodi");
             debugJoint(JointType.KneeRight, JointType.HipRight, JointType.FootRight, "rodd");
 
             debugJoint(JointType.ElbowLeft, JointType.ShoulderLeft, JointType.WristLeft, "codi");
             debugJoint(JointType.ElbowRight, JointType.ShoulderRight, JointType.WristRight, "codd");
-
             for (int t = 0; t < _cant_bones; t++)
                 if (_bones[t].p_mesh != null)
                 {

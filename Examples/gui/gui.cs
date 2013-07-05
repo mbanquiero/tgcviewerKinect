@@ -166,6 +166,7 @@ namespace TgcViewer.Utils.Gui
         public Sprite sprite;
         public Line line;
         public Microsoft.DirectX.Direct3D.Font font;
+        public Microsoft.DirectX.Direct3D.Font font_small;
 
         // Cursores
         public Texture[] cursores = new Texture[MAX_CURSOR];
@@ -251,6 +252,7 @@ namespace TgcViewer.Utils.Gui
         public void Dispose()
         {
             font.Dispose();
+            font_small.Dispose();
             sprite.Dispose();
             line.Dispose();
             for (int i = 0; i < MAX_CURSOR; ++i)
@@ -279,6 +281,12 @@ namespace TgcViewer.Utils.Gui
             font.PreloadGlyphs('0', '9');
             font.PreloadGlyphs('a', 'z');
             font.PreloadGlyphs('A', 'Z');
+
+            font_small = new Microsoft.DirectX.Direct3D.Font(d3dDevice, 10, 0, FontWeight.Light, 0, false, CharacterSet.Default,
+                    Precision.Default, FontQuality.Default, PitchAndFamily.DefaultPitch, "Lucida Console");
+            font_small.PreloadGlyphs('0', '9');
+            font_small.PreloadGlyphs('a', 'z');
+            font_small.PreloadGlyphs('A', 'Z');
 
             // Cargo las textura del cursor
             cursores[(int)tipoCursor.targeting] = cargar_textura("cursor_default.png", true);
@@ -809,7 +817,7 @@ namespace TgcViewer.Utils.Gui
 
             Rectangle rc = new Rectangle(x, y, x+600, y+100);
             sprite.Begin(SpriteFlags.AlphaBlend);
-            font.DrawText(sprite, text, rc, DrawTextFormat.NoClip | DrawTextFormat.Top | DrawTextFormat.Center, Color.Black);
+            font_small.DrawText(sprite, text, rc, DrawTextFormat.NoClip | DrawTextFormat.Top | DrawTextFormat.Left, Color.Black);
             sprite.End();
 
             // Restauro el zbuffer
