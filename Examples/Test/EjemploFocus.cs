@@ -18,6 +18,8 @@ using TgcViewer.Utils.Input;
 using Examples.Expo;
 using Microsoft.Kinect;
 
+
+// fullScreenMode=true defaultExampleName="Ejemplo Focus Loader" defaultExampleCategory="Test" showModifiersPanel=false title="Kinect Focus Interaction" showTitleBar=false
 namespace Examples.Test
 {
     public struct st_joint
@@ -179,7 +181,8 @@ namespace Examples.Test
             tgcKinect.init();
             tgcKinect.DebugSkeleton.init();
             gui.kinect.hay_sensor = !tgcKinect.sin_sensor;
-
+            //tgcKinect.EnableNearModeSkeletalTracking();
+        
 
             // levanto el GUI
             gui.Create();
@@ -890,7 +893,7 @@ namespace Examples.Test
                         ++cant_inferidos;
 
 
-            if(!all_tracked || cant_inferidos>=6)
+            if(!all_tracked/* || cant_inferidos>=6*/)
                 return false;
 
             return true;

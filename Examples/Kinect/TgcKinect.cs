@@ -531,12 +531,21 @@ namespace Examples.Kinect
                     // doesn't need the reduced latency as much as gesture recognition does.
                     TransformSmoothParameters smoothingParam = new TransformSmoothParameters();
                     {
+                        /*
                         smoothingParam.Smoothing = 0.5f;
                         smoothingParam.Correction = 0.1f;
                         smoothingParam.Prediction = 0.5f;
                         smoothingParam.JitterRadius = 0.1f;
                         smoothingParam.MaxDeviationRadius = 0.1f;
-                    };
+                         */
+
+                        smoothingParam.Smoothing = 0.5f;
+                        smoothingParam.Correction = 0f;
+                        smoothingParam.Prediction = 0f;
+                        smoothingParam.JitterRadius = 0f;
+                        smoothingParam.MaxDeviationRadius = 0f;
+
+                    }
 
                     this.sensor.SkeletonStream.Enable(smoothingParam);
                     //this.sensor.ColorStream.Enable(ColorImageFormat.RgbResolution640x480Fps30);
@@ -562,6 +571,16 @@ namespace Examples.Kinect
             }
         }
 
+
+        public void EnableNearModeSkeletalTracking()
+        {
+            if (this.sensor != null && this.sensor.DepthStream != null && this.sensor.SkeletonStream != null)
+            {
+                this.sensor.DepthStream.Range = DepthRange.Near; // Depth in near range enabled
+                this.sensor.SkeletonStream.EnableTrackingInNearRange = true; // enable returning skeletons while depth is in Near Range
+                this.sensor.SkeletonStream.TrackingMode = SkeletonTrackingMode.Default;
+            }
+        }
         /// <summary>
         /// Devuelve una posicion del esqueleto escalada por positionScale
         /// </summary>
