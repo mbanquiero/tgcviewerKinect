@@ -12,17 +12,20 @@ namespace TgcViewer.Utils.TgcSkeletalAnimation
     public class TgcSkeletalBone
     {
 
+        // skining directo 
+        public Vector3 curPos;
+        public Quaternion curRot;
+
         public TgcSkeletalBone(int index, string name, Vector3 startPosition, Quaternion startRotation)
         {
             this.index = index;
             this.name = name;
-            this.startPosition = startPosition;
-            this.startRotation = startRotation;
-
+            this.curPos = this.startPosition = startPosition;
+            this.curRot = this.startRotation = startRotation;
             this.matLocal = Matrix.RotationQuaternion(this.startRotation) * Matrix.Translation(this.startPosition);
         }
 
-        private Vector3 startPosition;
+        public Vector3 startPosition;
         /// <summary>
         /// Posicion inicial del hueso
         /// </summary>
@@ -31,7 +34,7 @@ namespace TgcViewer.Utils.TgcSkeletalAnimation
             get { return startPosition; }
         }
 
-        private Quaternion startRotation;
+        public Quaternion startRotation;
         /// <summary>
         /// Rotacion inicial del hueso
         /// </summary>
@@ -50,7 +53,7 @@ namespace TgcViewer.Utils.TgcSkeletalAnimation
             set { matLocal = value; }
         }
 
-        Matrix matFinal;
+        public Matrix matFinal;
         /// <summary>
         /// Matriz final de transformacion 
         /// </summary>
@@ -70,7 +73,7 @@ namespace TgcViewer.Utils.TgcSkeletalAnimation
             set { matInversePose = value; }
         }
 
-        private int index;
+        public  int index;
         /// <summary>
         /// Posición del hueso dentro del array de huesos de todo el esqueleto
         /// </summary>
@@ -80,7 +83,7 @@ namespace TgcViewer.Utils.TgcSkeletalAnimation
         }
 
 
-        private string name;
+        public string name;
         /// <summary>
         /// Nombre del hueso
         /// </summary>
@@ -89,7 +92,7 @@ namespace TgcViewer.Utils.TgcSkeletalAnimation
             get { return name; }
         }
 
-        private TgcSkeletalBone parentBone;
+        public TgcSkeletalBone parentBone;
         /// <summary>
         /// Hueso padre. Es null si no tiene
         /// </summary>

@@ -24,7 +24,8 @@ namespace TgcViewer.Utils.TgcSceneLoader
         public Vector3 size = new Vector3();
         public Vector3 center = new Vector3();
         public Matrix transform;
-
+        public String Technique = "DIFFUSE_MAP";
+            
         public void loadMesh(string path)
         {
             Device d3dDevice = GuiController.Instance.D3dDevice;
@@ -55,7 +56,7 @@ namespace TgcViewer.Utils.TgcSceneLoader
                         if (!File.Exists(fname_aux))
                         {
                             // Pruebo con la carpeta de texturas
-                            fname_aux = GuiController.Instance.ExamplesMediaDir + "ModelosX\\" + mtrl[i].TextureFilename;
+                            fname_aux = GuiController.Instance.ExamplesMediaDir + "ModelosX\\texturas\\" + mtrl[i].TextureFilename;
                             if (!File.Exists(fname_aux))
                                 // Usa una textura gris para que al menos salga un color
                                 fname_aux = GuiController.Instance.ExamplesMediaDir + "focus\\texturas\\gris.png";
@@ -88,13 +89,13 @@ namespace TgcViewer.Utils.TgcSceneLoader
         {
             Device d3dDevice = GuiController.Instance.D3dDevice;
             Effect effect = GuiController.Instance.Shaders.TgcMeshPhongShader;
-            effect.Technique = "DIFFUSE_MAP";
+            effect.Technique = Technique;
             GuiController.Instance.Shaders.setShaderMatrix(effect, transform);
             //Cargar variables shader
             effect.SetValue("ambientColor", ColorValue.FromColor(Color.Gray));
-            effect.SetValue("diffuseColor", ColorValue.FromColor(Color.LightBlue));
-            effect.SetValue("specularColor", ColorValue.FromColor(Color.White));
-            effect.SetValue("specularExp", 10f);
+            effect.SetValue("diffuseColor", ColorValue.FromColor(Color.Gray));
+            effect.SetValue("specularColor", ColorValue.FromColor(Color.Black));
+            effect.SetValue("specularExp", 2f);
 
 
             //Iniciar Shader e iterar sobre sus Render Passes

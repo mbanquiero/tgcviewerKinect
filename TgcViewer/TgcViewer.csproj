@@ -287,6 +287,7 @@
     <Compile Include="Utils\TgcKeyFrameLoader\TgcKeyFrameParser.cs" />
     <Compile Include="Utils\TgcSceneLoader\ITransformObject.cs" />
     <Compile Include="Utils\TgcSceneLoader\IRenderObject.cs" />
+    <Compile Include="Utils\TgcSceneLoader\TgcDxMesh.cs" />
     <Compile Include="Utils\TgcSceneLoader\TgcMaterialData.cs" />
     <Compile Include="Utils\TgcSceneLoader\TgcMesh.cs" />
     <Compile Include="Utils\TgcSceneLoader\TgcMeshData.cs" />
@@ -305,11 +306,13 @@
     <Compile Include="Utils\TgcSkeletalAnimation\TgcSkeletalAnimationBoneFrameData.cs" />
     <Compile Include="Utils\TgcSkeletalAnimation\TgcSkeletalAnimationData.cs" />
     <Compile Include="Utils\TgcSkeletalAnimation\TgcSkeletalBone.cs" />
+    <Compile Include="Utils\TgcSkeletalAnimation\TgcSkeletalMesh.cs">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Utils\TgcSkeletalAnimation\TgcSkeletalMeshData.cs" />
     <Compile Include="Utils\TgcSkeletalAnimation\TgcSkeletalParser.cs" />
     <Compile Include="Utils\TgcSkeletalAnimation\TgcSkeletalBoneData.cs" />
     <Compile Include="Utils\TgcSkeletalAnimation\TgcSkeletalVertexWeight.cs" />
-    <Compile Include="Utils\TgcSkeletalAnimation\TgcSkeletalMesh.cs" />
     <Compile Include="Utils\TgcUserVars.cs" />
     <Compile Include="Utils\Ui\AboutWindow.cs">
       <SubType>Form</SubType>

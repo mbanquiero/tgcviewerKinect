@@ -20,7 +20,7 @@ namespace TgcViewer.Utils.TgcSkeletalAnimation
         /// al VertexShader para hacer skinning.
         /// </summary>
         public const int MAX_BONE_COUNT = 26;
-
+        public bool modo_kinect = true;
         private TgcDXMesh elipsoid;
         private TgcDXMesh bola;
         private TgcDXMesh culo;
@@ -756,6 +756,31 @@ namespace TgcViewer.Utils.TgcSkeletalAnimation
         }
 
 
+        public void updateSkeletonDirectSkining()
+        {
+            for (int i = 0; i < bones.Length; i++)
+            {
+                TgcSkeletalBone bone = bones[i];
+
+                //Unir ambas transformaciones de este frame
+                Matrix frameMatrix = Matrix.RotationQuaternion(bone.curRot) * Matrix.Translation(bone.curPos);
+
+                //Multiplicar por la matriz del padre, si tiene
+                   if (bone.ParentBone != null)
+                {
+                    bone.MatFinal = frameMatrix * bone.ParentBone.MatFinal;
+                }
+                else
+                {
+                    bone.MatFinal = frameMatrix;
+                }
+
+            }
+            updateMeshVertices();
+
+        }
+
+
         /// <summary>
         /// Actualiza la posicion de cada hueso del esqueleto segun sus KeyFrames de la animacion
         /// </summary>
@@ -839,7 +864,9 @@ namespace TgcViewer.Utils.TgcSkeletalAnimation
                 TgcSkeletalBone bone = bones[i];
                 boneSpaceFinalTransforms[i] = bone.MatInversePose * bone.MatFinal;
             }
+
         }
+
 
 
         /// <summary>
@@ -872,7 +899,7 @@ namespace TgcViewer.Utils.TgcSkeletalAnimation
             effect.SetValue("bonesMatWorldArray", this.boneSpaceFinalTransforms);
 
             //Renderizar malla
-            if (!renderSkeleton && false)
+            if (!renderSkeleton && !modo_kinect)
             {
                 //Renderizar segun el tipo de render de la malla
                 effect.Technique = this.technique;
@@ -950,7 +977,7 @@ namespace TgcViewer.Utils.TgcSkeletalAnimation
         /// <summary>
         /// Actualizar transformacion actual de la malla
         /// </summary>
-        protected void updateMeshTransform()
+        public void updateMeshTransform()
         {
             if (autoTransformEnable)
             {
@@ -1290,11 +1317,14 @@ namespace TgcViewer.Utils.TgcSkeletalAnimation
             vertexDeclaration.Dispose();
             vertexDeclaration = null;
 
-            elipsoid.Dispose();
-            bola.Dispose();
-            culo.Dispose();
-            torso.Dispose();
-            cabeza.Dispose();
+            if (modo_kinect)
+            {
+                elipsoid.Dispose();
+                bola.Dispose();
+                culo.Dispose();
+                torso.Dispose();
+                cabeza.Dispose();
+            }
         }
 
 
